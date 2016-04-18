@@ -5,15 +5,8 @@
 This plugin is prepared to allow you to test and try it out via the `demo` folder.
 Additionally it provides a proper `.gitignore` to keep GitHub tidy as well as `.npmignore` to ensure everyone is happy when you publish your plugin via npm.
 
-### Prepare
 
-```
-"preparedemo": "npm run build && cd demo && tns plugin remove nativescript-yourplugin && tns plugin add .. && tns install",
-```
-
-Replace `nativescript-yourplugin` with your actual plugin name.
-
-### Development:
+## Development:
 
 Install typescript: `npm install -g typescript`
 
