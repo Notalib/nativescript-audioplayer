@@ -1,0 +1,11 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" loaded="pageLoaded">
+  <StackLayout>
+    <Label text="{{ message }}" class="message" textWrap="true"/>
+    <Button text="Play" tap="{{ play }}"/>
+    <Button text="Pause" tap="{{ pause }}"/>
+    <Button text="Toggle x2" tap="{{ toggleRate }}"/>
+    <Button text="Skip Backward" tap="{{ skipToPrevious }}"/>
+    <Button text="Skip Forward" tap="{{ skipToNext }}"/>
+    <Button text="Seek Specific" tap="{{ seekSpecific }}"/>
+  </StackLayout>
+</Page>

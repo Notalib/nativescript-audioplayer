@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "sourceMap": true,
+        "experimentalDecorators": true,
+        "noEmitHelpers": true
+    },
+    "files": [
+        "app/app.ts",
+        "app/main-page.ts",
+        "app/main-view-model.ts",
+        "references.d.ts"
+    ]
+}
