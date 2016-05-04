@@ -1,112 +1,89 @@
-//import * as def from 'nativescript-audioplayer';
-import {CommonAudioPlayer} from './audioplayer.common';
+import {PlaybackStateChangedListener} from 'nativescript-audioplayer';
+import {CommonAudioPlayer, MediaTrack, Playlist} from './audioplayer.common';
 import * as app from 'application';
 
-// namespace alias
-import vlc = org.videolan.libvlc;
+export {MediaTrack, Playlist} from './audioplayer.common';
 
-export enum EventType {
-    MediaChanged = 0x100,
-    Opening = 0x102,
-    Playing = 0x104,
-    Paused = 0x105,
-    Stopped = 0x106,
-    EndReached = 0x109,
-    EncounteredError = 0x10a,
-    TimeChanged = 0x10b,
-    PositionChanged = 0x10c,
-    SeekableChanged = 0x10d,
-    PausableChanged = 0x10e
-  }
+import lyt = dk.nota.lyt.libvlc;
 
 export class AudioPlayer extends CommonAudioPlayer
-  implements vlc.MediaPlayer.EventListener
 {
-  public _player: vlc.MediaPlayer;
-  private _libVLC: vlc.LibVLC;
-  private _playlist: vlc.Media[] = new Array<vlc.Media>();
+  public _serviceHelper: lyt.PlaybackServiceHelper;
+  public _service: lyt.PlaybackService;
+  private _libVLC: any;
   private _currentIndex: number = 0;
   private _queuedSeekTo: number = -1;
-  get _currentMedia(): vlc.Media {
-    return this._playlist[this._currentIndex];
-  }
 
-  constructor(paths: string[]) {
-    super(paths);
+  constructor(playlist: Playlist) {
+    super(playlist);
     this.android = this;
-    //this._player = android.media.MediaPlayer.create(app.android.context, android.net.Uri.parse(this._path));
-    let options = new java.util.ArrayList<string>();
-    options.add("--http-reconnect");
-    options.add("--network-caching=2000");
-    this._libVLC = new vlc.LibVLC(options);
-    this._player = new vlc.MediaPlayer(this._libVLC);
-    this._player.setEventListener(new vlc.MediaPlayer.EventListener({
-      onEvent: (evt: vlc.MediaPlayer.Event) => {
-        this.onEvent(evt);
-      }
+    this._serviceHelper = new lyt.PlaybackServiceHelper(app.android.context, new lyt.ConnectionCallback({
+        onConnected: (service: lyt.PlaybackService) => {
+            console.log("===== SERVICE CONNECTED =====");
+            this._service = service;
+            service.setNotificationActivity(app.android.startActivity, "LAUNCHED_FROM_NOTIFICATION");
+            let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
+            for (var track of this.playlist.tracks) {
+              console.log('track-title: '+ track.title);
+              mediaList.add(this.getNewMediaWrapper(track));
+            }
+            // service.addCallback(new lyt.PlaybackEventHandler({
+            //   update() {
+            //     console.log('update');
+            //   },
+            //   updateProgress() {
+            //     console.log('progress');
+            //   },
+            //   onMediaEvent(event: lyt.media.MediaEvent) {
+            //     console.log('mediaEvent');
+            //   },
+            //   onMediaPlayerEvent(event: lyt.media.MediaPlayerEvent) {
+            //     console.log('mediaPlayerEvent');
+            //   }
+            // }));
+            service.load(mediaList, 0);
+        },
+        onDisconnected: () => {
+            console.log("===== SERVICE DISCONNECTED =====");
+        }
     }));
+    this._serviceHelper.onStart();
     // TODO: IMPLEMENT MediaListPlayer?
-    this.addToPlaylist(paths);
-    if (this._playlist.length > 0) {
-      this._player.setMedia(this._playlist[0]);
-    }
-    console.log("Created player.android: "+ this._player);
+    // this.addToPlaylist(paths);
+    // if (this._playlist.length > 0) {
+    //   this._player.setMedia(this._playlist[0]);
+    // }
+    // console.log("Created player.android: "+ this._player);
     // this._player.setOnPreparedListener(this);
     // this._player.setOnSeekCompleteListener(this);
   }
   
-  public onEvent(event: vlc.MediaPlayer.Event) {
-      switch(event.type) {
-        case EventType.Opening:
-          break;
-        case EventType.Playing:
-          break;
-        case EventType.Stopped:
-          break;
-        case EventType.EndReached: {
-          console.log("-- END REACHED!");
-          this.skipToNext();
-          break;
-        }
-        default:
-          //console.log("Receied MediaPlayer event: "+ event.type);
-          break;
-      }
-      if (event.type == EventType.EndReached) {
-        console.log("-- END REACHED!");
-        this.skipToNext();
-      }
-      else if (event.type == EventType.EncounteredError) {
-        console.log("-- PLAYBACK ERROR!");
-      }
-      else if (event.type == EventType.TimeChanged) {
-        console.log("-- Time Changed: "+ event.getTimeChanged());
-      }
-      else if (event.type == EventType.SeekableChanged
-          && event.getSeekable() && this._queuedSeekTo >= 0) {
-        console.log("CAUGHT QUEUED SEEK: "+ this._queuedSeekTo);
-        this.seekTo(this._queuedSeekTo);
-        this._queuedSeekTo = -1;
-      } else {
-        
-      }
+  private getNewMediaWrapper(track: MediaTrack): lyt.media.MediaWrapper {
+    let uri: android.net.Uri = lyt.Utils.LocationToUri(track.url);
+    let media: lyt.media.MediaWrapper = new lyt.media.MediaWrapper(uri);
+    media.setDisplayTitle(track.title);
+    media.setArtist(track.artist);
+    media.setAlbum(track.album);
+    media.setArtworkURL(track.albumArtUrl);
+    return media;
   }
   
-  public addToPlaylist(paths: string[]) {
-    for (let path of paths) {
-      console.log("Adding to playlist path: "+ path);
-      let uri: android.net.Uri = vlc.util.AndroidUtil.LocationToUri(path);
-      let media: vlc.Media = new vlc.Media(this._libVLC, uri);
-      this._playlist.push(media);
-    }
+  public addToPlaylist(track: MediaTrack) {
+  }
+  
+  public getCurrentPlaylistIndex() {
   }
 
   public play() {
-    this._player.play();
+    this._service.play();
   }
 
   public pause() {
-    this._player.pause();
+    this._service.pause();
+  }
+
+  public stop(fullStop: boolean) {
+    this._service.stopPlayback();
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {
@@ -114,16 +91,12 @@ export class AudioPlayer extends CommonAudioPlayer
       this.skipToIndex(playlistIndex);
       this._queuedSeekTo = milisecs;
     } else {
-      this._player.setTime(milisecs);
+      this._service.setTime(milisecs);
     }
-  }
-
-  public stop(fullStop: boolean) {
-    this._player.stop();
   }
   
   public skipToNext() {
-    if (this._currentIndex < this._playlist.length - 1) {
+    if (this._currentIndex < this.playlist.length - 1) {
       this.skipToIndex(this._currentIndex + 1);
     }
   }
@@ -135,31 +108,27 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   private skipToIndex(newPlaylistIndex: number) {
-    console.log ("playlist size "+ this._playlist.length);
+    console.log ("playlist size "+ this.playlist.length);
     console.log ("skipping to "+ (newPlaylistIndex));
     this._currentIndex = newPlaylistIndex;
-    this.stop(false);
-    let nextMedia: vlc.Media = this._playlist[newPlaylistIndex];
-    console.log("next media is: "+ nextMedia.getMeta(0)); // 0 = Title
-    this._player.setMedia(nextMedia);
-    this._player.play();
+    //TODO: Implemenet properly
+    this._service.next();
   }
   
   public setRate(rate: number) {
-    this._player.setRate(rate);
+    this._service.setRate(rate);
   }
   
   public getRate() {
-    return this._player.getRate();
+    return this._service.getRate();
   }
   
   public getDuration() {
-    return this._player.getLength();
-    //return this._media.getDuration();
+    return this._service.getTime();
   }
   
-  public getCurrentTimeMilis() {
-    return this._player.getTime();
+  public getCurrentTime() {
+    return this._service.getTime();
   }
 
   public onPrepared(mp: android.media.MediaPlayer) {
@@ -172,6 +141,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   public release() {
-    throw new Error("Not implemented");
+    this._service.stopService();
+    this._serviceHelper.onStop();
   }
 }

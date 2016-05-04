@@ -5,17 +5,23 @@ declare namespace dk.nota.lyt.libvlc {
     update(): void;
     updateProgress(): void;
     onMediaEvent(event: media.MediaEvent): void;
-    onMediaPlayerEvent(event: media.MediaPlayerEvent)
+    onMediaPlayerEvent(event: media.MediaPlayerEvent);
+  }
+  export var PlaybackEventHandler: {
+    new(impl: any): PlaybackEventHandler;
   }
   
   export interface ConnectionCallback {
     onConnected(service: PlaybackService): void;
     onDisconnected(): void;
   }
+  export class ConnectionCallback {
+    constructor(impl: any);
+  }
   
   export class PlaybackService {
     load(media: media.MediaWrapper): void;
-    load(mediaPlaylist: java.util.List<media.MediaWrapper>): void;
+    load(mediaPlaylist: java.util.List<media.MediaWrapper>, initialIndex: number): void;
     play(): void;
     pause(): void;
     next(): void;
