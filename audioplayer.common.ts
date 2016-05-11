@@ -1,4 +1,4 @@
-import {AudioPlayer, PlaybackStateChangedListener} from 'nativescript-audioplayer';
+import {AudioPlayer, PlaybackEventListener} from 'nativescript-audioplayer';
 import * as app from 'application';
 
 export class MediaTrack {
@@ -26,18 +26,26 @@ export class Playlist {
   }
 }
 
+export enum PlaybackEvent {
+    Stopped,
+    Opening,
+    Playing,
+    Paused,
+    EndOfTrackReached,
+    EndOfPlaylistReached
+  }
+
 export abstract class CommonAudioPlayer implements AudioPlayer {
   
   public android: any;
   public ios: any;
   public message: string;
   public playlist: Playlist;
-  public currentPlaylistIndex: number;
-  private _listener: PlaybackStateChangedListener;
+  private _listener: PlaybackEventListener;
 
   constructor(playlist: Playlist) {
     this.playlist = playlist;
-    console.log("CommonAudioPlayer created with playlist.length: "+ playlist.tracks.length);
+    this._log("CommonAudioPlayer created with playlist.length: "+ playlist.tracks.length);
     this.message = `Your plugin is working on ${app.android ? 'Android' : 'iOS'}.`;
   }
 
@@ -52,14 +60,18 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public abstract getDuration(): number;
   public abstract getCurrentTime();
   public abstract getCurrentPlaylistIndex();
-  public abstract seekTo(milisecs: number, plalistIndex?: number);
+  public abstract seekTo(milisecs: number, playlistIndex?: number);
   public abstract release();
 
-  public setPlaybackStateChangeListener(listener: PlaybackStateChangedListener) {
+  public setPlaybackEventListener(listener: PlaybackEventListener) {
     this._listener = listener;
   }
 
-  protected _updateState(state: string) {
-    if (this._listener) this._listener.onPlaybackStateChanged(state);
+  protected _onPlaybackEvent(evt: PlaybackEvent) {
+    if (this._listener) this._listener.onPlaybackEvent(evt);
+  }
+  
+  protected _log(...args: any[]) {
+    console.log('NSAudioPlayer-Plugin - %s', ...args);
   }
 }

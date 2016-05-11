@@ -1,7 +1,16 @@
 declare module "nativescript-audioplayer" {
 
-  export interface PlaybackStateChangedListener {
-    onPlaybackStateChanged(state: string);
+  export interface PlaybackEventListener {
+    onPlaybackEvent(evt: PlaybackEvent);
+  }
+  
+  export enum PlaybackEvent {
+    Stopped,
+    Opening,
+    Playing,
+    Paused,
+    EndOfTrackReached,
+    EndOfPlaylistReached
   }
   
   export class MediaTrack {
@@ -22,7 +31,6 @@ declare module "nativescript-audioplayer" {
   export interface AudioPlayer {
     message: string;
     playlist: Playlist;
-    currentPlaylistIndex: number;
 
     addToPlaylist(track: MediaTrack);
     play(): void;
@@ -41,8 +49,9 @@ declare module "nativescript-audioplayer" {
      * Seeks to a specific offset in miliseconds of the current track.
      * Optionally skips to a specific playlist index before seeking.
      */
+    getCurrentPlaylistIndex(): number;
     seekTo(milisecs: number, playlistIndex?: number);
-    setPlaybackStateChangeListener(listener: PlaybackStateChangedListener): void;
+    setPlaybackEventListener(listener: PlaybackEventListener): void;
     release(): void;
   }
   export var AudioPlayer: {
