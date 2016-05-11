@@ -1,7 +1,7 @@
 import {Observable} from 'data/observable';
-import {AudioPlayer, Playlist, MediaTrack, PlaybackStateChangedListener} from 'nativescript-audioplayer';
+import {AudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent} from 'nativescript-audioplayer';
 
-export class HelloWorldModel extends Observable implements PlaybackStateChangedListener {
+export class HelloWorldModel extends Observable implements PlaybackEventListener {
   public message: string;
   private player: AudioPlayer;
   private rateToggled: boolean = false;
@@ -22,7 +22,7 @@ export class HelloWorldModel extends Observable implements PlaybackStateChangedL
     //   "http://www.noiseaddicts.com/samples_1w72b820/202.mp3",
     //   "http://www.noiseaddicts.com/samples_1w72b820/4941.mp3",
     //   "http://mean2u.rfshq.com/downloads/music/giveyouup.mp3"]);
-    this.player.setPlaybackStateChangeListener(this);
+    this.player.setPlaybackEventListener(this);
     this.message = this.player.message;
   }
 
@@ -53,7 +53,7 @@ export class HelloWorldModel extends Observable implements PlaybackStateChangedL
     this.player.skipToNext();
   }
 
-  public onPlaybackStateChanged(state: string) {
-    console.log('Playback state received: '+ state);
+  public onPlaybackEvent(evt: PlaybackEvent) {
+    console.log('Playback event received: '+ PlaybackEvent[evt]);
   }
 }
