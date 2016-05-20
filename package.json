@@ -11,10 +11,10 @@
 	"main": "audioplayer.js",
 	"scripts": {
 		"build": "tsc",
-		"demo.ios": "npm run preparedemo && cd demo && tns emulate ios",
-		"demo.android": "npm run preparedemo && cd demo && tns run android",
-		"preparedemo": "npm run build && npm run reloadplugin",
-		"reloadplugin": "cd demo && tns plugin remove nativescript-audioplayer && tns plugin add .. && tns install",
+		"demo.ios": "npm run prepdemo && cd demo && tns emulate ios",
+		"demo.android": "npm run prepdemo && cd demo && tns run android",
+		"prepdemo": "npm run build && npm run reload",
+		"reload": "cd demo && tns plugin remove nativescript-audioplayer && tns plugin add .. && tns install",
 		"apk": "cd demo && tns build android --copy-to ."
 	},
 	"repository": {
