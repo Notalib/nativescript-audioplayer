@@ -11,12 +11,10 @@ export class AudioPlayer extends CommonAudioPlayer
 {
   public _serviceHelper: lyt.PlaybackServiceHelper;
   public _service: lyt.PlaybackService;
-  private _libVLC: any;
   private _queuedSeekTo: number = null;
 
   constructor(playlist: Playlist) {
     super(playlist);
-    this.android = this;
     this._serviceHelper = new lyt.PlaybackServiceHelper(app.android.context, new lyt.ConnectionCallback({
       onConnected: (service: lyt.PlaybackService) => {
         this._log("===== SERVICE CONNECTED =====");
@@ -89,7 +87,7 @@ export class AudioPlayer extends CommonAudioPlayer
   private loadPlaylist(playlist: Playlist): void {
     let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
     for (var track of this.playlist.tracks) {
-      this._log('Android - Created MediaWrapper for: '+ track.title);
+      this._log('Android - Creating MediaWrapper for: '+ track.title);
       mediaList.add(this.getNewMediaWrapper(track));
     }
     this._service.load(mediaList, 0);
@@ -109,7 +107,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this._service.append(this.getNewMediaWrapper(track));
   }
 
-  public getCurrentPlaylistIndex() {
+  public getCurrentPlaylistIndex(): number {
     return this._service.getCurrentMediaPosition();
   }
 
@@ -161,10 +159,11 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public getDuration() {
-    return this._service.getTime();
+    //TODO: Implement duration on Android
+    return 666;
   }
 
-  public getCurrentTime() {
+  public getCurrentTime(): number {
     return this._service.getTime();
   }
 

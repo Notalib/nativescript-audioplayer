@@ -58,8 +58,8 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public abstract setRate(rate: number);
   public abstract getRate(): number;
   public abstract getDuration(): number;
-  public abstract getCurrentTime();
-  public abstract getCurrentPlaylistIndex();
+  public abstract getCurrentTime(): number;
+  public abstract getCurrentPlaylistIndex(): number;
   public abstract seekTo(milisecs: number, playlistIndex?: number);
   public abstract release();
 
