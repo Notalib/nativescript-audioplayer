@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es5",
-        "sourceMap": true,
+        "sourceMap": false,
         "experimentalDecorators": true,
         "noEmitHelpers": true
     },
@@ -11,9 +11,5 @@
         "app/main-page.ts",
         "app/main-view-model.ts",
         "references.d.ts"
-    ],
-    "exclude": [
-        "node_modules",
-        "platforms"
     ]
 }
