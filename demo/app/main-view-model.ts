@@ -42,6 +42,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
   
   public seekSpecific() {
+    console.log("Seeking to index 2 and 15 secs");
     this.player.seekTo(15000, 2);
   }
   

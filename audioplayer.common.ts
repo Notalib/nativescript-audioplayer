@@ -72,6 +72,6 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   }
   
   protected _log(...args: any[]) {
-    console.log('NSAudioPlayer-Plugin - %s', ...args);
+    console.log('tns-audioplayer: %s', ...args);
   }
 }

@@ -3,4 +3,4 @@ platform :ios, '8.0'
 source 'https://github.com/CocoaPods/Specs.git'
 source 'https://github.com/dfg-nota/CocoaPodSpecs.git'
 
-pod 'LYTAudioPlayer', '~> 0.0.5'
+pod 'LYTAudioPlayer', '~> 0.0.6'
