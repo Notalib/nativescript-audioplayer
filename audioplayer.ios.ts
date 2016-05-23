@@ -4,34 +4,41 @@ import * as app from 'application';
 // TODO: Do all exports in a main.ts instead?
 export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
-export class MyLYTPlayerDelegate extends NSObject implements LYTPlayerDelegate {
+export class LYTPlayerDelegateImpl extends NSObject implements LYTPlayerDelegate {
     
     public static ObjCProtocols = [ LYTPlayerDelegate ]
+    private player: AudioPlayer;
     
-    public init() {
-        return super.init();
+    public init(): LYTPlayerDelegateImpl {
+        var self = super.init();
+        if (self) {
+            console.log("MyLYTPlayerDelegate initialized succesfully");
+        }
+        return self as LYTPlayerDelegateImpl;
     }
     
-    public audioPlayerDidChangeStateFromToState(player: LYTPlayer, fromState, toState) {
-        console.log("delegate.didChangeState: "+ fromState + " -> "+ toState);
+    public withForwardingTo(player: AudioPlayer): LYTPlayerDelegateImpl {
+        this.player = player;
+        return this;
     }
-    public audioPlayerDidFinishPlayingTrack(player: LYTPlayer, track: LYTAudioTrack) {
-        console.log("delegate.didFinishPlayingTrack", track.title);
+    
+    public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
+        this.player.didChangeStateFromTo(fromState, toState);
     }
-    public audioPlayerDidFindDurationForTrack(player: LYTPlayer, duration: number, track: LYTAudioTrack) {
-        console.log("delegate.didFindDurationForTrack: "+ duration, track.title);
+    public didFinishPlayingTrack(track: LYTAudioTrack) {
+        this.player.didFinishPlayingTrack(track);
     }
-    public audioPlayerDidUpdateBufferingForTrack(player: LYTPlayer, buffered: number, track: LYTAudioTrack) {
-        console.log("delegate.didUpdateBufferingForTrack: "+ buffered, track.title);
+    public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
+        this.player.didFindDurationForTrack(duration, track);
     }
-    public audioPlayerDidChangeToTrack(player: LYTPlayer, track: LYTAudioTrack) {
-        console.log("delegate.DidChangeToTrack", track.title);
+    public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
+        this.player.didUpdateBufferedDurationForTrack(buffered, track);
     }
-    public audioPlayerDidFinishSeekingToTime(player: LYTPlayer, time: number) {
-        console.log("delegate.DidFinishSeekingToTime: "+ time);
+    public didChangeToTrack(track: LYTAudioTrack) {
+        this.player.didChangeToTrack(track);
     }
-    public audioPlayerDidEncounterError(player: LYTPlayer, error: NSError) {
-        console.log("delegate.didEncounterError: "+ error.localizedDescription);
+    public didEncounterError(error: NSError) {
+        this.player.didEncounterError(error);
     }
 }
 
@@ -53,8 +60,8 @@ export class AudioPlayer extends CommonAudioPlayer
             }
             this.player.loadPlaylistAndAutoplay(iosPlaylist, false);
         }
-        console.log("LYTPlayerDelegate methods: ", Object.keys(LYTPlayerDelegate.prototype))
-        this.player.delegate = new MyLYTPlayerDelegate();
+        console.log("LYTPlayerDelegate methods: ", Object.keys(LYTPlayerDelegate.prototype));
+        this.player.delegate = new LYTPlayerDelegateImpl().withForwardingTo(this);
     }
     
     private getNewLYTTrack(track: MediaTrack) {
@@ -100,36 +107,54 @@ export class AudioPlayer extends CommonAudioPlayer
     public getCurrentTime(): number { return this.player.currentTime; }
     public getCurrentPlaylistIndex() { return this.player.currentPlaylistIndex; }
     public seekTo(milisecs: number, playlistIndex?: number) {
-        if (playlistIndex) {
+        if (playlistIndex && playlistIndex != this.player.currentPlaylistIndex) {
             this.player.skipToPlaylistIndexOnCompletion(playlistIndex, () => {
                 this.player.seekToTimeMilisOnCompletion(milisecs, () => {
-                    console.log("TNS-SeekTo OnCompletion: finished seeking");
+                    this._log("Finished seeking");
                 });
+            });
+        } else {
+            this.player.seekToTimeMilisOnCompletion(milisecs, () => {
+                this._log("Finished seeking");
             });
         }
     }
-    public release() {}
     
+    public release() {
+        if (this.player.delegate) {
+            delete this.player.delegate;
+        }
+        delete this.player;
+    }
     
-    public audioPlayerDidChangeStateFromToState(player: LYTPlayer, fromState, toState) {
+    public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
         console.log("delegate.didChangeState: "+ fromState + " -> "+ toState);
+        switch(toState) {
+            case LYTPlayerState.Playing:
+                this._onPlaybackEvent(PlaybackEvent.Playing);
+                break;
+            case LYTPlayerState.Paused:
+                this._onPlaybackEvent(PlaybackEvent.Paused);
+                break;
+            case LYTPlayerState.Stopped:
+                this._onPlaybackEvent(PlaybackEvent.Stopped);
+                break;
+        }
     }
-    public audioPlayerDidFinishPlayingTrack(player: LYTPlayer, track: LYTAudioTrack) {
+    public didFinishPlayingTrack(track: LYTAudioTrack) {
         console.log("delegate.didFinishPlayingTrack", track.title);
+        this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
     }
-    public audioPlayerDidFindDurationForTrack(player: LYTPlayer, duration: number, track: LYTAudioTrack) {
+    public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
         console.log("delegate.didFindDurationForTrack: "+ duration, track.title);
     }
-    public audioPlayerDidUpdateBufferingForTrack(player: LYTPlayer, buffered: number, track: LYTAudioTrack) {
+    public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
         console.log("delegate.didUpdateBufferingForTrack: "+ buffered, track.title);
     }
-    public audioPlayerDidChangeToTrack(player: LYTPlayer, track: LYTAudioTrack) {
+    public didChangeToTrack(track: LYTAudioTrack) {
         console.log("delegate.DidChangeToTrack", track.title);
     }
-    public audioPlayerDidFinishSeekingToTime(player: LYTPlayer, time: number) {
-        console.log("delegate.DidFinishSeekingToTime: "+ time);
-    }
-    public audioPlayerDidEncounterError(player: LYTPlayer, error: NSError) {
+    public didEncounterError(error: NSError) {
         console.log("delegate.didEncounterError: "+ error.localizedDescription);
     }
 }

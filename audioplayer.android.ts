@@ -124,7 +124,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {
-    if (playlistIndex != null) {
+    if (playlistIndex && playlistIndex != this.getCurrentPlaylistIndex()) {
       this.skipToIndex(playlistIndex);
       this._queuedSeekTo = milisecs;
     } else {
