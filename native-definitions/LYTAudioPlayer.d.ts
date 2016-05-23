@@ -70,19 +70,17 @@ declare class LYTPlayer extends NSObject {
 
 interface LYTPlayerDelegate extends NSObjectProtocol {
 
-	audioPlayerDidChangeStateFromToState(audioPlayer: LYTPlayer, from: LYTPlayerState, to: LYTPlayerState): void;
+	didChangeStateFromTo(from: LYTPlayerState, to: LYTPlayerState): void;
 
-	audioPlayerDidChangeToTrack(audioPlayer: LYTPlayer, track: LYTAudioTrack): void;
+	didChangeToTrack(track: LYTAudioTrack): void;
 
-	audioPlayerDidEncounterError(audioPlayer: LYTPlayer, error: NSError): void;
+	didEncounterError(error: NSError): void;
 
-	audioPlayerDidFindDurationForTrack(audioPlayer: LYTPlayer, duration: number, track: LYTAudioTrack): void;
+	didFindDurationForTrack(durationSeconds: number, track: LYTAudioTrack): void;
 
-	audioPlayerDidFinishPlayingTrack(audioPlayer: LYTPlayer, track: LYTAudioTrack): void;
+	didFinishPlayingTrack(track: LYTAudioTrack): void;
 
-	audioPlayerDidFinishSeekingToTime(audioPlayer: LYTPlayer, time: number): void;
-
-	audioPlayerDidUpdateBufferingForTrack(audioPlayer: LYTPlayer, buffered: number, track: LYTAudioTrack): void;
+	didUpdateBufferedDurationForTrack(bufferedDuration: number, track: LYTAudioTrack): void;
 }
 declare var LYTPlayerDelegate: {
 
