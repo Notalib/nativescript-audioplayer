@@ -1,6 +1,6 @@
 {
 	"name": "nativescript-audioplayer",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Fully featured AudioPlayer NativeScript plugin.",
 	"nativescript": {
 		"platforms": {

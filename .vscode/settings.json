@@ -3,6 +3,8 @@
         "**/.git": true,
         "**/.DS_Store": true,
         "**/*.map": true,
+        "*.js": true,
+        "*.d.ts": true,
         "**/*.js": {
             "when": "$(basename).ts"
         }
