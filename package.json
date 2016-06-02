@@ -9,6 +9,7 @@
 		}
 	},
 	"main": "audioplayer.js",
+	"typings": "audioplayer.d.ts",
 	"scripts": {
 		"build": "tsc",
 		"demo.ios": "npm run prepdemo && cd demo && tns emulate ios",
