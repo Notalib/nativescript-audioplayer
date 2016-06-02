@@ -1,7 +1,7 @@
 declare module "nativescript-audioplayer" {
 
   export interface PlaybackEventListener {
-    onPlaybackEvent(evt: PlaybackEvent);
+    onPlaybackEvent(evt: PlaybackEvent): void;
   }
   
   export enum PlaybackEvent {
@@ -32,7 +32,7 @@ declare module "nativescript-audioplayer" {
     message: string;
     playlist: Playlist;
 
-    addToPlaylist(track: MediaTrack);
+    addToPlaylist(track: MediaTrack): void;
     play(): void;
     pause(): void;
     stop(fullStop: boolean): void;
@@ -50,7 +50,7 @@ declare module "nativescript-audioplayer" {
      * Optionally skips to a specific playlist index before seeking.
      */
     getCurrentPlaylistIndex(): number;
-    seekTo(milisecs: number, playlistIndex?: number);
+    seekTo(milisecs: number, playlistIndex?: number): void;
     setPlaybackEventListener(listener: PlaybackEventListener): void;
     release(): void;
   }
