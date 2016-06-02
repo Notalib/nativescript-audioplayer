@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es5",
-        "sourceMap": false,
+        "sourceMap": true,
         "experimentalDecorators": true,
         "noEmitHelpers": true
     },
@@ -10,6 +10,7 @@
         "app/app.ts",
         "app/main-page.ts",
         "app/main-view-model.ts",
-        "references.d.ts"
+        "node_modules/tns-core-modules/tns-core-modules.d.ts",
+        "../audioplayer.common.d.ts"
     ]
 }

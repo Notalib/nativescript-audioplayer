@@ -1,39 +1,7 @@
-import {AudioPlayer, PlaybackEventListener} from 'nativescript-audioplayer';
 import * as app from 'application';
+import { AudioPlayer, MediaTrack, Playlist, PlaybackEvent, PlaybackEventListener } from './types';
 
-export class MediaTrack {
-  constructor(url: string, title: string, artist: string, album: string, albumArtUrl: string) {
-    this.url = url;
-    this.title = title;
-    this.artist = artist;
-    this.album = album;
-    this.albumArtUrl = albumArtUrl;
-  }
-  public url: string;
-  public title: string;
-  public artist: string;
-  public album: string;
-  public albumArtUrl: string;
-}
-
-export class Playlist {
-  constructor(...tracks: MediaTrack[]) {
-    this.tracks = tracks;
-  }
-  public tracks: MediaTrack[];
-  public get length(): number {
-    return this.tracks.length;
-  }
-}
-
-export enum PlaybackEvent {
-    Stopped,
-    Opening,
-    Playing,
-    Paused,
-    EndOfTrackReached,
-    EndOfPlaylistReached
-  }
+export * from './types';
 
 export abstract class CommonAudioPlayer implements AudioPlayer {
   

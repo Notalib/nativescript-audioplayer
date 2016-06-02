@@ -4,16 +4,18 @@
     "module": "commonjs",
     "removeComments": true,
     "experimentalDecorators": true,
-    "sourceMap": false,
-    "noEmitOnError": false
+    "declaration": true,
+    "sourceMap": true
   },
   "files": [
     "audioplayer.common.ts",
     "audioplayer.android.ts",
     "audioplayer.ios.ts",
-    "audioplayer.d.ts",
-    "references.d.ts",
-    "demo/node_modules/tns-core-modules/tns-core-modules.d.ts"
+    "native-definitions/libvlc-service.d.ts",
+    "native-definitions/LYTAudioPlayer.d.ts",
+    "demo/node_modules/tns-core-modules/tns-core-modules.d.ts",
+    "demo/node_modules/tns-platform-declarations/android17.d.ts",
+    "demo/node_modules/tns-platform-declarations/ios.d.ts"
   ],
   "compileOnSave": false
 }
