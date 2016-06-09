@@ -48,6 +48,8 @@ declare namespace dk.nota.lyt.libvlc {
     setNotificationActivity<T extends android.app.Activity>(activity: T, action: string): void;
     addCallback(callback: PlaybackEventHandler): void;
     removeCallback(callback: PlaybackEventHandler): void;
+    removeAllCallbacks(): void;
+    restartMediaPlayer(): void;
   }
   export class PlaybackServiceHelper {
     constructor(context: android.content.Context);
