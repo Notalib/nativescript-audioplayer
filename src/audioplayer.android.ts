@@ -145,8 +145,8 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private skipToIndex(newPlaylistIndex: number) {
-    this._log ("playlist size "+ this.playlist.length);
-    this._log ("skipping to index "+ newPlaylistIndex +" (zero-based)");
+    this._log("playlist size "+ this.playlist.length);
+    this._log("skipping to index "+ newPlaylistIndex +" (zero-based)");
     this._service.playIndex(newPlaylistIndex, 0);
   }
 
