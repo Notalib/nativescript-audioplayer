@@ -17,7 +17,7 @@
 		"prepdemo": "npm run build && npm run reload",
 		"reload": "cd demo && tns plugin remove nativescript-audioplayer && tns plugin add .. && tns install",
 		"apk": "cd demo && tns build android --copy-to .",
-		"gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios && cd .. && cp gen-typings-i386/objc!LYTAudioPlayer.d.ts native-definitions/LYTAudioPlayer.gen.d.ts"
+		"gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios && cd .. && cp gen-typings-i386/objc!LYTAudioPlayer.d.ts src/LYTAudioPlayer.gen.d.ts"
 	},
 	"repository": {
 		"type": "git",
