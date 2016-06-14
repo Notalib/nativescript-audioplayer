@@ -7,7 +7,7 @@ export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 export class LYTPlayerDelegateImpl extends NSObject implements LYTPlayerDelegate {
     
     public static ObjCProtocols = [ LYTPlayerDelegate ]
-    private player: AudioPlayer;
+    private audioPlayer: AudioPlayer;
     
     public init(): LYTPlayerDelegateImpl {
         var self = super.init();
@@ -18,31 +18,31 @@ export class LYTPlayerDelegateImpl extends NSObject implements LYTPlayerDelegate
     }
     
     public withForwardingTo(player: AudioPlayer): LYTPlayerDelegateImpl {
-        this.player = player;
+        this.audioPlayer = player;
         return this;
     }
     
     public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
-        this.player.didChangeStateFromTo(fromState, toState);
+        this.audioPlayer.didChangeStateFromTo(fromState, toState);
     }
     public didFinishPlayingTrack(track: LYTAudioTrack) {
-        this.player.didFinishPlayingTrack(track);
+        this.audioPlayer.didFinishPlayingTrack(track);
     }
     public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
-        this.player.didFindDurationForTrack(duration, track);
+        this.audioPlayer.didFindDurationForTrack(duration, track);
     }
     public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
-        this.player.didUpdateBufferedDurationForTrack(buffered, track);
+        this.audioPlayer.didUpdateBufferedDurationForTrack(buffered, track);
     }
     public didChangeToTrack(track: LYTAudioTrack) {
-        this.player.didChangeToTrack(track);
+        this.audioPlayer.didChangeToTrack(track);
     }
     public didEncounterError(error: NSError) {
-        this.player.didEncounterError(error);
+        this.audioPlayer.didEncounterError(error);
     }
 }
 
-export class AudioPlayer extends CommonAudioPlayer
+export class AudioPlayer extends CommonAudioPlayer 
 {
     public player: LYTPlayer;
     private _queuedSeek: number = -1;
