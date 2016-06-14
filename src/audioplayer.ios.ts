@@ -86,6 +86,10 @@ export class AudioPlayer extends CommonAudioPlayer
     public stop(fullStop: boolean) {
         this.player.stop();
     }
+
+    public isPlaying(): boolean {
+        return this.player.isPlaying;
+    }
     
     public skipToNext() {
         this.player.nextAudioTrack();

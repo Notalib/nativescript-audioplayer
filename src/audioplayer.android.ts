@@ -75,6 +75,7 @@ export class AudioPlayer extends CommonAudioPlayer
           }
         } else if (event.type == PlayerEvent.EncounteredError) {
           this._log('== Encountered ERROR ==');
+          // TODO: Use error callback instead
           throw new Error("Android PlaybackService encountered an error");
         } else {
           // this._log('^ Unhandled PlayerEvent: '+ event.type);
@@ -121,6 +122,10 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public stop(fullStop: boolean) {
     this._service.stopPlayback();
+  }
+
+  public isPlaying(): boolean {
+    return this._service.isPlaying();
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {

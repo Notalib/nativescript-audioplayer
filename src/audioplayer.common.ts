@@ -21,6 +21,7 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public abstract play();
   public abstract pause();
   public abstract stop(fullStop: boolean);
+  public abstract isPlaying(): boolean;
   public abstract skipToNext();
   public abstract skipToPrevious();
   public abstract setRate(rate: number);
