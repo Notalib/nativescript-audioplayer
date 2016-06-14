@@ -26,6 +26,7 @@ export interface AudioPlayer {
     play(): void;
     pause(): void;
     stop(fullStop: boolean): void;
+    isPlaying(): boolean;
     skipToNext(): void;
     skipToPrevious(): void;
     setRate(rate: number): void;
