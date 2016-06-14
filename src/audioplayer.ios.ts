@@ -126,6 +126,7 @@ export class AudioPlayer extends CommonAudioPlayer
     
     public release() {
         if (this.player.delegate) {
+            this.player.delegate.release();
             delete this.player.delegate;
         }
         delete this.player;
