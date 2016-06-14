@@ -8,7 +8,11 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
 
   constructor() {
     super();
-    
+    this.loadAndSetupPlaylist();
+    this.message = this.player.message;
+  }
+
+  public loadAndSetupPlaylist() {
     let playlist = new Playlist();
     playlist.tracks.push(new MediaTrack("http://www.noiseaddicts.com/samples_1w72b820/4357.mp3", "Skyggeforbandelsen", "Helene Tegtmeier", "Del 1 af 3", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
     playlist.tracks.push(new MediaTrack("http://www.noiseaddicts.com/samples_1w72b820/3816.mp3", "title", "artist", "album", null));
@@ -23,7 +27,6 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     //   "http://www.noiseaddicts.com/samples_1w72b820/4941.mp3",
     //   "http://mean2u.rfshq.com/downloads/music/giveyouup.mp3"]);
     this.player.setPlaybackEventListener(this);
-    this.message = this.player.message;
   }
 
   public play() {
@@ -52,6 +55,11 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   
   public skipToNext() {
     this.player.skipToNext();
+  }
+
+  public reload() {
+    this.player.release();
+    this.loadAndSetupPlaylist();
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {
