@@ -1,5 +1,5 @@
 import {Observable} from 'data/observable';
-import {AudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent} from 'nativescript-audioplayer';
+import {AudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent} from '@nota/nativescript-audioplayer';
 
 export class HelloWorldModel extends Observable implements PlaybackEventListener {
   public message: string;

@@ -1,16 +1,3 @@
-android {
-    productFlavors {
-        'nativescript-audioplayer' {
-            dimension 'nativescript-audioplayer'
-
-            // Setting below requires 'android.useDeprecatedNdk=true' in user of plugin's platforms/android/gradle.properties file.
-            ndk {
-                abiFilters 'armeabi-v7a'//, 'mips'
-            }
-        }
-    }
-}
-
 dependencies {
     compile 'dk.nota.lyt:libvlc-service:0.2.3'
     // compile 'com.android.support:appcompat-v7:23+'

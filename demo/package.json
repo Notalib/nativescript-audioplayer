@@ -1,27 +1,27 @@
 {
-  "name": "nativescript-audioplayer-demo",
-  "version": "0.0.3",
-  "nativescript": {
-    "id": "org.nativescript.demo",
-    "tns-android": {
-      "version": "2.0.1"
-    },
-    "tns-ios": {
-      "version": "2.0.0"
-    }
-  },
-  "dependencies": {
-    "nativescript-audioplayer": "file:..",
-    "tns-core-modules": "~2.0.1"
-  },
-  "devDependencies": {
-    "babel-traverse": "6.9.0",
-    "babel-types": "6.9.1",
-    "babylon": "6.8.0",
-    "filewalker": "0.1.2",
-    "lazy": "1.0.11",
-    "nativescript-dev-typescript": "^0.3.2",
-    "tns-platform-declarations": "^2.0.0",
-    "typescript": "^1.8.10"
-  }
+	"name": "nativescript-audioplayer-demo",
+	"version": "0.0.3",
+	"nativescript": {
+		"id": "org.nativescript.demo",
+		"tns-ios": {
+			"version": "2.0.1"
+		},
+		"tns-android": {
+			"version": "2.0.0"
+		}
+	},
+	"dependencies": {
+		"@nota/nativescript-audioplayer": "file:..",
+		"tns-core-modules": "~2.0.1"
+	},
+	"devDependencies": {
+		"babel-traverse": "6.9.0",
+		"babel-types": "6.9.1",
+		"babylon": "6.8.0",
+		"filewalker": "0.1.2",
+		"lazy": "1.0.11",
+		"nativescript-dev-typescript": "^0.3.2",
+		"tns-platform-declarations": "^2.0.0",
+		"typescript": "^1.8.10"
+	}
 }
