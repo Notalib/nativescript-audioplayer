@@ -41,6 +41,6 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   }
   
   protected _log(...args: any[]) {
-    console.log('tns-audioplayer: %s', ...args);
+    console.log('tns-audioplayer: ', ...args);
   }
 }

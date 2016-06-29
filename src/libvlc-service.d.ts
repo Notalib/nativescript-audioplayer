@@ -21,7 +21,7 @@ declare namespace dk.nota.lyt.libvlc {
   
   export class PlaybackService {
     load(media: media.MediaWrapper): void;
-    load(mediaPlaylist: java.util.List<media.MediaWrapper>, initialIndex: number): void;
+    load(mediaPlaylist: java.util.List<media.MediaWrapper>): void;
     append(media: media.MediaWrapper): void;
     append(mediaPlaylist: java.util.List<media.MediaWrapper>): void;
     play(): void;

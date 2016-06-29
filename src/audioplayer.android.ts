@@ -91,7 +91,9 @@ export class AudioPlayer extends CommonAudioPlayer
       this._log('Android - Creating MediaWrapper for: '+ track.title);
       mediaList.add(this.getNewMediaWrapper(track));
     }
-    this._service.load(mediaList, 0);
+    if (this._service) {
+      this._service.load(mediaList);
+    }
   }
 
   private getNewMediaWrapper(track: MediaTrack): lyt.media.MediaWrapper {
@@ -109,6 +111,9 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public getCurrentPlaylistIndex(): number {
+    if (!this._service) {
+      return -1;
+    }
     return this._service.getCurrentMediaPosition();
   }
 
@@ -125,7 +130,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public isPlaying(): boolean {
-    return this._service.isPlaying();
+    return this._service && this._service.isPlaying();
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {
@@ -138,38 +143,48 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public skipToNext() {
-    if (this._service.hasNext()) {
+    if (this._service && this._service.hasNext()) {
       this._service.next();
     }
   }
 
   public skipToPrevious() {
-    if (this._service.hasPrevious()) {
+    if (this._service && this._service.hasPrevious()) {
       this._service.previous();
     }
   }
 
   private skipToIndex(newPlaylistIndex: number) {
-    this._log("playlist size "+ this.playlist.length);
-    this._log("skipping to index "+ newPlaylistIndex +" (zero-based)");
-    this._service.playIndex(newPlaylistIndex, 0);
+    if (this._service) {
+      this._log("playlist size "+ this.playlist.length);
+      this._log("skipping to index "+ newPlaylistIndex +" (zero-based)");
+      this._service.playIndex(newPlaylistIndex, 0);
+    }
   }
 
   public setRate(rate: number) {
-    this._service.setRate(rate);
+    if (this._service) {
+      this._service.setRate(rate);
+    }
   }
 
   public getRate() {
+    if (!this._service) {
+      return 0;
+    }
     return this._service.getRate();
   }
 
   public getDuration() {
-    //TODO: Implement duration on Android
-    return 666;
+    if (this._service) {
+      return this._service.getLength();
+    }
   }
 
   public getCurrentTime(): number {
-    return this._service.getTime();
+    if (this._service) {
+      return this._service.getTime();
+    }
   }
 
   public release() {
