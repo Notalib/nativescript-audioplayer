@@ -7,6 +7,7 @@
     <Button text="Skip Backward" tap="{{ skipToPrevious }}"/>
     <Button text="Skip Forward" tap="{{ skipToNext }}"/>
     <Button text="Seek Specific" tap="{{ seekSpecific }}"/>
+    <Button text="Duration" tap="{{ logDuration }}"/>
     <Button text="Reload" tap="{{ reload }}"/>
   </StackLayout>
 </Page>

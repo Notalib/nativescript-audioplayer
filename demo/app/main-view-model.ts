@@ -62,6 +62,10 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     this.loadAndSetupPlaylist();
   }
 
+  public logDuration() {
+    console.log('duration: '+ this.player.getDuration());
+  }
+
   public onPlaybackEvent(evt: PlaybackEvent) {
     console.log('Playback event received: '+ PlaybackEvent[evt]);
   }

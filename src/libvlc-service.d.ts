@@ -35,6 +35,7 @@ declare namespace dk.nota.lyt.libvlc {
     hasPlaylist(): boolean;
     setTime(milisecs: number): void;
     getTime(): number;
+    getLength(): number;
     setRate(rate: number): void;
     getRate(): number;
     isPlaying(): boolean;
