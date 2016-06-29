@@ -1,5 +1,5 @@
 {
-	"name": "@nota/nativescript-audioplayer",
+	"name": "nativescript-audioplayer",
 	"version": "0.0.8",
 	"description": "Fully featured AudioPlayer for NativeScript. Gapless playlist playback with playbackrate and platform-specific notification and remote controls during playback",
 	"nativescript": {
@@ -15,7 +15,7 @@
 		"demo.ios": "npm run prepdemo && cd demo && tns emulate ios",
 		"demo.android": "npm run prepdemo && cd demo && tns run android",
 		"prepdemo": "npm run build && npm run reload",
-		"reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add .. && tns install",
+		"reload": "cd demo && tns plugin remove nativescript-audioplayer && tns plugin add .. && tns install",
 		"apk": "cd demo && tns build android --copy-to .",
 		"gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios && cd .. && cp gen-typings-i386/objc!LYTAudioPlayer.d.ts src/LYTAudioPlayer.gen.d.ts"
 	},

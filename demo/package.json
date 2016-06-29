@@ -11,7 +11,7 @@
 		}
 	},
 	"dependencies": {
-		"@nota/nativescript-audioplayer": "file:..",
+		"nativescript-audioplayer": "file:..",
 		"tns-core-modules": "~2.0.1"
 	},
 	"devDependencies": {
