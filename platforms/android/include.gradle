@@ -1,11 +1,3 @@
-android {
-    productFlavors {
-        'nativescript-audioplayer' {
-            dimension 'nativescript-audioplayer'
-
-        }
-    }
-}
 dependencies {
     compile 'dk.nota.lyt:libvlc-service:0.3.0'
     // compile 'com.android.support:appcompat-v7:23+'
