@@ -92,11 +92,15 @@ export class AudioPlayer extends CommonAudioPlayer
     }
     
     public skipToNext() {
-        this.player.nextAudioTrack();
+        this.player.nextAudioTrack(() => {
+            console.log('iOS - skipToNext complete');
+        });
     }
     
     public skipToPrevious() {
-        this.player.previousAudioTrack();
+        this.player.previousAudioTrack(() => {
+            console.log('iOS - skipToPrevious complete');
+        });
     }
     
     public setRate(rate: number) {

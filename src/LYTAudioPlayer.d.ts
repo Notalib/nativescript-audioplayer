@@ -51,13 +51,13 @@ declare class LYTPlayer extends NSObject {
 
 	loadPlaylistAndAutoplay(playlist: LYTPlaylist, autoplay: boolean): void;
 
-	nextAudioTrack(): void;
+	nextAudioTrack(onCompletion: () => void): void;
 
 	pause(): void;
 
 	play(): void;
 
-	previousAudioTrack(): void;
+	previousAudioTrack(onCompletion: () => void): void;
 
 	seekToTimeMilisOnCompletion(timeMilis: number, onCompletion: () => void): void;
 

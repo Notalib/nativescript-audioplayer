@@ -12,5 +12,9 @@
         "app/main-view-model.ts",
         "node_modules/tns-core-modules/tns-core-modules.d.ts",
         "../audioplayer.common.d.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "platforms"
     ]
 }
