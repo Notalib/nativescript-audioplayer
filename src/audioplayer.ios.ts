@@ -144,9 +144,15 @@ export class AudioPlayer extends CommonAudioPlayer
     }
 
     public getCurrentPlaylistIndex() {
-        // TODO: store original LYTPlaylist and find index for current url
+        let currentItem = this.playController.currentPlaylistItem;
+        if (currentItem) {
+            let currentTrack = this.playlist.tracks.filter((track) => track.url == currentItem.url.absoluteString);
+            if (currentTrack.length > 0) {
+                console.log("getCurrentPlaylistIndex: track url = "+ currentTrack[0].url);
+                return this.playlist.tracks.indexOf(currentTrack[0]);
+            }
+        }
         return 0;
-        //return this.playController.currentPlaylistItem.url;
     }
 
     public seekTo(milisecs: number, playlistIndex?: number) {
