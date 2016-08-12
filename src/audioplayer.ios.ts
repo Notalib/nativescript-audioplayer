@@ -40,6 +40,7 @@ export class AudioPlayer extends CommonAudioPlayer
     
     constructor(playlist: Playlist) {
         super(playlist);
+        this.ios = this;
         let config = new FSStreamConfiguration();
         config.cacheEnabled = false;
         config.enableTimeAndPitchConversion = true;

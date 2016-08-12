@@ -15,6 +15,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   constructor(playlist: Playlist) {
     super(playlist);
+    this.android = this;
     this._serviceHelper = new lyt.PlaybackServiceHelper(app.android.context, new lyt.ConnectionCallback({
       onConnected: (service: lyt.PlaybackService) => {
         this._log("===== SERVICE CONNECTED =====");
