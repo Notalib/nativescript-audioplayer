@@ -51,11 +51,11 @@ export interface AudioPlayer {
    * Returns offset of the currently played track in miliseconds.
    */
   getCurrentTime(): number;
+  getCurrentPlaylistIndex(): number;
   /**
    * Seeks to a specific offset in miliseconds of the current track.
    * Optionally skips to a specific playlist index before seeking.
    */
-  getCurrentPlaylistIndex(): number;
   seekTo(milisecs: number, playlistIndex?: number): void;
   setPlaybackEventListener(listener: PlaybackEventListener): void;
   release(): void;
