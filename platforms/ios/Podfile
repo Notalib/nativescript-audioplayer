@@ -1,1 +1,1 @@
-pod 'FreeStreamer', :git => 'https://github.com/dfg-nota/FreeStreamer.git', :tag => '3.6.2'
+pod 'FreeStreamer', :git => 'https://github.com/dfg-nota/FreeStreamer.git'
