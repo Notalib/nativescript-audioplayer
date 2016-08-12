@@ -10,14 +10,21 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     super();
     this.loadAndSetupPlaylist();
     this.message = this.player.message;
+
+    setInterval(() => {
+        if (this.player && this.player.isPlaying()) {
+            console.log(`Playing ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
+        }
+    }, 1000);
   }
 
   public loadAndSetupPlaylist() {
     let playlist = new Playlist();
-    playlist.tracks.push(new MediaTrack("http://www.noiseaddicts.com/samples_1w72b820/4357.mp3", "Skyggeforbandelsen", "Helene Tegtmeier", "Del 1 af 3", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
-    playlist.tracks.push(new MediaTrack("http://www.noiseaddicts.com/samples_1w72b820/3816.mp3", "title", "artist", "album", null));
-    playlist.tracks.push(new MediaTrack("http://www.noiseaddicts.com/samples_1w72b820/202.mp3", "title", "artist", "album", null));
-    playlist.tracks.push(new MediaTrack("http://www.noiseaddicts.com/samples_1w72b820/4941.mp3", "title", "artist", "album", null));
+    playlist.tracks.push(new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null));
+    playlist.tracks.push(new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
+    playlist.tracks.push(new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
+    playlist.tracks.push(new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
+    playlist.tracks.push(new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3", "1986", "George Orwell", "Del 4 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
     playlist.tracks.push(new MediaTrack("http://mean2u.rfshq.com/downloads/music/giveyouup.mp3", "Rick n' Roll", "Rick Astley", "album", null));
     this.player = new AudioPlayer(playlist);
       // "http://www.noiseaddicts.com/samples_1w72b820/4357.mp3",
