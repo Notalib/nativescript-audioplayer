@@ -49,7 +49,7 @@ export class AudioPlayer extends CommonAudioPlayer
     config.requireStrictContentTypeChecking = false;
     config.httpConnectionBufferSize = 1024 * 64;      // 64 kB. bufferSize should match this.
     config.bufferSize = 1024 * 64;
-    config.maxPrebufferedByteCount = 50000000;        // Max 50mb cache ahead. TODO: Time based maxBuffer
+    config.maxPrebufferedByteCount = 100000000;        // Max 100mb cache ahead. TODO: Time based maxBuffer
     config.requiredPrebufferSizeInSeconds = 10;       // Prebuffer at least 10 seconds before starting playback.
     this.playController = new FSAudioController();
     this.playController.configuration = config;
@@ -57,14 +57,14 @@ export class AudioPlayer extends CommonAudioPlayer
       this.didChangeState(state);
     }
     this.playController.onMetaDataAvailable = (meta: NSDictionary) => {
-      console.log("FreeStreamer: metadata received...");
-      console.log("FreeStreamer: metadata received "+ JSON.stringify(Object.keys(meta)));
+      this._log("FreeStreamer: metadata received...");
+      this._log("FreeStreamer: metadata received "+ JSON.stringify(Object.keys(meta)));
     }
     this.playController.onFailure = (errorType: FSAudioStreamError, errorText: string) => {
-      console.log("FreeStreamer: FAILURE! "+ errorText);
+      this._log("FreeStreamer: FAILURE! "+ errorText);
     }
-    console.log("FreeStreamer instance retrieved!", this.playController);
-    console.log("FreeStreamer methods: ", Object.keys(FSAudioController.prototype))
+    this._log("FreeStreamer instance retrieved!", this.playController);
+    this._log("FreeStreamer methods: ", Object.keys(FSAudioController.prototype))
     for (var track of this.playlist.tracks) {
       this._log('iOS - Creating LYTAudioTrack for: '+ track.title);
       let item = new FSPlaylistItem();
@@ -72,7 +72,7 @@ export class AudioPlayer extends CommonAudioPlayer
       item.title = track.title;
       this.playController.addItem(item);
     }
-    //console.log("FSAudioControllerDelegateImpl methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
+    //this._log("FSAudioControllerDelegateImpl methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
   }
   
@@ -83,7 +83,7 @@ export class AudioPlayer extends CommonAudioPlayer
   public addToPlaylist(track: MediaTrack) {
     // TODO: Define common interface for appending and replacing playlist items
     // FreeStreamer supports this very well. need to define the common interface first.
-    console.log("iOS addToPlaylist not implemented");
+    this._log("iOS addToPlaylist not implemented");
   }
   
   public play() {
@@ -200,31 +200,31 @@ export class AudioPlayer extends CommonAudioPlayer
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPlaying: {
-        console.log("FreeStreamer: Playing");
+        this._log("FreeStreamer: Playing");
         this._onPlaybackEvent(PlaybackEvent.Playing);
         if (this._queuedSeek >= 0) {
-          console.log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
+          this._log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
           this.seekInternal(this._queuedSeek);
           this._queuedSeek = -1;
         }
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPaused: {
-        console.log("FreeStreamer: Paused");
+        this._log("FreeStreamer: Paused");
         this._onPlaybackEvent(PlaybackEvent.Paused);
         break;
       }
       case FSAudioStreamState.kFsAudioStreamStopped: {
-        console.log("FreeStreamer: Stopped");
+        this._log("FreeStreamer: Stopped");
         this._onPlaybackEvent(PlaybackEvent.Stopped);
         break;
       }
       case FSAudioStreamState.kFSAudioStreamEndOfFile: {
-        console.log("FreeStreamer: Stream fully buffered");
+        this._log("FreeStreamer: Stream fully buffered");
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPlaybackCompleted: {
-        console.log("FreeStreamer: Playback Completed");
+        this._log("FreeStreamer: Playback Completed");
         if (this.getCurrentPlaylistIndex() < this.playlist.length - 1) {
           this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
         } else {
@@ -236,7 +236,7 @@ export class AudioPlayer extends CommonAudioPlayer
       case FSAudioStreamState.kFsAudioStreamRetryingFailed:
       // TODO: Handle errors better and give user feedback.
       default: {
-        console.log("FreeStreamer: state change: "+ toState);
+        this._log("FreeStreamer: state change: "+ toState);
         break;
       }
     }
