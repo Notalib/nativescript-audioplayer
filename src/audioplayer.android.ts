@@ -136,8 +136,8 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public seekTo(milisecs: number, playlistIndex?: number) {
     if (playlistIndex && playlistIndex != this.getCurrentPlaylistIndex()) {
-      this.skipToIndex(playlistIndex);
       this._queuedSeekTo = milisecs;
+      this.skipToPlaylistIndex(playlistIndex);
     } else {
       this._service.setTime(milisecs);
     }
@@ -154,12 +154,11 @@ export class AudioPlayer extends CommonAudioPlayer
       this._service.previous();
     }
   }
-
-  private skipToIndex(newPlaylistIndex: number) {
+  public skipToPlaylistIndex(playlistIndex: number) {
     if (this._service) {
       this._log("playlist size "+ this.playlist.length);
-      this._log("skipping to index "+ newPlaylistIndex +" (zero-based)");
-      this._service.playIndex(newPlaylistIndex, 0);
+      this._log("skipping to index "+ playlistIndex +" (zero-based)");
+      this._service.playIndex(playlistIndex, 0);
     }
   }
 

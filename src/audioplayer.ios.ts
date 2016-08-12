@@ -113,6 +113,10 @@ export class AudioPlayer extends CommonAudioPlayer
     }
   }
 
+  public skipToPlaylistIndex(playlistIndex: number) {
+    this.playController.playItemAtIndex(playlistIndex);
+  }
+  
   public setRate(rate: number) {
     if (this.playController.activeStream) {
       this.playController.activeStream.setPlayRate(rate);

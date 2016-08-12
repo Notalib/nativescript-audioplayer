@@ -29,6 +29,7 @@ export interface AudioPlayer {
     isPlaying(): boolean;
     skipToNext(): void;
     skipToPrevious(): void;
+    skipToPlaylistIndex(playlistIndex: number): void;
     setRate(rate: number): void;
     getRate(): number;
     getDuration(): number;
