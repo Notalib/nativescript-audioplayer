@@ -44,12 +44,13 @@ export class AudioPlayer extends CommonAudioPlayer
     this.ios = this;
     let config = new FSStreamConfiguration();
     config.cacheEnabled = false;
-    config.maxRetryCount = 50;
+    config.maxRetryCount = 10000;                     // Always keep retrying
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
-    //config.httpConnectionBufferSize = 1024 * 512; // 512 kB
-    //config.bufferSize = 1024 * 512; // audio buffer and httpBuffer should be the same size
-    //config.maxPrebufferedByteCount = 50000000 // Max 50mb cache ahead. TODO: Time based maxBuffer
+    config.httpConnectionBufferSize = 1024 * 64;      // 64 kB. bufferSize should match this.
+    config.bufferSize = 1024 * 64;
+    config.maxPrebufferedByteCount = 50000000;        // Max 50mb cache ahead. TODO: Time based maxBuffer
+    config.requiredPrebufferSizeInSeconds = 10;       // Prebuffer at least 10 seconds before starting playback.
     this.playController = new FSAudioController();
     this.playController.configuration = config;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
