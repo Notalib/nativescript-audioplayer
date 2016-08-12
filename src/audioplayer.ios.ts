@@ -38,6 +38,7 @@ export class AudioPlayer extends CommonAudioPlayer
 {
   public playController: FSAudioController;
   private _queuedSeek: number = -1;
+  private _playbackRate: number = 1;
   
   constructor(playlist: Playlist) {
     super(playlist);
@@ -119,10 +120,13 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   public setRate(rate: number) {
-    if (this.playController.activeStream) {
+    this._playbackRate = rate;
+    // If we're currently playing
+    if (this.getRate() != rate && this.playController.isPlaying()) {
       this.playController.activeStream.setPlayRate(rate);
     }
   }
+
   public getRate(): number {
     if (this.playController.activeStream) {
       return this.playController.activeStream.playRate();
@@ -201,6 +205,10 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamPlaying: {
         this._log("FreeStreamer: Playing");
+        // Update playback rate on newly started tracks
+        if (this.getRate() != this._playbackRate && this.playController.activeStream) {
+          this.playController.activeStream.setPlayRate(this._playbackRate);
+        }
         this._onPlaybackEvent(PlaybackEvent.Playing);
         if (this._queuedSeek >= 0) {
           this._log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
