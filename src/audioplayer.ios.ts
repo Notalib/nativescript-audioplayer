@@ -48,10 +48,12 @@ export class AudioPlayer extends CommonAudioPlayer
     config.maxRetryCount = 10000;                     // Always keep retrying
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
+    config.automaticAudioSessionHandlingEnabled = true;
+    //config.predefinedHttpHeaderValues               // TODO: Could be used to set auth headers
     config.httpConnectionBufferSize = 1024 * 64;      // 64 kB. bufferSize should match this.
     config.bufferSize = 1024 * 64;
     config.maxPrebufferedByteCount = 100000000;        // Max 100mb cache ahead. TODO: Time based maxBuffer
-    config.requiredPrebufferSizeInSeconds = 10;       // Prebuffer at least 10 seconds before starting playback.
+    config.requiredPrebufferSizeInSeconds = 5;       // Prebuffer at least 10 seconds before starting playback.
     this.playController = new FSAudioController();
     this.playController.configuration = config;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
@@ -73,8 +75,16 @@ export class AudioPlayer extends CommonAudioPlayer
       item.title = track.title;
       this.playController.addItem(item);
     }
-    //this._log("FSAudioControllerDelegateImpl methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
+    //this._log("FSAudioControllerDelegate methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
+  }
+
+  private subscribeToRemoteControlEvents() {
+    // TODO: remote control events
+  }
+
+  private updateNowPlayingInfo() {
+    // TODO: nowplaying info
   }
   
   private getNSURL(urlString: string) {
@@ -242,7 +252,7 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamFailed:
       case FSAudioStreamState.kFsAudioStreamRetryingFailed:
-      // TODO: Handle errors better and give user feedback.
+      // TODO: Better error handling and user feedback for above cases.
       default: {
         this._log("FreeStreamer: state change: "+ toState);
         break;
