@@ -39,6 +39,7 @@
 	"homepage": "https://github.com/dfg-nota/nativescript-audioplayer-plugin",
 	"readmeFilename": "README.md",
 	"devDependencies": {
-		"typescript": "^1.8.10"
+		"typescript": "^1.8.10",
+        "tns-platform-declarations": "^2.2.0"
 	}
 }
