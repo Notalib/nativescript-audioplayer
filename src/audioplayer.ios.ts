@@ -53,7 +53,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this.playController = new FSAudioController();
     this.playController.configuration = config;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
-      this.didChangeStateTo(state);
+      this.didChangeState(state);
     }
     this.playController.onMetaDataAvailable = (meta: NSDictionary) => {
       console.log("FreeStreamer: metadata received...");
@@ -143,12 +143,20 @@ export class AudioPlayer extends CommonAudioPlayer
   public getCurrentPlaylistIndex() {
     let currentItem = this.playController.currentPlaylistItem;
     if (currentItem) {
-      let currentTrackResult = this.playlist.tracks.filter((track) => track.url == currentItem.url.absoluteString);
-      if (currentTrackResult.length > 0) {
-        return this.playlist.tracks.indexOf(currentTrackResult[0]);
+      let currentTrack = this.getMediaTrackFromUrl(currentItem.url.absoluteString);
+      if (currentTrack) {
+        return this.playlist.tracks.indexOf(currentTrack);
       }
     }
     return 0;
+  }
+
+  private getMediaTrackFromUrl(url: string) {
+    let trackResult = this.playlist.tracks.filter((track) => track.url == url);
+    if (trackResult.length > 0) {
+      return trackResult[0];
+    }
+    return null;
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {
@@ -183,8 +191,8 @@ export class AudioPlayer extends CommonAudioPlayer
     this.playController = null;
   }
   
-  public didChangeStateTo(state: FSAudioStreamState) {
-    switch(state) {
+  public didChangeState(toState: FSAudioStreamState) {
+    switch(toState) {
       case FSAudioStreamState.kFsAudioStreamBuffering:
       case FSAudioStreamState.kFsAudioStreamSeeking: {
         this._onPlaybackEvent(PlaybackEvent.Opening);
@@ -211,21 +219,23 @@ export class AudioPlayer extends CommonAudioPlayer
         break;
       }
       case FSAudioStreamState.kFSAudioStreamEndOfFile: {
-        console.log("FreeStreamer: End of File (buffered?)");
-        this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+        console.log("FreeStreamer: Stream fully buffered");
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPlaybackCompleted: {
         console.log("FreeStreamer: Playback Completed");
-        this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+        if (this.getCurrentPlaylistIndex() < this.playlist.length - 1) {
+          this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+        } else {
+          this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+        }
         break;
       }
       case FSAudioStreamState.kFsAudioStreamFailed:
-      case FSAudioStreamState.kFsAudioStreamRetryingFailed: {
-        break;
-      }
+      case FSAudioStreamState.kFsAudioStreamRetryingFailed:
+      // TODO: Handle errors better and give user feedback.
       default: {
-        console.log("FreeStreamer: state change: "+ state);
+        console.log("FreeStreamer: state change: "+ toState);
         break;
       }
     }
