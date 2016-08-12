@@ -27,6 +27,8 @@ declare class FSAudioController extends NSObject {
 
 	volume: number;
 
+    constructor();
+
 	constructor(o: { url: NSURL; });
 
 	addItem(item: FSPlaylistItem): void;
