@@ -156,17 +156,6 @@ export class AudioPlayer extends CommonAudioPlayer
     }
 
     public seekTo(milisecs: number, playlistIndex?: number) {
-        // if (playlistIndex && playlistIndex != this.player.currentPlaylistIndex) {
-        //     this.player.skipToPlaylistIndexOnCompletion(playlistIndex, () => {
-        //         this.player.seekToTimeMilisOnCompletion(milisecs, () => {
-        //             this._log("Finished seeking");
-        //         });
-        //     });
-        // } else {
-        //     this.player.seekToTimeMilisOnCompletion(milisecs, () => {
-        //         this._log("Finished seeking");
-        //     });
-        // }
         // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
         if (playlistIndex) {
             this.playController.playItemAtIndex(playlistIndex)
@@ -181,10 +170,10 @@ export class AudioPlayer extends CommonAudioPlayer
             let knownDuration = this.getDuration();
             // If position (0-1 of duration) is over 0 it is used, else it uses the less accurate minute/second.
             let position: FSStreamPosition = {
-                minute: milisecs / 1000000,
+                minute: Math.floor(milisecs / 60000),
                 second: milisecs / 1000 % 60,
                 playbackTimeInSeconds:  milisecs / 1000,
-                position: knownDuration > 0 ? milisecs / knownDuration * 100 : 0// TODO: know duration? then set position, more accurate
+                position: knownDuration > 0 ? milisecs / knownDuration: 0// TODO: know duration? then set position, more accurate
             }
             this.playController.activeStream.seekToPosition(position);
         }
