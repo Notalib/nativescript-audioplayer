@@ -1,169 +1,222 @@
 import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
-import * as app from 'application';
 
 // TODO: Do all exports in a main.ts instead?
 export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
-export class LYTPlayerDelegateImpl extends NSObject implements LYTPlayerDelegate {
+// See API Docs for native audio playback framework:
+// http://muhku.github.io/FreeStreamer/api/
+
+export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioControllerDelegate {
     
-    public static ObjCProtocols = [ LYTPlayerDelegate ]
+    public static ObjCProtocols = [ FSAudioControllerDelegate ]
     private audioPlayer: AudioPlayer;
     
-    public init(): LYTPlayerDelegateImpl {
+    public init(): FSAudioControllerDelegateImpl {
         var self = super.init();
         if (self) {
             console.log("MyLYTPlayerDelegate initialized succesfully");
         }
-        return self as LYTPlayerDelegateImpl;
+        return self as FSAudioControllerDelegateImpl;
     }
     
-    public withForwardingTo(player: AudioPlayer): LYTPlayerDelegateImpl {
+    public withForwardingTo(player: AudioPlayer): FSAudioControllerDelegateImpl {
         this.audioPlayer = player;
         return this;
     }
     
-    public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
-        this.audioPlayer.didChangeStateFromTo(fromState, toState);
+    public audioControllerAllowPreloadingForStream(audioController: FSAudioController, stream: FSAudioStream): boolean {
+        return true;
     }
-    public didFinishPlayingTrack(track: LYTAudioTrack) {
-        this.audioPlayer.didFinishPlayingTrack(track);
-    }
-    public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
-        this.audioPlayer.didFindDurationForTrack(duration, track);
-    }
-    public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
-        this.audioPlayer.didUpdateBufferedDurationForTrack(buffered, track);
-    }
-    public didChangeToTrack(track: LYTAudioTrack) {
-        this.audioPlayer.didChangeToTrack(track);
-    }
-    public didEncounterError(error: NSError) {
-        this.audioPlayer.didEncounterError(error);
+
+	public audioControllerPreloadStartedForStream(audioController: FSAudioController, stream: FSAudioStream): void {
+        
     }
 }
 
 export class AudioPlayer extends CommonAudioPlayer 
 {
-    public player: LYTPlayer;
+    public playController: FSAudioController;
     private _queuedSeek: number = -1;
     
     constructor(playlist: Playlist) {
         super(playlist);
-        this.player = LYTPlayer.sharedInstance();
-        if (this.player) {
-            console.log("LYTPlayer instance retrieved!", this.player);
-            console.log("LYTPlayer methods: ", Object.keys(LYTPlayer.prototype))
-            let iosPlaylist = new LYTPlaylist()
-            for (var track of this.playlist.tracks) {
-                this._log('iOS - Creating LYTAudioTrack for: '+ track.title);
-                iosPlaylist.addTrack(this.getNewLYTTrack(track));
+        let config = new FSStreamConfiguration();
+        config.cacheEnabled = false;
+        config.enableTimeAndPitchConversion = true;
+        config.requireStrictContentTypeChecking = false;
+        config.httpConnectionBufferSize = 1024 * 512; // 512 kB
+        config.bufferSize = 1024 * 512; // audio buffer and httpBuffer should be the same size
+        config.maxPrebufferedByteCount = 50000000 // Max 50mb cache ahead. TODO: Time based maxBuffer
+        this.playController = new FSAudioController();
+        this.playController.configuration = config;
+        this.playController.onStateChange = (state: FSAudioStreamState) => {
+            console.log("FreeStreamer: state change: "+ state);
+            if (state == FSAudioStreamState.kFsAudioStreamPlaying) {
+                console.log("FreeStreamer PLAYING!");
+                this._onPlaybackEvent(PlaybackEvent.Playing);
+                if (this._queuedSeek >= 0) {
+                    console.log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
+                    this.seekInternal(this._queuedSeek);
+                    this._queuedSeek = -1;
+                }
             }
-            this.player.loadPlaylistAndAutoplay(iosPlaylist, false);
         }
-        console.log("LYTPlayerDelegate methods: ", Object.keys(LYTPlayerDelegate.prototype));
-        this.player.delegate = new LYTPlayerDelegateImpl().withForwardingTo(this);
-    }
-    
-    private getNewLYTTrack(track: MediaTrack) {
-        return new LYTAudioTrack({ url: this.getNSURL(track.url),
-            title: track.title, artist: track.artist, album: track.album, albumArtUrl: this.getNSURL(track.albumArtUrl) });
+        this.playController.onMetaDataAvailable = (meta: NSDictionary) => {
+            console.log("FreeStreamer: metadata received...");
+            console.log("FreeStreamer: metadata received "+ JSON.stringify(Object.keys(meta)));
+        }
+        this.playController.onFailure = (errorType: FSAudioStreamError, errorText: string) => {
+            console.log("FreeStreamer: FAILURE! "+ errorText);
+        }
+        console.log("FreeStreamer instance retrieved!", this.playController);
+        console.log("FreeStreamer methods: ", Object.keys(FSAudioController.prototype))
+        for (var track of this.playlist.tracks) {
+            this._log('iOS - Creating LYTAudioTrack for: '+ track.title);
+            let item = new FSPlaylistItem();
+            item.url = NSURL.URLWithString(track.url);
+            item.title = track.title;
+            this.playController.addItem(item);
+        }
+        //this.playController.play()
+        //console.log("FSAudioControllerDelegateImpl methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
+        //this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
     }
     
     private getNSURL(urlString: string) {
         return NSURL.URLWithString(urlString);
     }
     
-    public addToPlaylist(track: MediaTrack) {}
+    public addToPlaylist(track: MediaTrack) {
+        //TODO: Define common interface for appending and replacing playlist items
+        console.log("iOS addToPlaylist not implemented");
+    }
     
     public play() {
-        this.player.play();
+        this.playController.play();
     }
     
     public pause() {
-        this.player.pause();
+        this.playController.pause();
     }
     
     public stop(fullStop: boolean) {
-        this.player.stop();
+        this.playController.stop();
     }
 
     public isPlaying(): boolean {
-        return this.player.isPlaying;
+        return this.playController.isPlaying();
     }
     
     public skipToNext() {
-        this.player.nextAudioTrack(() => {
-            console.log('iOS - skipToNext complete');
-        });
+        if (this.playController.hasNextItem()) {
+            this.playController.playNextItem();
+        }
     }
     
     public skipToPrevious() {
-        this.player.previousAudioTrack(() => {
-            console.log('iOS - skipToPrevious complete');
-        });
+        if (this.playController.hasPreviousItem()) {
+            this.playController.playPreviousItem();
+        }
     }
     
     public setRate(rate: number) {
-        this.player.playbackRate = rate;
+        this.playController.activeStream.setPlayRate(rate);
     }
     public getRate(): number {
-        return this.player.playbackRate;
+        return 1;
+        // TODO: Implement
+        // return this.playController.activeStream.
     }
+
     public getDuration(): number {
-        return this.player.currentTrackDuration;
+        if (this.playController.activeStream) {
+            return ~~(this.playController.activeStream.duration.playbackTimeInSeconds * 1000);
+        }
     }
-    public getCurrentTime(): number { return this.player.currentTime; }
-    public getCurrentPlaylistIndex() { return this.player.currentPlaylistIndex; }
+
+    public getCurrentTime(): number {
+        if (this.playController.activeStream) {
+            return ~~(this.playController.activeStream.currentTimePlayed.playbackTimeInSeconds * 1000);
+        }
+    }
+
+    public getCurrentPlaylistIndex() {
+        // TODO: store original LYTPlaylist and find index for current url
+        return 0;
+        //return this.playController.currentPlaylistItem.url;
+    }
+
     public seekTo(milisecs: number, playlistIndex?: number) {
-        if (playlistIndex && playlistIndex != this.player.currentPlaylistIndex) {
-            this.player.skipToPlaylistIndexOnCompletion(playlistIndex, () => {
-                this.player.seekToTimeMilisOnCompletion(milisecs, () => {
-                    this._log("Finished seeking");
-                });
-            });
+        // if (playlistIndex && playlistIndex != this.player.currentPlaylistIndex) {
+        //     this.player.skipToPlaylistIndexOnCompletion(playlistIndex, () => {
+        //         this.player.seekToTimeMilisOnCompletion(milisecs, () => {
+        //             this._log("Finished seeking");
+        //         });
+        //     });
+        // } else {
+        //     this.player.seekToTimeMilisOnCompletion(milisecs, () => {
+        //         this._log("Finished seeking");
+        //     });
+        // }
+        // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
+        if (playlistIndex) {
+            this.playController.playItemAtIndex(playlistIndex)
+            this._queuedSeek = milisecs;
         } else {
-            this.player.seekToTimeMilisOnCompletion(milisecs, () => {
-                this._log("Finished seeking");
-            });
+            this.seekInternal(milisecs);
+        }
+    }
+
+    private seekInternal(milisecs: number) {
+        if (this.playController.activeStream) {
+            let knownDuration = this.getDuration();
+            // If position (0-1 of duration) is over 0 it is used, else it uses the less accurate minute/second.
+            let position: FSStreamPosition = {
+                minute: milisecs / 1000000,
+                second: milisecs / 1000 % 60,
+                playbackTimeInSeconds:  milisecs / 1000,
+                position: knownDuration > 0 ? milisecs / knownDuration * 100 : 0// TODO: know duration? then set position, more accurate
+            }
+            this.playController.activeStream.seekToPosition(position);
         }
     }
     
     public release() {
-        if (this.player.delegate) {
-            this.player.delegate.release();
-            delete this.player.delegate;
+        if (this.playController.delegate) {
+            this.playController.delegate = null;
         }
-        delete this.player;
+        delete this.playController.release();
     }
     
-    public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
-        console.log("delegate.didChangeState: "+ fromState + " -> "+ toState);
-        switch(toState) {
-            case LYTPlayerState.Playing:
-                this._onPlaybackEvent(PlaybackEvent.Playing);
-                break;
-            case LYTPlayerState.Paused:
-                this._onPlaybackEvent(PlaybackEvent.Paused);
-                break;
-            case LYTPlayerState.Stopped:
-                this._onPlaybackEvent(PlaybackEvent.Stopped);
-                break;
-        }
-    }
-    public didFinishPlayingTrack(track: LYTAudioTrack) {
-        console.log("delegate.didFinishPlayingTrack", track.title);
-        this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
-    }
-    public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
-        console.log("delegate.didFindDurationForTrack: "+ duration, track.title);
-    }
-    public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
-        console.log("delegate.didUpdateBufferingForTrack: "+ buffered, track.title);
-    }
-    public didChangeToTrack(track: LYTAudioTrack) {
-        console.log("delegate.DidChangeToTrack", track.title);
-    }
-    public didEncounterError(error: NSError) {
-        console.log("delegate.didEncounterError: "+ error.localizedDescription);
-    }
+    // public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
+    //     console.log("delegate.didChangeState: "+ fromState + " -> "+ toState);
+    //     switch(toState) {
+    //         case LYTPlayerState.Playing:
+    //             this._onPlaybackEvent(PlaybackEvent.Playing);
+    //             break;
+    //         case LYTPlayerState.Paused:
+    //             this._onPlaybackEvent(PlaybackEvent.Paused);
+    //             break;
+    //         case LYTPlayerState.Stopped:
+    //             this._onPlaybackEvent(PlaybackEvent.Stopped);
+    //             break;
+    //     }
+    // }
+
+    // public didFinishPlayingTrack(track: LYTAudioTrack) {
+    //     console.log("delegate.didFinishPlayingTrack", track.title);
+    //     this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+    // }
+    // public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
+    //     console.log("delegate.didFindDurationForTrack: "+ duration, track.title);
+    // }
+    // public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
+    //     console.log("delegate.didUpdateBufferingForTrack: "+ buffered, track.title);
+    // }
+    // public didChangeToTrack(track: LYTAudioTrack) {
+    //     console.log("delegate.DidChangeToTrack", track.title);
+    // }
+    // public didEncounterError(error: NSError) {
+    //     console.log("delegate.didEncounterError: "+ error.localizedDescription);
+    // }
 }
