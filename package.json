@@ -12,7 +12,7 @@
 	"typings": "types.d.ts",
 	"scripts": {
 		"build": "tsc",
-		"demo.ios": "npm run prepdemo && cd demo && tns emulate ios",
+		"demo.ios": "npm run prepdemo && cd demo && tns run ios",
 		"demo.android": "npm run prepdemo && cd demo && tns run android",
 		"prepdemo": "npm run build && npm run reload",
 		"reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add .. && tns install",
