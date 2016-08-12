@@ -121,12 +121,14 @@ export class AudioPlayer extends CommonAudioPlayer
     }
     
     public setRate(rate: number) {
-        this.playController.activeStream.setPlayRate(rate);
+        if (this.playController.activeStream) {
+            this.playController.activeStream.setPlayRate(rate);
+        }
     }
     public getRate(): number {
-        return 1;
-        // TODO: Implement
-        // return this.playController.activeStream.
+        if (this.playController.activeStream) {
+            return this.playController.activeStream.playRate();
+        }
     }
 
     public getDuration(): number {
