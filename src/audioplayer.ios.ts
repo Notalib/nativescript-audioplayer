@@ -183,7 +183,8 @@ export class AudioPlayer extends CommonAudioPlayer
         if (this.playController.delegate) {
             this.playController.delegate = null;
         }
-        delete this.playController.release();
+        this.playController.release();
+        this.playController = null;
     }
     
     // public didChangeStateFromTo(fromState: LYTPlayerState, toState: LYTPlayerState) {
@@ -199,22 +200,5 @@ export class AudioPlayer extends CommonAudioPlayer
     //             this._onPlaybackEvent(PlaybackEvent.Stopped);
     //             break;
     //     }
-    // }
-
-    // public didFinishPlayingTrack(track: LYTAudioTrack) {
-    //     console.log("delegate.didFinishPlayingTrack", track.title);
-    //     this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
-    // }
-    // public didFindDurationForTrack(duration: number, track: LYTAudioTrack) {
-    //     console.log("delegate.didFindDurationForTrack: "+ duration, track.title);
-    // }
-    // public didUpdateBufferedDurationForTrack(buffered: number, track: LYTAudioTrack) {
-    //     console.log("delegate.didUpdateBufferingForTrack: "+ buffered, track.title);
-    // }
-    // public didChangeToTrack(track: LYTAudioTrack) {
-    //     console.log("delegate.DidChangeToTrack", track.title);
-    // }
-    // public didEncounterError(error: NSError) {
-    //     console.log("delegate.didEncounterError: "+ error.localizedDescription);
     // }
 }
