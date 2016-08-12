@@ -135,13 +135,13 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public getDuration(): number {
     if (this.playController.activeStream) {
-      return ~~(this.playController.activeStream.duration.playbackTimeInSeconds * 1000);
+      return Math.floor(this.playController.activeStream.duration.playbackTimeInSeconds * 1000);
     }
   }
 
   public getCurrentTime(): number {
     if (this.playController.activeStream) {
-      return ~~(this.playController.activeStream.currentTimePlayed.playbackTimeInSeconds * 1000);
+      return Math.floor(this.playController.activeStream.currentTimePlayed.playbackTimeInSeconds * 1000);
     }
   }
 
