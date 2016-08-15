@@ -162,6 +162,19 @@ export class AudioPlayer extends CommonAudioPlayer
       this.seekInternal(milisecs);
     }
   }
+  
+  public release() {
+    this.clearNowPlayingInfo();
+    this.unsubscribeFromRemoteControlEvents();
+    if (this.playController.delegate) {
+      this.playController.delegate = null;
+    }
+    this.playController.release();
+    this.playController = null;
+  }
+
+  // ------------------------------------------------------------------------------
+  // Internal helpers and event handlers
 
   private seekInternal(milisecs: number) {
     if (this.playController.activeStream) {
