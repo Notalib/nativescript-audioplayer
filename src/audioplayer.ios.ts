@@ -77,18 +77,7 @@ export class AudioPlayer extends CommonAudioPlayer
     }
     //this._log("FSAudioControllerDelegate methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
-  }
-
-  private subscribeToRemoteControlEvents() {
-    // TODO: remote control events
-  }
-
-  private updateNowPlayingInfo() {
-    // TODO: nowplaying info
-  }
-  
-  private getNSURL(urlString: string) {
-    return NSURL.URLWithString(urlString);
+    this.subscribeToRemoteControlEvents();
   }
   
   public addToPlaylist(track: MediaTrack) {
@@ -196,6 +185,50 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       this.playController.activeStream.seekToPosition(position);
     }
+  }
+
+  private subscribeToRemoteControlEvents() {
+    UIApplication.sharedApplication().beginReceivingRemoteControlEvents();
+    let remoteCommandCenter = MPRemoteCommandCenter.sharedCommandCenter();
+    (<MPSkipIntervalCommand>remoteCommandCenter.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
+    remoteCommandCenter.skipBackwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
+      this._log('RemoteControl - Skip Backwards');
+      this.seekInternal(this.getCurrentTime() - this.seekIntervalSeconds * 1000);
+      return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+    });
+    remoteCommandCenter.togglePlayPauseCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
+    remoteCommandCenter.playCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
+    remoteCommandCenter.pauseCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
+    (<MPSkipIntervalCommand>remoteCommandCenter.skipForwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
+    remoteCommandCenter.skipForwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
+      this._log('RemoteControl - Skip Forward');
+      this.seekInternal(this.getCurrentTime() + this.seekIntervalSeconds * 1000);
+      return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+    });
+    remoteCommandCenter.changePlaybackRateCommand.enabled = true;
+    remoteCommandCenter.changePlaybackRateCommand.supportedPlaybackRates = <any>this.supportedPlaybackRate;
+    remoteCommandCenter.changePlaybackRateCommand.addTargetWithHandler((evt: MPChangePlaybackRateCommandEvent) => {
+      this._log('RemoteControl - Set playback rate: '+ evt.playbackRate);
+      return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+    });
+    // remoteCommandCenter.bookmarkCommand.enabled = true;
+    // remoteCommandCenter.bookmarkCommand.localizedTitle = "Sæt Bogmærke";
+    // remoteCommandCenter.bookmarkCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
+    //   let feedback = evt.command as MPFeedbackCommand;
+    //   this._log('RemoteControl - Set bookmark: '+ feedback.active);
+    //   return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+    // });
+  }
+ 
+  private remoteTogglePlayPauseHandler = (evt: MPRemoteCommandEvent) => {
+    // FreeStreamer's pause() command is already a toggle.
+    this._log('RemoteControl - Toggle play/pause');
+    this.pause();
+    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+  }
+
+  private unsubscribeFromRemoteControlEvents() {
+    UIApplication.sharedApplication().endReceivingRemoteControlEvents();
   }
   
   public release() {
