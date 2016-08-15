@@ -37,6 +37,8 @@ export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioCo
 export class AudioPlayer extends CommonAudioPlayer 
 {
   public playController: FSAudioController;
+  public seekIntervalSeconds: number = 15;
+  public supportedPlaybackRate: number[] = [0.7, 1.0, 1.2, 1.5, 2.0];
   private _queuedSeek: number = -1;
   private _playbackRate: number = 1;
   
@@ -67,7 +69,6 @@ export class AudioPlayer extends CommonAudioPlayer
       this._log("FreeStreamer: FAILURE! "+ errorText);
     }
     this._log("FreeStreamer instance retrieved!", this.playController);
-    this._log("FreeStreamer methods: ", Object.keys(FSAudioController.prototype))
     for (var track of this.playlist.tracks) {
       this._log('iOS - Creating LYTAudioTrack for: '+ track.title);
       let item = new FSPlaylistItem();
@@ -75,7 +76,6 @@ export class AudioPlayer extends CommonAudioPlayer
       item.title = track.title;
       this.playController.addItem(item);
     }
-    //this._log("FSAudioControllerDelegate methods: ", Object.keys(FSAudioControllerDelegateImpl.prototype));
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
     this.subscribeToRemoteControlEvents();
   }
@@ -123,6 +123,7 @@ export class AudioPlayer extends CommonAudioPlayer
     // If we're currently playing
     if (this.getRate() != rate && this.playController.isPlaying()) {
       this.playController.activeStream.setPlayRate(rate);
+      this.updateNowPlayingInfoPositionTracking(false);
     }
   }
 
@@ -145,22 +146,11 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public getCurrentPlaylistIndex() {
-    let currentItem = this.playController.currentPlaylistItem;
-    if (currentItem) {
-      let currentTrack = this.getMediaTrackFromUrl(currentItem.url.absoluteString);
-      if (currentTrack) {
-        return this.playlist.tracks.indexOf(currentTrack);
-      }
+    let currentTrack = this.getCurrentMediaTrack();
+    if (currentTrack) {
+      return this.playlist.tracks.indexOf(currentTrack);
     }
     return 0;
-  }
-
-  private getMediaTrackFromUrl(url: string) {
-    let trackResult = this.playlist.tracks.filter((track) => track.url == url);
-    if (trackResult.length > 0) {
-      return trackResult[0];
-    }
-    return null;
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {
@@ -181,7 +171,7 @@ export class AudioPlayer extends CommonAudioPlayer
         minute: Math.floor(milisecs / 60000),
         second: milisecs / 1000 % 60,
         playbackTimeInSeconds:  milisecs / 1000,
-        position: knownDuration > 0 ? milisecs / knownDuration: 0
+        position: knownDuration > 0 ? milisecs / knownDuration : 0
       }
       this.playController.activeStream.seekToPosition(position);
     }
@@ -230,16 +220,66 @@ export class AudioPlayer extends CommonAudioPlayer
   private unsubscribeFromRemoteControlEvents() {
     UIApplication.sharedApplication().endReceivingRemoteControlEvents();
   }
-  
-  public release() {
-    if (this.playController.delegate) {
-      this.playController.delegate = null;
+
+  private clearNowPlayingInfo() {
+    this._log('=== REMOVE NOWPLAYINGINFO! ===');
+    MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = null;
+  }
+
+  private setNowPlayingInfo() {
+    let currentTrack: MediaTrack = this.getCurrentMediaTrack();
+    if (currentTrack === null) {
+      return;
     }
-    this.playController.release();
-    this.playController = null;
+    let playingInfo = NSMutableDictionary.alloc().init();
+    playingInfo.setObjectForKey(currentTrack.title, MPMediaItemPropertyTitle);
+    playingInfo.setObjectForKey(currentTrack.artist, MPMediaItemPropertyArtist);
+    playingInfo.setObjectForKey(currentTrack.album, MPMediaItemPropertyAlbumTitle);
+    playingInfo.setObjectForKey(this.getCurrentPlaylistIndex(), MPNowPlayingInfoPropertyChapterNumber);
+    playingInfo.setObjectForKey(this.playlist.tracks.length, MPNowPlayingInfoPropertyChapterCount);
+    playingInfo.setObjectForKey(this.isPlaying() ? this.getRate() : 0, MPNowPlayingInfoPropertyPlaybackRate);
+    playingInfo.setObjectForKey(this.getCurrentTime() / 1000, MPNowPlayingInfoPropertyElapsedPlaybackTime);
+    let knownDuration = this.getDuration();
+    if (knownDuration > 0) {
+      playingInfo.setObjectForKey(knownDuration / 1000, MPMediaItemPropertyPlaybackDuration);
+    }
+    MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
+    //console.log('Updated NowPlayingInfo:\n '+ MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo.description);
+  }
+
+  private updateNowPlayingInfoKey(key: string, value: any) {
+    let playingInfo = NSMutableDictionary.alloc().initWithDictionary(MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo);
+    //console.log("Update NowPlayingInfo with: "+ JSON.stringify({key: key, value: value}));
+    playingInfo.setObjectForKey(value, key);
+    MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
+  }
+
+  private updateNowPlayingInfoPositionTracking(isPaused: boolean) {
+    this.updateNowPlayingInfoKey(MPNowPlayingInfoPropertyElapsedPlaybackTime, this.getCurrentTime() / 1000);
+    this.updateNowPlayingInfoKey(MPNowPlayingInfoPropertyPlaybackRate, isPaused ? 0 : this._playbackRate);
   }
   
-  public didChangeState(toState: FSAudioStreamState) {
+  private getNSURL(urlString: string) {
+    return NSURL.URLWithString(urlString);
+  }
+
+  private getCurrentMediaTrack() {
+    let currentItem = this.playController.currentPlaylistItem;
+    if (currentItem) {
+      return this.getMediaTrackFromUrl(currentItem.url.absoluteString);
+    }
+    return null;
+  }
+
+  private getMediaTrackFromUrl(url: string) {
+    let trackResult = this.playlist.tracks.filter((track) => track.url == url);
+    if (trackResult.length > 0) {
+      return trackResult[0];
+    }
+    return null;
+  }
+  
+  private didChangeState(toState: FSAudioStreamState) {
     switch(toState) {
       case FSAudioStreamState.kFsAudioStreamBuffering:
       case FSAudioStreamState.kFsAudioStreamSeeking: {
@@ -253,6 +293,7 @@ export class AudioPlayer extends CommonAudioPlayer
           this.playController.activeStream.setPlayRate(this._playbackRate);
         }
         this._onPlaybackEvent(PlaybackEvent.Playing);
+        this.setNowPlayingInfo();
         if (this._queuedSeek >= 0) {
           this._log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
           this.seekInternal(this._queuedSeek);
@@ -263,6 +304,7 @@ export class AudioPlayer extends CommonAudioPlayer
       case FSAudioStreamState.kFsAudioStreamPaused: {
         this._log("FreeStreamer: Paused");
         this._onPlaybackEvent(PlaybackEvent.Paused);
+        this.updateNowPlayingInfoPositionTracking(true);
         break;
       }
       case FSAudioStreamState.kFsAudioStreamStopped: {
@@ -278,8 +320,10 @@ export class AudioPlayer extends CommonAudioPlayer
         this._log("FreeStreamer: Playback Completed");
         if (this.getCurrentPlaylistIndex() < this.playlist.length - 1) {
           this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+          this.setNowPlayingInfo();
         } else {
           this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+          this.clearNowPlayingInfo();
         }
         break;
       }
