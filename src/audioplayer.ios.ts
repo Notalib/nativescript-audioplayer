@@ -36,7 +36,6 @@ export class AudioPlayer extends CommonAudioPlayer
   public playController: FSAudioController;
   public seekIntervalSeconds: number = 15;
   public supportedPlaybackRate: number[] = [0.7, 1.0, 1.2, 1.5, 2.0];
-  private _queuedSeek: number = -1;
   private _playbackRate: number = 1;
   
   constructor(playlist: Playlist) {
@@ -51,9 +50,9 @@ export class AudioPlayer extends CommonAudioPlayer
     //config.predefinedHttpHeaderValues               // TODO: Could be used to set auth headers
     config.httpConnectionBufferSize = 1024 * 64;      // 64 kB. bufferSize should match this.
     config.bufferSize = 1024 * 64;
-    config.maxPrebufferedByteCount = 100000000;        // Max 100mb cache ahead. TODO: Time based maxBuffer
-    config.requiredPrebufferSizeInSeconds = 5;       // Prebuffer at least 10 seconds before starting playback.
-    this.playController = new FSAudioController();
+    config.maxPrebufferedByteCount = 100000000;       // Max 100mb cache ahead. TODO: Time based maxBuffer
+    config.requiredPrebufferSizeInSeconds = 5;        // Prebuffer at least 10 seconds before starting playback.
+    this.playController = FSAudioController.alloc().init() as FSAudioController;
     this.playController.configuration = config;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
       this.didChangeState(state);
@@ -66,15 +65,19 @@ export class AudioPlayer extends CommonAudioPlayer
       this._log("FreeStreamer: FAILURE! "+ errorText);
     }
     this._log("FreeStreamer instance retrieved!", this.playController);
-    for (var track of this.playlist.tracks) {
-      this._log('iOS - Creating LYTAudioTrack for: '+ track.title);
-      let item = new FSPlaylistItem();
-      item.url = NSURL.URLWithString(track.url);
-      item.title = track.title;
-      this.playController.addItem(item);
-    }
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
     this.subscribeToRemoteControlEvents();
+
+    setTimeout(() => {
+      for (var track of this.playlist.tracks) {
+        this._log('Creating FSPlaylistItem for: '+ track.title);
+        let item = new FSPlaylistItem();
+        item.url = NSURL.URLWithString(track.url);
+        item.title = track.title;
+        this._log('playController.addItem');
+        this.playController.addItem(item);
+      }
+    }, 10);
   }
   
   public addToPlaylist(track: MediaTrack) {
@@ -91,7 +94,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this.playController.pause();
   }
   
-  public stop(fullStop: boolean) {
+  public stop() {
     this.playController.stop();
   }
 
@@ -112,13 +115,13 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public skipToPlaylistIndex(playlistIndex: number) {
-    this.playController.playItemAtIndex(playlistIndex);
+      this.playController.playItemAtIndex(playlistIndex);
   }
   
   public setRate(rate: number) {
     this._playbackRate = rate;
     // If we're currently playing
-    if (this.getRate() != rate && this.isPlaying()) {
+    if (this.getRate() !== rate && this.isPlaying()) {
       this.playController.activeStream.setPlayRate(rate);
       this.updateNowPlayingInfoPositionTracking(false);
     }
@@ -156,56 +159,43 @@ export class AudioPlayer extends CommonAudioPlayer
     return 0;
   }
 
-  public seekTo(milisecs: number, playlistIndex?: number) {
+  public seekTo(offset: number) {
     // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
-    this._log(`===> seekTo called ${milisecs}, ${playlistIndex}`);
-    if (playlistIndex && playlistIndex !== this.getCurrentPlaylistIndex()) {
-      if (milisecs > 0) {
-        this._queuedSeek = milisecs;
-        this._log('===> Set queuedSeek to '+ milisecs);
+    if (this.playController.activeStream) {
+      let knownDuration = this.getDuration();
+      // In FreeStreamer if position (0-1 of full duration) is over 0 it is used, else it uses the less accurate minute/second variables.
+      let seekToSeconds: number = +(offset / 1000).toFixed(3);
+      let position: FSStreamPosition = {
+        minute: Math.floor(seekToSeconds / 60),
+        second: seekToSeconds % 60,
+        playbackTimeInSeconds:  seekToSeconds,
+        position: knownDuration > 0 ? offset / knownDuration : 0
       }
-      this.playController.playItemAtIndex(playlistIndex)
-    } else {
-      this.seekInternal(milisecs);
+      this._log('seekInternal to\n '+ JSON.stringify(position));
+      this.playController.activeStream.seekToPosition(position);
     }
   }
   
   public release() {
-    this.clearNowPlayingInfo();
+    this.playController.stop();
     this.unsubscribeFromRemoteControlEvents();
-    if (this.playController.delegate) {
-      this.playController.delegate = null;
-    }
-    this.playController.release();
+    this.clearNowPlayingInfo();
+    this._log('Releasing all resources');
+    this.playController.delegate = null;
     this.playController = null;
   }
 
   // ------------------------------------------------------------------------------
   // Internal helpers and event handlers
 
-  private seekInternal(milisecs: number) {
-    if (this.playController.activeStream) {
-      let knownDuration = this.getDuration();
-      // In FreeStreamer if position (0-1 of full duration) is over 0 it is used, else it uses the less accurate minute/second variables.
-      let seekToSeconds: number = +(milisecs / 1000).toFixed(3);
-      let position: FSStreamPosition = {
-        minute: Math.floor(seekToSeconds / 60),
-        second: seekToSeconds % 60,
-        playbackTimeInSeconds:  seekToSeconds,
-        position: knownDuration > 0 ? milisecs / knownDuration : 0
-      }
-      this._log('seekInternal to\n '+ JSON.stringify(position));
-      this.playController.activeStream.seekToPosition(position);
-    }
-  }
-
   private subscribeToRemoteControlEvents() {
+    this._log('Begin receiving remote control events');
     UIApplication.sharedApplication().beginReceivingRemoteControlEvents();
     let remoteCommandCenter = MPRemoteCommandCenter.sharedCommandCenter();
     (<MPSkipIntervalCommand>remoteCommandCenter.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
     remoteCommandCenter.skipBackwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
       this._log('RemoteControl - Skip Backwards');
-      this.seekInternal(this.getCurrentTime() - this.seekIntervalSeconds * 1000);
+      this.seekRelative(this.seekIntervalSeconds * -1000);
       return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
     });
     remoteCommandCenter.togglePlayPauseCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
@@ -214,7 +204,7 @@ export class AudioPlayer extends CommonAudioPlayer
     (<MPSkipIntervalCommand>remoteCommandCenter.skipForwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
     remoteCommandCenter.skipForwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
       this._log('RemoteControl - Skip Forward');
-      this.seekInternal(this.getCurrentTime() + this.seekIntervalSeconds * 1000);
+      this.seekRelative(this.seekIntervalSeconds * 1000);
       return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
     });
     remoteCommandCenter.changePlaybackRateCommand.enabled = true;
@@ -231,6 +221,11 @@ export class AudioPlayer extends CommonAudioPlayer
     //   return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
     // });
   }
+
+  private unsubscribeFromRemoteControlEvents() {
+    this._log('End receiving remote control events');
+    UIApplication.sharedApplication().endReceivingRemoteControlEvents();
+  }
  
   private remoteTogglePlayPauseHandler = (evt: MPRemoteCommandEvent) => {
     // FreeStreamer's pause() command is already a toggle.
@@ -239,12 +234,8 @@ export class AudioPlayer extends CommonAudioPlayer
     return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
   }
 
-  private unsubscribeFromRemoteControlEvents() {
-    UIApplication.sharedApplication().endReceivingRemoteControlEvents();
-  }
-
   private clearNowPlayingInfo() {
-    this._log('=== REMOVE NOWPLAYINGINFO! ===');
+    this._log('Clear NowPlaying Info');
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = null;
   }
 
@@ -316,11 +307,10 @@ export class AudioPlayer extends CommonAudioPlayer
         }
         this._onPlaybackEvent(PlaybackEvent.Playing);
         this.setNowPlayingInfo();
-        if (this._queuedSeek >= 0) {
-          this._log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
-          this.seekInternal(this._queuedSeek);
-          this._queuedSeek = -1;
-          this._log('===> Set queuedSeek to -1');
+        if (this._queuedSeekTo !== null) {
+          this._log("FreeStreamer: Queue Seek to "+ this._queuedSeekTo);
+          this.seekTo(this._queuedSeekTo);
+          this._queuedSeekTo = null;
         }
         break;
       }
@@ -341,8 +331,8 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamPlaybackCompleted: {
         this._log("FreeStreamer: Playback Completed");
+        this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
         if (this.getCurrentPlaylistIndex() < this.playlist.length - 1) {
-          this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
           this.setNowPlayingInfo();
         } else {
           this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);

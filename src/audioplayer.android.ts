@@ -11,7 +11,6 @@ export class AudioPlayer extends CommonAudioPlayer
 {
   public _serviceHelper: lyt.PlaybackServiceHelper;
   public _service: lyt.PlaybackService;
-  private _queuedSeekTo: number = null;
 
   constructor(playlist: Playlist) {
     super(playlist);
@@ -52,7 +51,7 @@ export class AudioPlayer extends CommonAudioPlayer
         //TODO: Simplify: VLCToClientEventMap
         if (event.type == PlayerEvent.SeekableChanged) {
           //this._log('^ SeekableChanged ==');
-          if (event.getSeekable() == true && this._queuedSeekTo != null) {
+          if (event.getSeekable() == true && this._queuedSeekTo !== null) {
             this._log('Queued SeekTo discovered. Seeking to '+ this._queuedSeekTo);
             this.seekTo(this._queuedSeekTo);
             this._queuedSeekTo = null;
@@ -77,7 +76,7 @@ export class AudioPlayer extends CommonAudioPlayer
         } else if (event.type == PlayerEvent.EncounteredError) {
           this._log('== Encountered ERROR ==');
           // TODO: Use error callback instead
-          throw new Error("Android PlaybackService encountered an error");
+          //throw new Error("Android PlaybackService encountered an error");
         } else {
           // this._log('^ Unhandled PlayerEvent: '+ event.type);
         }
@@ -129,7 +128,7 @@ export class AudioPlayer extends CommonAudioPlayer
     }
   }
 
-  public stop(fullStop: boolean) {
+  public stop() {
     if (this._service) {
       this._service.stopPlayback();
     }
@@ -139,15 +138,9 @@ export class AudioPlayer extends CommonAudioPlayer
     return this._service && this._service.isPlaying();
   }
 
-  public seekTo(milisecs: number, playlistIndex?: number) {
-    if (playlistIndex && playlistIndex !== this.getCurrentPlaylistIndex()) {
-      // When chaning track we always start at 0, so seeking might not always be necessary.
-      if (milisecs > 0) {
-        this._queuedSeekTo = milisecs;
-      }
-      this.skipToPlaylistIndex(playlistIndex);
-    } else {
-      this._service.setTime(milisecs);
+  public seekTo(offset: number) {
+    if (this._service && this._service.hasMedia()) {
+      this._service.setTime(offset);
     }
   }
 
@@ -162,10 +155,9 @@ export class AudioPlayer extends CommonAudioPlayer
       this._service.previous();
     }
   }
+
   public skipToPlaylistIndex(playlistIndex: number) {
     if (this._service) {
-      this._log("playlist size "+ this.playlist.length);
-      this._log("skipping to index "+ playlistIndex +" (zero-based)");
       this._service.playIndex(playlistIndex, 0);
     }
   }
@@ -177,10 +169,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public getRate() {
-    if (!this._service) {
-      return 0;
-    }
-    return this._service.getRate();
+    return this._service ? this._service.getRate() : 1;
   }
 
   public getDuration() {

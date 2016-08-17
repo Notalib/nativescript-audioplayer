@@ -9,7 +9,8 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public ios: any;
   public message: string;
   public playlist: Playlist;
-  private _listener: PlaybackEventListener;
+  protected _queuedSeekTo: number = null;
+  protected _listener: PlaybackEventListener;
 
   constructor(playlist: Playlist) {
     this.playlist = playlist;
@@ -20,21 +21,43 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public abstract addToPlaylist(track: MediaTrack);
   public abstract play();
   public abstract pause();
-  public abstract stop(fullStop: boolean);
+  public abstract stop();
   public abstract isPlaying(): boolean;
   public abstract skipToNext();
   public abstract skipToPrevious();
-  public abstract skipToPlaylistIndex(playlistIndex: number);
+  public abstract skipToPlaylistIndex(playlistIndex: number): void;
   public abstract setRate(rate: number);
   public abstract getRate(): number;
   public abstract getDuration(): number;
   public abstract getCurrentTime(): number;
   public abstract getCurrentPlaylistIndex(): number;
-  public abstract seekTo(milisecs: number, playlistIndex?: number);
+  public abstract seekTo(offset: number);
   public abstract release();
+
+  public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
+    if (this.getCurrentPlaylistIndex() === playlistIndex) {
+      this.seekTo(offset);
+    } else {
+      if (offset > 0) {
+        this._log(`Set queuedSeek to ${offset}`);
+        this._queuedSeekTo = offset;
+      }
+      this.skipToPlaylistIndex(playlistIndex);
+    }
+  }
+
+  public seekRelative(relativeOffset: number): void {
+    this.seekTo(Math.max(this.getCurrentTime() + relativeOffset, 0));
+  }
 
   public setPlaybackEventListener(listener: PlaybackEventListener) {
     this._listener = listener;
+  }
+
+  public _promiseForPlaybackEvent(evt: PlaybackEvent): Promise<PlaybackEvent> {
+    return new Promise<PlaybackEvent>((resolve, reject) => {
+
+    });
   }
 
   protected _onPlaybackEvent(evt: PlaybackEvent) {

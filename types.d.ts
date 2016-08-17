@@ -25,17 +25,19 @@ export interface AudioPlayer {
     addToPlaylist(track: MediaTrack): void;
     play(): void;
     pause(): void;
-    stop(fullStop: boolean): void;
+    stop(): void;
     isPlaying(): boolean;
     skipToNext(): void;
     skipToPrevious(): void;
     skipToPlaylistIndex(playlistIndex: number): void;
+    skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void;
     setRate(rate: number): void;
     getRate(): number;
     getDuration(): number;
     getCurrentTime(): number;
     getCurrentPlaylistIndex(): number;
-    seekTo(milisecs: number, playlistIndex?: number): void;
+    seekTo(offset: number): void;
+    seekRelative(relativeOffset: number): void;
     setPlaybackEventListener(listener: PlaybackEventListener): void;
     release(): void;
 }

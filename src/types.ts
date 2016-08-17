@@ -39,11 +39,15 @@ export interface AudioPlayer {
   addToPlaylist(track: MediaTrack): void;
   play(): void;
   pause(): void;
-  stop(fullStop: boolean): void;
+  stop(): void;
   isPlaying(): boolean;
   skipToNext(): void;
   skipToPrevious(): void;
+  /*
+   * Skip to specific playlist index and optionally seek directly to an offset.
+   */
   skipToPlaylistIndex(playlistIndex: number): void;
+  skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void;
   setRate(rate: number): void;
   getRate(): number;
   getDuration(): number;
@@ -54,9 +58,12 @@ export interface AudioPlayer {
   getCurrentPlaylistIndex(): number;
   /**
    * Seeks to a specific offset in miliseconds of the current track.
-   * Optionally skips to a specific playlist index before seeking.
    */
-  seekTo(milisecs: number, playlistIndex?: number): void;
+  seekTo(offset: number): void;
+  /**
+   * Seeks to an offset in miliseconds relative to the current time of the current track.
+   */
+  seekRelative(relativeOffset: number): void;
   setPlaybackEventListener(listener: PlaybackEventListener): void;
   release(): void;
 }
