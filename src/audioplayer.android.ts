@@ -140,8 +140,11 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public seekTo(milisecs: number, playlistIndex?: number) {
-    if (playlistIndex && playlistIndex != this.getCurrentPlaylistIndex()) {
-      this._queuedSeekTo = milisecs;
+    if (playlistIndex && playlistIndex !== this.getCurrentPlaylistIndex()) {
+      // When chaning track we always start at 0, so seeking might not always be necessary.
+      if (milisecs > 0) {
+        this._queuedSeekTo = milisecs;
+      }
       this.skipToPlaylistIndex(playlistIndex);
     } else {
       this._service.setTime(milisecs);
