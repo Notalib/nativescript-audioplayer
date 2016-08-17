@@ -121,7 +121,7 @@ export class AudioPlayer extends CommonAudioPlayer
   public setRate(rate: number) {
     this._playbackRate = rate;
     // If we're currently playing
-    if (this.getRate() != rate && this.playController.isPlaying()) {
+    if (this.getRate() != rate && this.isPlaying()) {
       this.playController.activeStream.setPlayRate(rate);
       this.updateNowPlayingInfoPositionTracking(false);
     }
@@ -129,7 +129,12 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public getRate(): number {
     if (this.playController.activeStream) {
-      return this.playController.activeStream.playRate();
+      // On iOS playbackRate is always 0 during pause, so we return our internal rate variable instead.
+      if (this.isPlaying()) {
+        return this.playController.activeStream.playRate();
+      } else {
+        return this._playbackRate;
+      }
     }
   }
 
