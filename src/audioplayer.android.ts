@@ -87,12 +87,12 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private loadPlaylist(playlist: Playlist): void {
-    let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
-    for (var track of this.playlist.tracks) {
-      this._log('Android - Creating MediaWrapper for: '+ track.title);
-      mediaList.add(this.getNewMediaWrapper(track));
-    }
     if (this._service) {
+      let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
+      for (var track of this.playlist.tracks) {
+        this._log('Android - Creating MediaWrapper for: '+ track.title);
+        mediaList.add(this.getNewMediaWrapper(track));
+      }
       this._service.load(mediaList);
     }
   }
@@ -108,26 +108,31 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public addToPlaylist(track: MediaTrack) {
-    this._service.append(this.getNewMediaWrapper(track));
+    if (this._service) {
+      this._service.append(this.getNewMediaWrapper(track));
+    }
   }
 
   public getCurrentPlaylistIndex(): number {
-    if (!this._service) {
-      return -1;
-    }
-    return this._service.getCurrentMediaPosition();
+    return this._service ? this._service.getCurrentMediaPosition() : -1;
   }
 
   public play() {
-    this._service.play();
+    if (this._service) {
+      this._service.play();
+    }
   }
 
   public pause() {
-    this._service.pause();
+    if (this._service) {
+      this._service.pause();
+    }
   }
 
   public stop(fullStop: boolean) {
-    this._service.stopPlayback();
+    if (this._service) {
+      this._service.stopPlayback();
+    }
   }
 
   public isPlaying(): boolean {
