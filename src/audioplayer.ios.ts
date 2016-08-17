@@ -161,8 +161,10 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public seekTo(milisecs: number, playlistIndex?: number) {
     // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
-    if (playlistIndex) {
-      this._queuedSeek = milisecs;
+    if (playlistIndex && playlistIndex !== this.getCurrentPlaylistIndex()) {
+      if (milisecs > 0) {
+        this._queuedSeek = milisecs;
+      }
       this.playController.playItemAtIndex(playlistIndex)
     } else {
       this.seekInternal(milisecs);
