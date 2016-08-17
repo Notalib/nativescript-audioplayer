@@ -42,6 +42,7 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   }
   
   protected _log(...args: any[]) {
-    console.log('tns-audioplayer: ', ...args);
+    let platform = this.ios ? 'iOS' : 'Android';
+    console.log(`tns-audioplayer(${platform}): `, ...args);
   }
 }

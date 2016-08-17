@@ -13,9 +13,6 @@ export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioCo
   
   public init(): FSAudioControllerDelegateImpl {
     var self = super.init();
-    if (self) {
-      console.log("MyLYTPlayerDelegate initialized succesfully");
-    }
     return self as FSAudioControllerDelegateImpl;
   }
   
