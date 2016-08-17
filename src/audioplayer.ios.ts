@@ -141,7 +141,8 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public getCurrentTime(): number {
     if (this.playController.activeStream) {
-      return Math.floor(this.playController.activeStream.currentTimePlayed.playbackTimeInSeconds * 1000);
+      // Math.max because FreeStreamer can return negative playbackTime at beginning of playback.
+      return Math.max(Math.floor(this.playController.activeStream.currentTimePlayed.playbackTimeInSeconds * 1000), 0);
     }
   }
 
