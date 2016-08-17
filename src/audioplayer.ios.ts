@@ -161,9 +161,11 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public seekTo(milisecs: number, playlistIndex?: number) {
     // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
+    this._log(`===> seekTo called ${milisecs}, ${playlistIndex}`);
     if (playlistIndex && playlistIndex !== this.getCurrentPlaylistIndex()) {
       if (milisecs > 0) {
         this._queuedSeek = milisecs;
+        this._log('===> Set queuedSeek to '+ milisecs);
       }
       this.playController.playItemAtIndex(playlistIndex)
     } else {
@@ -187,13 +189,15 @@ export class AudioPlayer extends CommonAudioPlayer
   private seekInternal(milisecs: number) {
     if (this.playController.activeStream) {
       let knownDuration = this.getDuration();
-      // If position (0-1 of duration) is over 0 it is used, else it uses the less accurate minute/second.
+      // In FreeStreamer if position (0-1 of full duration) is over 0 it is used, else it uses the less accurate minute/second variables.
+      let seekToSeconds: number = +(milisecs / 1000).toFixed(3);
       let position: FSStreamPosition = {
-        minute: Math.floor(milisecs / 60000),
-        second: milisecs / 1000 % 60,
-        playbackTimeInSeconds:  milisecs / 1000,
+        minute: Math.floor(seekToSeconds / 60),
+        second: seekToSeconds % 60,
+        playbackTimeInSeconds:  seekToSeconds,
         position: knownDuration > 0 ? milisecs / knownDuration : 0
       }
+      this._log('seekInternal to\n '+ JSON.stringify(position));
       this.playController.activeStream.seekToPosition(position);
     }
   }
@@ -319,6 +323,7 @@ export class AudioPlayer extends CommonAudioPlayer
           this._log("FreeStreamer: Queue Seek to "+ this._queuedSeek);
           this.seekInternal(this._queuedSeek);
           this._queuedSeek = -1;
+          this._log('===> Set queuedSeek to -1');
         }
         break;
       }
