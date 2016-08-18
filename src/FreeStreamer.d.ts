@@ -7,9 +7,13 @@ declare class FSAudioController extends NSObject {
 
 	/* readonly */ activeStream: FSAudioStream;
 
+	automaticAudioSessionHandlingEnabled: boolean;
+
 	configuration: FSStreamConfiguration;
 
 	/* readonly */ currentPlaylistItem: FSPlaylistItem;
+
+  /* readonly */ currentPlaylistItemIndex: number;
 
 	delegate: FSAudioControllerDelegate;
 
@@ -27,7 +31,7 @@ declare class FSAudioController extends NSObject {
 
 	volume: number;
 
-    constructor();
+	constructor();
 
 	constructor(o: { url: NSURL; });
 
@@ -152,6 +156,8 @@ declare class FSAudioStream extends NSObject {
 	initWithUrl(url: NSURL): this;
 
 	isPlaying(): boolean;
+
+	isPaused(): boolean;
 
 	pause(): void;
 
