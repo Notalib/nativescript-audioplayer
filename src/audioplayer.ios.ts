@@ -82,12 +82,19 @@ export class AudioPlayer extends CommonAudioPlayer
   
   public addToPlaylist(track: MediaTrack) {
     // TODO: Define common interface for appending and replacing playlist items
-    // FreeStreamer supports this very well. need to define the common interface first.
+    // FreeStreamer supports this very well. need to further define the common interface first.
     this._log("iOS addToPlaylist not implemented");
   }
   
   public play() {
-    this.playController.play();
+    // FIX: Play should resume playback if it was paused.
+    if (this.playController.activeStream && this.playController.activeStream.isPaused()) {
+      // FreeStreamer's pause is a toggle. This resumes playback.
+      this.playController.pause();
+    } else {
+      console.log('PLAY');
+      this.playController.play();
+    }
   }
   
   public pause() {
