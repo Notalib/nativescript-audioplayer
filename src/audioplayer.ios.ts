@@ -184,8 +184,10 @@ export class AudioPlayer extends CommonAudioPlayer
     this.unsubscribeFromRemoteControlEvents();
     this.clearNowPlayingInfo();
     this._log('Releasing all resources');
-    this.playController.delegate = null;
-    this.playController = null;
+    setTimeout(() => {
+      this.playController.delegate = null;
+      this.playController = null;
+    }, 50);
   }
 
   // ------------------------------------------------------------------------------
