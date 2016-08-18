@@ -159,11 +159,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public getCurrentPlaylistIndex() {
-    let currentTrack = this.getCurrentMediaTrack();
-    if (currentTrack) {
-      return this.playlist.tracks.indexOf(currentTrack);
-    }
-    return 0;
+    return this.playController.currentPlaylistItemIndex;
   }
 
   public seekTo(offset: number) {
@@ -284,19 +280,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private getCurrentMediaTrack() {
-    let currentItem = this.playController.currentPlaylistItem;
-    if (currentItem) {
-      return this.getMediaTrackFromUrl(currentItem.url.absoluteString);
-    }
-    return null;
-  }
-
-  private getMediaTrackFromUrl(url: string) {
-    let trackResult = this.playlist.tracks.filter((track) => track.url == url);
-    if (trackResult.length > 0) {
-      return trackResult[0];
-    }
-    return null;
+    return this.playlist.tracks[this.getCurrentPlaylistIndex()];
   }
   
   private didChangeState(toState: FSAudioStreamState) {
