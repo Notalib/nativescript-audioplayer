@@ -9,7 +9,7 @@ export declare class MediaTrack {
 export declare class Playlist {
     constructor(...tracks: MediaTrack[]);
     tracks: MediaTrack[];
-    length: number;
+    readonly length: number;
 }
 export declare enum PlaybackEvent {
     Stopped = 0,

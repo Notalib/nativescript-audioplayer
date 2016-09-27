@@ -1,3 +1,5 @@
+import * as utils from 'utils/utils';
+
 import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
 // TODO: Do all exports in a main.ts instead?
@@ -195,7 +197,9 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private subscribeToRemoteControlEvents() {
     this._log('Begin receiving remote control events');
-    UIApplication.sharedApplication().beginReceivingRemoteControlEvents();
+    const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+    app.beginReceivingRemoteControlEvents();
+    
     let remoteCommandCenter = MPRemoteCommandCenter.sharedCommandCenter();
     (<MPSkipIntervalCommand>remoteCommandCenter.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
     remoteCommandCenter.skipBackwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
