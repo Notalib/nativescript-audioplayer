@@ -185,7 +185,10 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public release() {
-    this._service.stopService();
+    // Do not kill the background service if it is still playing.
+    if (this._service && !this._service.isPlaying()) {
+      this._service.stopService();
+    }
     this._serviceHelper.onStop();
     delete this._service;
     delete this._serviceHelper;
