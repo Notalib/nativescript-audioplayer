@@ -8,9 +8,10 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
 
   constructor() {
     super();
-    this.loadAndSetupPlaylist();
-    this.message = this.player.message;
-
+    setTimeout(() => {
+      this.loadAndSetupPlaylist();
+      this.message = this.player.message;
+    }, 1000);
     setInterval(() => {
         if (this.player && this.player.isPlaying()) {
             console.log(`Playing ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
@@ -26,6 +27,8 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     playlist.tracks.push(new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
     playlist.tracks.push(new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3", "1986", "George Orwell", "Del 4 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"));
     playlist.tracks.push(new MediaTrack("http://mean2u.rfshq.com/downloads/music/giveyouup.mp3", "Rick n' Roll", "Rick Astley", "album", null));
+    playlist.tracks.push(new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam2", "SoundSnap.com", "Short Test", null));
+    playlist.tracks.push(new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null));
     this.player = new AudioPlayer(playlist);
       // "http://www.noiseaddicts.com/samples_1w72b820/4357.mp3",
       // "http://www.noiseaddicts.com/samples_1w72b820/3816.mp3"]);
@@ -53,21 +56,29 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
   
   public seekSpecific() {
-    console.log("Seeking to index 2 and 15 secs");
-    this.player.seekTo(15000, 2);
+    console.log("Seeking to index 2 @ 15 secs");
+    this.player.skipToPlaylistIndexAndOffset(2, 15000);
   }
   
   public skipToPrevious() {
     this.player.skipToPrevious();
+    // let seekTo = this.player.getCurrentTime() - 15000;
+    // console.log('demo - seekTo '+ seekTo);
+    // this.player.seekTo(Math.max(seekTo, 0));
   }
   
   public skipToNext() {
     this.player.skipToNext();
+    // let seekTo = this.player.getCurrentTime() + 15000;
+    // console.log('demo - seekTo '+ seekTo);
+    // this.player.seekTo(Math.min(seekTo, this.player.getDuration()));
   }
 
   public reload() {
     this.player.release();
-    this.loadAndSetupPlaylist();
+    setTimeout(() => {
+      this.loadAndSetupPlaylist();
+    });
   }
 
   public logDuration() {
