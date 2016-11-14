@@ -45,7 +45,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this.ios = this;
     let config = new FSStreamConfiguration();
     config.cacheEnabled = false;
-    config.maxRetryCount = 10000;                     // Always keep retrying
+    config.maxRetryCount = 3;                         // Retry 3 times
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
     config.automaticAudioSessionHandlingEnabled = true;
