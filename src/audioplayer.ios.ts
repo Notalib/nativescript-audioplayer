@@ -233,7 +233,8 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private unsubscribeFromRemoteControlEvents() {
     this._log('End receiving remote control events');
-    UIApplication.sharedApplication().endReceivingRemoteControlEvents();
+    const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+    app.endReceivingRemoteControlEvents();
   }
  
   private remoteTogglePlayPauseHandler = (evt: MPRemoteCommandEvent) => {
