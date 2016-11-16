@@ -7,18 +7,12 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   
   public android: any;
   public ios: any;
-  public message: string;
   public playlist: Playlist;
+
   protected _queuedSeekTo: number = null;
   protected _listener: PlaybackEventListener;
 
-  constructor(playlist: Playlist) {
-    this.playlist = playlist;
-    this._log("CommonAudioPlayer created with playlist.length: "+ playlist.tracks.length);
-    this.message = `Your plugin is working on ${app.android ? 'Android' : 'iOS'}.`;
-  }
-
-  public abstract addToPlaylist(track: MediaTrack);
+  protected abstract preparePlaylist(playlist: Playlist);
   public abstract play();
   public abstract pause();
   public abstract stop();
@@ -33,6 +27,15 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public abstract getCurrentPlaylistIndex(): number;
   public abstract seekTo(offset: number);
   public abstract release();
+
+  public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
+    this.preparePlaylist(playlist);
+    if (startIndex && startOffset) {
+      this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
+    } else if (startIndex) {
+      this.skipToPlaylistIndex(startIndex);
+    }
+  }
 
   public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
     if (this.getCurrentPlaylistIndex() === playlistIndex) {

@@ -12,8 +12,8 @@ export class AudioPlayer extends CommonAudioPlayer
   public _serviceHelper: lyt.PlaybackServiceHelper;
   public _service: lyt.PlaybackService;
 
-  constructor(playlist: Playlist) {
-    super(playlist);
+  constructor() {
+    super();
     this.android = this;
     this._serviceHelper = new lyt.PlaybackServiceHelper(app.android.context, new lyt.ConnectionCallback({
       onConnected: (service: lyt.PlaybackService) => {
@@ -52,7 +52,7 @@ export class AudioPlayer extends CommonAudioPlayer
         if (event.type == PlayerEvent.SeekableChanged) {
           //this._log('^ SeekableChanged ==');
           if (event.getSeekable() == true && this._queuedSeekTo !== null) {
-            this._log('Queued SeekTo discovered. Seeking to '+ this._queuedSeekTo);
+            this._log('Executing queued SeekTo: '+ this._queuedSeekTo);
             this.seekTo(this._queuedSeekTo);
             this._queuedSeekTo = null;
           }
@@ -70,6 +70,7 @@ export class AudioPlayer extends CommonAudioPlayer
           this._onPlaybackEvent(PlaybackEvent.Stopped);
         } else if (event.type == PlayerEvent.EndReached) {
           this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+          this._log(`=== ENDOFTRACK > index / len > ${this.getCurrentPlaylistIndex()} / ${this.playlist.length}`);
           if (this.getCurrentPlaylistIndex() == this.playlist.length - 1) {
             this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
           }
@@ -82,18 +83,6 @@ export class AudioPlayer extends CommonAudioPlayer
         }
       }
     }));
-    this.loadPlaylist(this.playlist);
-  }
-
-  private loadPlaylist(playlist: Playlist): void {
-    if (this._service) {
-      let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
-      for (var track of this.playlist.tracks) {
-        this._log('Android - Creating MediaWrapper for: '+ track.title);
-        mediaList.add(this.getNewMediaWrapper(track));
-      }
-      this._service.load(mediaList);
-    }
   }
 
   private getNewMediaWrapper(track: MediaTrack): lyt.media.MediaWrapper {
@@ -106,9 +95,15 @@ export class AudioPlayer extends CommonAudioPlayer
     return media;
   }
 
-  public addToPlaylist(track: MediaTrack) {
+  public preparePlaylist(playlist: Playlist): void {
     if (this._service) {
-      this._service.append(this.getNewMediaWrapper(track));
+      this.playlist = playlist;
+      let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
+      for (var track of this.playlist.tracks) {
+        this._log('Android - Creating MediaWrapper for: '+ track.title);
+        mediaList.add(this.getNewMediaWrapper(track));
+      }
+      this._service.load(mediaList);
     }
   }
 

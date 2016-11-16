@@ -7,7 +7,8 @@ export declare class MediaTrack {
     albumArtUrl: string;
 }
 export declare class Playlist {
-    constructor(...tracks: MediaTrack[]);
+    constructor(UID: string, ...tracks: MediaTrack[]);
+    UID: string;
     tracks: MediaTrack[];
     readonly length: number;
 }
@@ -18,11 +19,12 @@ export declare enum PlaybackEvent {
     Paused = 3,
     EndOfTrackReached = 4,
     EndOfPlaylistReached = 5,
+    EncounteredError = 6,
+    TimeChanged = 7,
 }
 export interface AudioPlayer {
-    message: string;
     playlist: Playlist;
-    addToPlaylist(track: MediaTrack): void;
+    loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): any;
     play(): void;
     pause(): void;
     stop(): void;
@@ -42,7 +44,7 @@ export interface AudioPlayer {
     release(): void;
 }
 export declare var AudioPlayer: {
-    new (playlist: Playlist): AudioPlayer;
+    new (): AudioPlayer;
 };
 export interface PlaybackEventListener {
     onPlaybackEvent(evt: PlaybackEvent): void;

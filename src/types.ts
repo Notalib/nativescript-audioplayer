@@ -33,10 +33,8 @@ export enum PlaybackEvent {
 }
 
 export interface AudioPlayer {
-  message: string;
   playlist: Playlist;
-
-  addToPlaylist(track: MediaTrack): void;
+  loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number);
   play(): void;
   pause(): void;
   stop(): void;
@@ -69,7 +67,7 @@ export interface AudioPlayer {
 }
 
 export var AudioPlayer: {
-  new (playlist: Playlist) : AudioPlayer;
+  new() : AudioPlayer;
 }
 
 export interface PlaybackEventListener {

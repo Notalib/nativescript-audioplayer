@@ -40,8 +40,8 @@ export class AudioPlayer extends CommonAudioPlayer
   public supportedPlaybackRate: number[] = [0.7, 1.0, 1.2, 1.5, 2.0];
   private _playbackRate: number = 1;
   
-  constructor(playlist: Playlist) {
-    super(playlist);
+  constructor() {
+    super();
     this.ios = this;
     let config = new FSStreamConfiguration();
     config.cacheEnabled = false;
@@ -49,11 +49,11 @@ export class AudioPlayer extends CommonAudioPlayer
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
     config.automaticAudioSessionHandlingEnabled = true;
-    //config.predefinedHttpHeaderValues               // TODO: Could be used to set auth headers
+    //config.predefinedHttpHeaderValues               // Could be used to set auth headers
     config.httpConnectionBufferSize = 1024 * 64;      // 64 kB. bufferSize should match this.
     config.bufferSize = 1024 * 64;
     config.maxPrebufferedByteCount = 100000000;       // Max 100mb cache ahead. TODO: Time based maxBuffer
-    config.requiredPrebufferSizeInSeconds = 5;        // Prebuffer at least 10 seconds before starting playback.
+    config.requiredPrebufferSizeInSeconds = 5;        // Prebuffer 5 seconds before starting playback.
     this.playController = FSAudioController.alloc().init() as FSAudioController;
     this.playController.configuration = config;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
@@ -69,23 +69,18 @@ export class AudioPlayer extends CommonAudioPlayer
     this._log("FreeStreamer instance retrieved!", this.playController);
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
     this.subscribeToRemoteControlEvents();
-
-    setTimeout(() => {
-      for (var track of this.playlist.tracks) {
-        this._log('Creating FSPlaylistItem for: '+ track.title);
-        let item = new FSPlaylistItem();
-        item.url = NSURL.URLWithString(track.url);
-        item.title = track.title;
-        this._log('playController.addItem');
-        this.playController.addItem(item);
-      }
-    }, 10);
   }
-  
-  public addToPlaylist(track: MediaTrack) {
-    // TODO: Define common interface for appending and replacing playlist items
-    // FreeStreamer supports this very well. need to further define the common interface first.
-    this._log("iOS addToPlaylist not implemented");
+
+  public preparePlaylist(playlist: Playlist) {
+    this.playlist = playlist;
+    for (var track of playlist.tracks) {
+      this._log('Creating FSPlaylistItem for: '+ track.title);
+      let item = new FSPlaylistItem();
+      item.url = NSURL.URLWithString(track.url);
+      item.title = track.title;
+      this._log('playController.addItem');
+      this.playController.addItem(item);
+    }
   }
   
   public play() {
@@ -100,7 +95,9 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   public pause() {
-    this.playController.pause();
+    if (this.playController.activeStream && !this.playController.activeStream.isPaused()) {
+      this.playController.pause();
+    }
   }
   
   public stop() {
