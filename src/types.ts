@@ -57,6 +57,7 @@ export interface AudioPlayer {
    */
   getCurrentTime(): number;
   getCurrentPlaylistIndex(): number;
+  getCurrentPlaylistUID(): string;
   /**
    * Seeks to a specific offset in miliseconds of the current track.
    */

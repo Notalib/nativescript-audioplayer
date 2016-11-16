@@ -30,6 +30,7 @@ export class AudioPlayer extends CommonAudioPlayer
   private onServiceConnected(service: lyt.PlaybackService): void {
     this._service = service;
     service.setNotificationActivity(app.android.startActivity, "LAUNCHED_FROM_NOTIFICATION");
+    service.removeAllCallbacks();
     service.addCallback(new lyt.PlaybackEventHandler({
       update: () => {
         // this._log('update');
@@ -105,6 +106,7 @@ export class AudioPlayer extends CommonAudioPlayer
         mediaList.add(this.getNewMediaWrapper(track));
       }
       this._service.load(mediaList);
+      this._service.setMediaListIdentifier(playlist.UID);
     }
   }
 
@@ -177,6 +179,14 @@ export class AudioPlayer extends CommonAudioPlayer
   public getCurrentTime(): number {
     if (this._service) {
       return this._service.getTime();
+    }
+  }
+
+  public getCurrentPlaylistUID() {
+    if (this._service) {
+      return this._service.getMediaListIdentifier();
+    } else {
+      return super.getCurrentPlaylistUID();
     }
   }
 

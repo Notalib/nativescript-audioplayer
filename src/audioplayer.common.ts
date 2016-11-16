@@ -57,10 +57,8 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
     this._listener = listener;
   }
 
-  public _promiseForPlaybackEvent(evt: PlaybackEvent): Promise<PlaybackEvent> {
-    return new Promise<PlaybackEvent>((resolve, reject) => {
-
-    });
+  public getCurrentPlaylistUID(): string {
+    return this.playlist.UID;
   }
 
   protected _onPlaybackEvent(evt: PlaybackEvent) {
