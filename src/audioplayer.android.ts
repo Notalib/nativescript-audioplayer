@@ -75,11 +75,12 @@ export class AudioPlayer extends CommonAudioPlayer
             this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
           }
         } else if (event.type == PlayerEvent.EncounteredError) {
-          this._log('== Encountered ERROR ==');
-          // TODO: Use error callback instead
+          this._onPlaybackEvent(PlaybackEvent.EncounteredError);
+          this._log('== Encountered ERROR - Pausing ==');
+          this.stop();
           //throw new Error("Android PlaybackService encountered an error");
         } else {
-          // this._log('^ Unhandled PlayerEvent: '+ event.type);
+          //this._log('^ Unhandled PlayerEvent: '+ event.type);
         }
       }
     }));

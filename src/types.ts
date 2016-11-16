@@ -14,9 +14,10 @@ export class MediaTrack {
 }
 
 export class Playlist {
-  constructor(...tracks: MediaTrack[]) {
+  constructor(UID: string, ...tracks: MediaTrack[]) {
     this.tracks = tracks;
   }
+  public UID: string;
   public tracks: MediaTrack[];
   public get length(): number {
     return this.tracks.length;
@@ -29,7 +30,9 @@ export enum PlaybackEvent {
   Playing,
   Paused,
   EndOfTrackReached,
-  EndOfPlaylistReached
+  EndOfPlaylistReached,
+  EncounteredError,
+  TimeChanged,
 }
 
 export interface AudioPlayer {
