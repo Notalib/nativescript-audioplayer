@@ -39,6 +39,11 @@ export enum PlaybackEvent {
 
 export interface AudioPlayer {
   playlist: Playlist;
+  /**
+   * Promise which resolves when the AudioPlayer is ready to receive commands.
+   * Mostly useful during startup
+   */
+  isReady: Promise<any>;
   loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number);
   play(): void;
   pause(): void;
@@ -85,5 +90,5 @@ export var AudioPlayer: {
 }
 
 export interface PlaybackEventListener {
-  onPlaybackEvent(evt: PlaybackEvent): void;
+  onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
 }

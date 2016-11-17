@@ -65,8 +65,8 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
     return this.playlist ? this.playlist.UID : null;
   }
 
-  protected _onPlaybackEvent(evt: PlaybackEvent) {
-    if (this._listener) this._listener.onPlaybackEvent(evt);
+  protected _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
+    if (this._listener) this._listener.onPlaybackEvent(evt, arg);
   }
   
   protected _log(...args: any[]) {

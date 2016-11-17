@@ -5,7 +5,7 @@ import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audiopla
 // TODO: Do all exports in a main.ts instead?
 export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
-// See API Docs for native audio playback framework:
+// See API Docs for native audio playback framework
 // http://muhku.github.io/FreeStreamer/api/
 
 export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioControllerDelegate {
@@ -69,6 +69,10 @@ export class AudioPlayer extends CommonAudioPlayer
     this._log("FreeStreamer instance retrieved!", this.playController);
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
     this.subscribeToRemoteControlEvents();
+  }
+
+  public get isReady(): Promise<any> {
+    return Promise.resolve();
   }
 
   public preparePlaylist(playlist: Playlist) {
@@ -371,8 +375,11 @@ export class AudioPlayer extends CommonAudioPlayer
         break;
       }
       case FSAudioStreamState.kFsAudioStreamFailed:
-      case FSAudioStreamState.kFsAudioStreamRetryingFailed:
-      // TODO: Better error handling and user feedback for above cases.
+      case FSAudioStreamState.kFsAudioStreamRetryingFailed: {
+        this._log("FreeStreamer: StreamFailed");
+        this._onPlaybackEvent(PlaybackEvent.EncounteredError);
+        break;
+      }
       default: {
         this._log("FreeStreamer: state change: "+ toState);
         break;
