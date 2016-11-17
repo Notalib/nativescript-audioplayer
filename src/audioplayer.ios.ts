@@ -89,18 +89,20 @@ export class AudioPlayer extends CommonAudioPlayer
       // FreeStreamer's pause is a toggle. This resumes playback.
       this.playController.pause();
     } else {
-      console.log('PLAY');
+      this._log('Play');
       this.playController.play();
     }
   }
   
   public pause() {
     if (this.playController.activeStream && !this.playController.activeStream.isPaused()) {
+      this.cancelSleepTimer();
       this.playController.pause();
     }
   }
   
   public stop() {
+    this.cancelSleepTimer();
     this.playController.stop();
   }
 
@@ -177,8 +179,40 @@ export class AudioPlayer extends CommonAudioPlayer
       this.playController.activeStream.seekToPosition(position);
     }
   }
+
+  private _sleepTimer: number;
+  private _sleepTimerMillisecsLeft: number = 0;
+
+  public setSleepTimer(millisecs: number) {
+    this.cancelSleepTimer();
+
+    const countdownTick = 200;
+    this._sleepTimerMillisecsLeft = millisecs;
+    this._sleepTimer = setInterval(() => {
+      this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
+      if (this._sleepTimerMillisecsLeft == 0) {
+        this.pause();
+        clearInterval(this._sleepTimer);
+        this._sleepTimer = undefined;
+      }
+    }, countdownTick);
+  }
+
+  public getSleepTimerRemaining(): number {
+    return this._sleepTimerMillisecsLeft;
+  }
+
+  public cancelSleepTimer() {
+    if (this._sleepTimer != undefined) {
+      clearInterval(this._sleepTimer);
+      this._sleepTimer = undefined;
+      this._sleepTimerMillisecsLeft = 0;
+      this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerCancelled);
+    }
+  }
   
   public release() {
+    this.cancelSleepTimer();
     this.playController.stop();
     this.unsubscribeFromRemoteControlEvents();
     this.clearNowPlayingInfo();
@@ -332,6 +366,7 @@ export class AudioPlayer extends CommonAudioPlayer
         } else {
           this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
           this.clearNowPlayingInfo();
+          this.cancelSleepTimer();
         }
         break;
       }

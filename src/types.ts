@@ -33,6 +33,8 @@ export enum PlaybackEvent {
   EndOfPlaylistReached,
   EncounteredError,
   TimeChanged,
+  SleepTimerReached,
+  SleepTimerCancelled,
 }
 
 export interface AudioPlayer {
@@ -67,6 +69,14 @@ export interface AudioPlayer {
    */
   seekRelative(relativeOffset: number): void;
   setPlaybackEventListener(listener: PlaybackEventListener): void;
+  /**
+   * Sets an inactivity sleep timer.
+   * Automatically cancelled when a new timer is set,
+   * or when playback is manually paused, stopped or reaches end of playlist.
+   */
+  setSleepTimer(millisecs: number);
+  getSleepTimerRemaining(): number;
+  cancelSleepTimer();
   release(): void;
 }
 

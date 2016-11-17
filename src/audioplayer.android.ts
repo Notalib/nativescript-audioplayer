@@ -190,7 +190,27 @@ export class AudioPlayer extends CommonAudioPlayer
     }
   }
 
-  public release() {
+  setSleepTimer(millisecs: number) {
+    if (this._service) {
+      this._service.setSleepTimer(millisecs);
+    }
+  }
+
+  getSleepTimerRemaining(): number {
+    if (this._service) {
+      const remain = this._service.getSleepTimerRemaining();
+      this._log('REMAINING '+ remain);
+      return this._service.getSleepTimerRemaining();
+    }
+  }
+
+  cancelSleepTimer() {
+    if (this._service) {
+      this._service.cancelSleepTimer();
+    }
+  }
+
+  release() {
     // Do not kill the background service if it is still playing.
     if (this._service && !this._service.isPlaying()) {
       this._service.stopService();

@@ -104,6 +104,7 @@ declare namespace dk.nota.lyt.libvlc {
       static ESAdded: number;
       static ESDeleted: number;
       static SleepTimerReached: number;
+      static SleepTimerCancelled: number;
       type: number;
       getTimeChanged(): number;
       getPositionChanged(): number;
