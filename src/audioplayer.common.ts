@@ -11,8 +11,9 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
 
   protected _queuedSeekTo: number = null;
   protected _listener: PlaybackEventListener;
+  public abstract isReady: Promise<any>;
 
-  protected abstract preparePlaylist(playlist: Playlist);
+  public abstract preparePlaylist(playlist: Playlist);
   public abstract play();
   public abstract pause();
   public abstract stop();
@@ -61,7 +62,7 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   }
 
   public getCurrentPlaylistUID(): string {
-    return this.playlist.UID;
+    return this.playlist ? this.playlist.UID : null;
   }
 
   protected _onPlaybackEvent(evt: PlaybackEvent) {
