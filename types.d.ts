@@ -21,9 +21,12 @@ export declare enum PlaybackEvent {
     EndOfPlaylistReached = 5,
     EncounteredError = 6,
     TimeChanged = 7,
+    SleepTimerReached = 8,
+    SleepTimerCancelled = 9,
 }
 export interface AudioPlayer {
     playlist: Playlist;
+    isReady: Promise<any>;
     loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): any;
     play(): void;
     pause(): void;
@@ -38,14 +41,18 @@ export interface AudioPlayer {
     getDuration(): number;
     getCurrentTime(): number;
     getCurrentPlaylistIndex(): number;
+    getCurrentPlaylistUID(): string;
     seekTo(offset: number): void;
     seekRelative(relativeOffset: number): void;
     setPlaybackEventListener(listener: PlaybackEventListener): void;
+    setSleepTimer(millisecs: number): any;
+    getSleepTimerRemaining(): number;
+    cancelSleepTimer(): any;
     release(): void;
 }
 export declare var AudioPlayer: {
     new (): AudioPlayer;
 };
 export interface PlaybackEventListener {
-    onPlaybackEvent(evt: PlaybackEvent): void;
+    onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
 }
