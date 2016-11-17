@@ -15,6 +15,7 @@ export class MediaTrack {
 
 export class Playlist {
   constructor(UID: string, ...tracks: MediaTrack[]) {
+    this.UID = UID;
     this.tracks = tracks;
   }
   public UID: string;
