@@ -91,6 +91,9 @@ export class AudioPlayer extends CommonAudioPlayer
   public stop() {
     if (this._service) {
       this._service.stopPlayback();
+      // On Android the playback service is stopped on stopPlayback,
+      // so we have to manually send the Stopped event to our listener.
+      this._listener.onPlaybackEvent(PlaybackEvent.Stopped);
     }
   }
 
