@@ -164,8 +164,6 @@ export class AudioPlayer extends CommonAudioPlayer
 
   getSleepTimerRemaining(): number {
     if (this._service) {
-      const remain = this._service.getSleepTimerRemaining();
-      this._log('REMAINING '+ remain);
       return this._service.getSleepTimerRemaining();
     }
   }
