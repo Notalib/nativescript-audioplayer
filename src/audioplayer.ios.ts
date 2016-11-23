@@ -202,6 +202,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this._sleepTimerMillisecsLeft = millisecs;
     this._sleepTimer = setInterval(() => {
       this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
+      this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
       if (this._sleepTimerMillisecsLeft == 0) {
         this.playController.pause();
         clearInterval(this._sleepTimer);
@@ -219,7 +220,7 @@ export class AudioPlayer extends CommonAudioPlayer
       clearInterval(this._sleepTimer);
       this._sleepTimer = undefined;
       this._sleepTimerMillisecsLeft = 0;
-      this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerCancelled);
+      this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
     }
   }
   

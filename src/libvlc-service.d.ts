@@ -56,6 +56,8 @@ declare namespace dk.nota.lyt.libvlc {
     getSleepTimerRemaining(): number;
     setSleepTimer(millisecs: number): void;
     cancelSleepTimer(): void;
+    pauseSleepTimer(): void;
+    resumeSleepTimer(): void;
     setSleepTimerVolumeFadeDuration(millisecs: number)
   }
   export class PlaybackServiceHelper {
@@ -103,8 +105,7 @@ declare namespace dk.nota.lyt.libvlc {
       static PausableChanged: number;
       static ESAdded: number;
       static ESDeleted: number;
-      static SleepTimerReached: number;
-      static SleepTimerCancelled: number;
+      static SleepTimerChanged: number;
       type: number;
       getTimeChanged(): number;
       getPositionChanged(): number;

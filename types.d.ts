@@ -21,8 +21,7 @@ export declare enum PlaybackEvent {
     EndOfPlaylistReached = 5,
     EncounteredError = 6,
     TimeChanged = 7,
-    SleepTimerReached = 8,
-    SleepTimerCancelled = 9,
+    SleepTimerChanged = 8,
 }
 export interface AudioPlayer {
     playlist: Playlist;

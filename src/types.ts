@@ -34,8 +34,7 @@ export enum PlaybackEvent {
   EndOfPlaylistReached,
   EncounteredError,
   TimeChanged,
-  SleepTimerReached,
-  SleepTimerCancelled,
+  SleepTimerChanged,
 }
 
 export interface AudioPlayer {

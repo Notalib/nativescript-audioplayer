@@ -231,13 +231,11 @@ export class AudioPlayer extends CommonAudioPlayer
           if (this.getCurrentPlaylistIndex() >= this.playlist.length - 1) {
             this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
           }
-        } else if (event.type == PlayerEvent.SleepTimerReached) {
-          this._onPlaybackEvent(PlaybackEvent.SleepTimerReached);
-        } else if (event.type == PlayerEvent.SleepTimerCancelled) {
-          this._onPlaybackEvent(PlaybackEvent.SleepTimerCancelled);
+        } else if (event.type == PlayerEvent.SleepTimerChanged) {
+          this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
         } else if (event.type == PlayerEvent.EncounteredError) {
-          this._onPlaybackEvent(PlaybackEvent.EncounteredError);
           this._log('== Playback ERROR ==');
+          this._onPlaybackEvent(PlaybackEvent.EncounteredError);
           //throw new Error("Android PlaybackService encountered an error");
         } else {
           //this._log('^ Unhandled PlayerEvent: '+ event.type);
