@@ -209,7 +209,7 @@ export class AudioPlayer extends CommonAudioPlayer
         this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
       }
       if (this._sleepTimerMillisecsLeft == 0) {
-        this.playController.pause();
+        this.fadeOutVolumeAndPause();
         clearInterval(this._sleepTimer);
         this._sleepTimer = undefined;
       }
@@ -255,6 +255,22 @@ export class AudioPlayer extends CommonAudioPlayer
 
   // ------------------------------------------------------------------------------
   // Internal helpers and event handlers
+
+  private fadeOutVolumeAndPause(): void {
+    const fadeTickMillis = 250.0;
+    const sleepTimerFadeDuration = 5000.0;
+    const previousVolume = this.playController.volume;
+    const fadeInterval = setInterval(() => {
+      const decreaseBy = fadeTickMillis / sleepTimerFadeDuration;
+      const newVolume = Math.max(this.playController.volume - decreaseBy, 0);
+      this.playController.setVolume(newVolume);
+      if (newVolume === 0) {
+        this.playController.pause();
+        this.playController.setVolume(previousVolume);
+        clearInterval(fadeInterval);
+      }
+    }, fadeTickMillis);
+  }
 
   private subscribeToRemoteControlEvents() {
     this._log('Begin receiving remote control events');
