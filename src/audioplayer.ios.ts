@@ -43,9 +43,13 @@ export class AudioPlayer extends CommonAudioPlayer
   constructor() {
     super();
     this.ios = this;
+    this.loadFreeStreamer();
+  }
+
+  private loadFreeStreamer() {
     let config = new FSStreamConfiguration();
     config.cacheEnabled = false;
-    config.maxRetryCount = 3;                         // Retry 3 times
+    config.maxRetryCount = 5;                         // Retry 3 times
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
     config.automaticAudioSessionHandlingEnabled = true;
@@ -76,6 +80,10 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public preparePlaylist(playlist: Playlist) {
+    if (this.playController) {
+      this.release();
+      this.loadFreeStreamer();
+    }
     this.playlist = playlist;
     for (var track of playlist.tracks) {
       this._log('Creating FSPlaylistItem for: '+ track.title);
@@ -195,7 +203,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this._sleepTimer = setInterval(() => {
       this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
       if (this._sleepTimerMillisecsLeft == 0) {
-        this.pause();
+        this.playController.pause();
         clearInterval(this._sleepTimer);
         this._sleepTimer = undefined;
       }
@@ -221,10 +229,10 @@ export class AudioPlayer extends CommonAudioPlayer
     this.unsubscribeFromRemoteControlEvents();
     this.clearNowPlayingInfo();
     this._log('Releasing all resources');
-    setTimeout(() => {
+    // setTimeout(() => {
       this.playController.delegate = null;
       this.playController = null;
-    }, 50);
+    // }, 50);
   }
 
   // ------------------------------------------------------------------------------
