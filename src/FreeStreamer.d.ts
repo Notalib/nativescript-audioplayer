@@ -29,7 +29,7 @@ declare class FSAudioController extends NSObject {
 
 	url: NSURL;
 
-	volume: number;
+	/* readonly */ volume: number;
 
 	constructor();
 
@@ -70,6 +70,8 @@ declare class FSAudioController extends NSObject {
 	removeItemAtIndex(index: number): void;
 
 	replaceItemAtIndexWithItem(index: number, item: FSPlaylistItem): void;
+
+	setVolume(volume: number): void;
 
 	stop(): void;
 }

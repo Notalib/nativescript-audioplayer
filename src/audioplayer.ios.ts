@@ -99,17 +99,19 @@ export class AudioPlayer extends CommonAudioPlayer
     // FIX: Play should resume playback if it was paused.
     if (this.playController.activeStream && this.playController.activeStream.isPaused()) {
       // FreeStreamer's pause is a toggle. This resumes playback.
-      this.playController.pause();
+      this.pause();
     } else {
       this._log('Play');
       this.playController.play();
+      this.resumeSleepTimer();
     }
   }
   
   public pause() {
     if (this.playController.activeStream && !this.playController.activeStream.isPaused()) {
-      this.cancelSleepTimer();
+      this._log('Pause');
       this.playController.pause();
+      this.pauseSleepTimer();
     }
   }
   
@@ -193,16 +195,19 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private _sleepTimer: number;
+  private _sleepTimerPaused: boolean = false;
   private _sleepTimerMillisecsLeft: number = 0;
 
   public setSleepTimer(millisecs: number) {
     this.cancelSleepTimer();
 
-    const countdownTick = 200;
+    const countdownTick = 1000;
     this._sleepTimerMillisecsLeft = millisecs;
     this._sleepTimer = setInterval(() => {
-      this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
-      this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+      if (!this._sleepTimerPaused) {
+        this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
+        this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+      }
       if (this._sleepTimerMillisecsLeft == 0) {
         this.playController.pause();
         clearInterval(this._sleepTimer);
@@ -221,6 +226,18 @@ export class AudioPlayer extends CommonAudioPlayer
       this._sleepTimer = undefined;
       this._sleepTimerMillisecsLeft = 0;
       this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+    }
+  }
+
+  public pauseSleepTimer() {
+    if (this._sleepTimer != undefined) {
+      this._sleepTimerPaused = true;
+    }
+  }
+
+  public resumeSleepTimer() {
+    if (this._sleepTimer != undefined) {
+      this._sleepTimerPaused = false;
     }
   }
   
