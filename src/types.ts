@@ -14,9 +14,11 @@ export class MediaTrack {
 }
 
 export class Playlist {
-  constructor(...tracks: MediaTrack[]) {
+  constructor(UID: string, ...tracks: MediaTrack[]) {
+    this.UID = UID;
     this.tracks = tracks;
   }
+  public UID: string;
   public tracks: MediaTrack[];
   public get length(): number {
     return this.tracks.length;
@@ -29,20 +31,32 @@ export enum PlaybackEvent {
   Playing,
   Paused,
   EndOfTrackReached,
-  EndOfPlaylistReached
+  EndOfPlaylistReached,
+  EncounteredError,
+  TimeChanged,
+  SleepTimerReached,
+  SleepTimerCancelled,
 }
 
 export interface AudioPlayer {
-  message: string;
   playlist: Playlist;
-
-  addToPlaylist(track: MediaTrack): void;
+  /**
+   * Promise which resolves when the AudioPlayer is ready to receive commands.
+   * Mostly useful during startup
+   */
+  isReady: Promise<any>;
+  loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number);
   play(): void;
   pause(): void;
-  stop(fullStop: boolean): void;
+  stop(): void;
   isPlaying(): boolean;
   skipToNext(): void;
   skipToPrevious(): void;
+  /*
+   * Skip to specific playlist index and optionally seek directly to an offset.
+   */
+  skipToPlaylistIndex(playlistIndex: number): void;
+  skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void;
   setRate(rate: number): void;
   getRate(): number;
   getDuration(): number;
@@ -50,20 +64,32 @@ export interface AudioPlayer {
    * Returns offset of the currently played track in miliseconds.
    */
   getCurrentTime(): number;
+  getCurrentPlaylistIndex(): number;
+  getCurrentPlaylistUID(): string;
   /**
    * Seeks to a specific offset in miliseconds of the current track.
-   * Optionally skips to a specific playlist index before seeking.
    */
-  getCurrentPlaylistIndex(): number;
-  seekTo(milisecs: number, playlistIndex?: number): void;
+  seekTo(offset: number): void;
+  /**
+   * Seeks to an offset in miliseconds relative to the current time of the current track.
+   */
+  seekRelative(relativeOffset: number): void;
   setPlaybackEventListener(listener: PlaybackEventListener): void;
+  /**
+   * Sets an inactivity sleep timer.
+   * Automatically cancelled when a new timer is set,
+   * or when playback is manually paused, stopped or reaches end of playlist.
+   */
+  setSleepTimer(millisecs: number);
+  getSleepTimerRemaining(): number;
+  cancelSleepTimer();
   release(): void;
 }
 
 export var AudioPlayer: {
-  new (playlist: Playlist) : AudioPlayer;
+  new() : AudioPlayer;
 }
 
 export interface PlaybackEventListener {
-  onPlaybackEvent(evt: PlaybackEvent): void;
+  onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
 }

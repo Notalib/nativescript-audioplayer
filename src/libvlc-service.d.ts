@@ -33,7 +33,7 @@ declare namespace dk.nota.lyt.libvlc {
     stopService(): void;
     hasMedia(): boolean;
     hasPlaylist(): boolean;
-    setTime(milisecs: number): void;
+    setTime(millisecs: number): void;
     getTime(): number;
     getLength(): number;
     setRate(rate: number): void;
@@ -51,6 +51,12 @@ declare namespace dk.nota.lyt.libvlc {
     removeCallback(callback: PlaybackEventHandler): void;
     removeAllCallbacks(): void;
     restartMediaPlayer(): void;
+    setMediaListIdentifier(identifier: string): void;
+    getMediaListIdentifier(): string;
+    getSleepTimerRemaining(): number;
+    setSleepTimer(millisecs: number): void;
+    cancelSleepTimer(): void;
+    setSleepTimerVolumeFadeDuration(millisecs: number)
   }
   export class PlaybackServiceHelper {
     constructor(context: android.content.Context);
@@ -97,6 +103,8 @@ declare namespace dk.nota.lyt.libvlc {
       static PausableChanged: number;
       static ESAdded: number;
       static ESDeleted: number;
+      static SleepTimerReached: number;
+      static SleepTimerCancelled: number;
       type: number;
       getTimeChanged(): number;
       getPositionChanged(): number;

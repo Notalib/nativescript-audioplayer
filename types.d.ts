@@ -7,9 +7,10 @@ export declare class MediaTrack {
     albumArtUrl: string;
 }
 export declare class Playlist {
-    constructor(...tracks: MediaTrack[]);
+    constructor(UID: string, ...tracks: MediaTrack[]);
+    UID: string;
     tracks: MediaTrack[];
-    length: number;
+    readonly length: number;
 }
 export declare enum PlaybackEvent {
     Stopped = 0,
@@ -18,29 +19,40 @@ export declare enum PlaybackEvent {
     Paused = 3,
     EndOfTrackReached = 4,
     EndOfPlaylistReached = 5,
+    EncounteredError = 6,
+    TimeChanged = 7,
+    SleepTimerReached = 8,
+    SleepTimerCancelled = 9,
 }
 export interface AudioPlayer {
-    message: string;
     playlist: Playlist;
-    addToPlaylist(track: MediaTrack): void;
+    isReady: Promise<any>;
+    loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): any;
     play(): void;
     pause(): void;
-    stop(fullStop: boolean): void;
+    stop(): void;
     isPlaying(): boolean;
     skipToNext(): void;
     skipToPrevious(): void;
+    skipToPlaylistIndex(playlistIndex: number): void;
+    skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void;
     setRate(rate: number): void;
     getRate(): number;
     getDuration(): number;
     getCurrentTime(): number;
     getCurrentPlaylistIndex(): number;
-    seekTo(milisecs: number, playlistIndex?: number): void;
+    getCurrentPlaylistUID(): string;
+    seekTo(offset: number): void;
+    seekRelative(relativeOffset: number): void;
     setPlaybackEventListener(listener: PlaybackEventListener): void;
+    setSleepTimer(millisecs: number): any;
+    getSleepTimerRemaining(): number;
+    cancelSleepTimer(): any;
     release(): void;
 }
 export declare var AudioPlayer: {
-    new (playlist: Playlist): AudioPlayer;
+    new (): AudioPlayer;
 };
 export interface PlaybackEventListener {
-    onPlaybackEvent(evt: PlaybackEvent): void;
+    onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
 }

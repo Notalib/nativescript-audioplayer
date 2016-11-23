@@ -5,8 +5,9 @@
     "removeComments": true,
     "experimentalDecorators": true,
     "noFallthroughCasesInSwitch": true,
+    "noEmitHelpers": true,
     "declaration": true,
-    "sourceMap": true,
+    "inlineSourceMap": true,
     "rootDir": "src",
     "outDir": "."
   },
@@ -15,10 +16,10 @@
     "src/audioplayer.android.ts",
     "src/audioplayer.ios.ts",
     "src/libvlc-service.d.ts",
-    "src/LYTAudioPlayer.d.ts",
-    "demo/node_modules/tns-core-modules/tns-core-modules.d.ts",
-    "demo/node_modules/tns-platform-declarations/android17.d.ts",
-    "demo/node_modules/tns-platform-declarations/ios.d.ts"
+    "src/FreeStreamer.d.ts",
+    "node_modules/tns-core-modules/tns-core-modules.d.ts",
+    "node_modules/tns-platform-declarations/tns-core-modules/android17.d.ts",
+    "node_modules/tns-platform-declarations/tns-core-modules/ios.d.ts"
   ],
   "compileOnSave": false
 }

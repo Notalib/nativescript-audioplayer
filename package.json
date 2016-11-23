@@ -1,44 +1,46 @@
 {
-	"name": "@nota/nativescript-audioplayer",
-	"version": "0.1.4",
-	"description": "Fully featured AudioPlayer for NativeScript. Gapless playlist playback with playbackrate and platform-specific notification and remote controls during playback",
-	"nativescript": {
-		"platforms": {
-			"android": "2.0.0",
-			"ios": "2.0.1"
-		}
-	},
-	"main": "audioplayer.js",
-	"typings": "types.d.ts",
-	"scripts": {
-		"build": "tsc",
-		"demo.ios": "npm run prepdemo && cd demo && tns emulate ios",
-		"demo.android": "npm run prepdemo && cd demo && tns run android",
-		"prepdemo": "npm run build && npm run reload",
-		"reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add .. && tns install",
-		"apk": "cd demo && tns build android --copy-to .",
-		"gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios && cd .. && cp gen-typings-i386/objc!LYTAudioPlayer.d.ts src/LYTAudioPlayer.gen.d.ts"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/dfg-nota/nativescript-audioplayer-plugin.git"
-	},
-	"keywords": [
-		"NativeScript",
-		"JavaScript",
-		"Android",
-		"iOS"
-	],
-	"author": {
-		"name": "Daniel Freiling",
-		"email": "dfg@nota.dk"
-	},
-	"bugs": {
-		"url": "https://github.com/dfg-nota/nativescript-audioplayer-plugin/issues"
-	},
-	"homepage": "https://github.com/dfg-nota/nativescript-audioplayer-plugin",
-	"readmeFilename": "README.md",
-	"devDependencies": {
-		"typescript": "^1.8.10"
-	}
+  "name": "@nota/nativescript-audioplayer",
+  "version": "0.3.5",
+  "description": "Fully featured AudioPlayer for NativeScript. Gapless playlist playback with playbackrate and platform-specific notification and remote controls during playback",
+  "nativescript": {
+    "platforms": {
+      "android": "2.0.0",
+      "ios": "2.0.1"
+    }
+  },
+  "main": "audioplayer.js",
+  "typings": "types.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "demo.ios": "npm run prepdemo && cd demo && tns run ios",
+    "demo.android": "npm run prepdemo && cd demo && tns run android",
+    "prepdemo": "npm run build && npm run reload",
+    "reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add .. && tns install",
+    "apk": "cd demo && tns build android --copy-to .",
+    "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios && cd .. && cp gen-typings-i386/objc!FreeStreamer.d.ts src/FreeStreamer.gen.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfg-nota/nativescript-audioplayer-plugin.git"
+  },
+  "keywords": [
+    "NativeScript",
+    "JavaScript",
+    "Android",
+    "iOS"
+  ],
+  "author": {
+    "name": "Daniel Freiling",
+    "email": "dfg@nota.dk"
+  },
+  "bugs": {
+    "url": "https://github.com/dfg-nota/nativescript-audioplayer-plugin/issues"
+  },
+  "homepage": "https://github.com/dfg-nota/nativescript-audioplayer-plugin",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "typescript": "^2.0.3",
+    "tns-core-modules": "^2.4.0",
+    "tns-platform-declarations": "^2.2.0"
+  }
 }

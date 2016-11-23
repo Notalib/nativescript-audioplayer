@@ -7,40 +7,70 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   
   public android: any;
   public ios: any;
-  public message: string;
   public playlist: Playlist;
-  private _listener: PlaybackEventListener;
 
-  constructor(playlist: Playlist) {
-    this.playlist = playlist;
-    this._log("CommonAudioPlayer created with playlist.length: "+ playlist.tracks.length);
-    this.message = `Your plugin is working on ${app.android ? 'Android' : 'iOS'}.`;
-  }
+  protected _queuedSeekTo: number = null;
+  protected _listener: PlaybackEventListener;
+  public abstract isReady: Promise<any>;
 
-  public abstract addToPlaylist(track: MediaTrack);
+  public abstract preparePlaylist(playlist: Playlist);
   public abstract play();
   public abstract pause();
-  public abstract stop(fullStop: boolean);
+  public abstract stop();
   public abstract isPlaying(): boolean;
   public abstract skipToNext();
   public abstract skipToPrevious();
+  public abstract skipToPlaylistIndex(playlistIndex: number): void;
   public abstract setRate(rate: number);
   public abstract getRate(): number;
   public abstract getDuration(): number;
   public abstract getCurrentTime(): number;
   public abstract getCurrentPlaylistIndex(): number;
-  public abstract seekTo(milisecs: number, playlistIndex?: number);
+  public abstract seekTo(offset: number);
   public abstract release();
+  public abstract setSleepTimer(millisecs: number);
+  public abstract getSleepTimerRemaining(): number;
+  public abstract cancelSleepTimer();
+
+  public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
+    this.preparePlaylist(playlist);
+    if (startIndex && startOffset) {
+      this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
+    } else if (startIndex) {
+      this.skipToPlaylistIndex(startIndex);
+    }
+  }
+
+  public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
+    if (this.getCurrentPlaylistIndex() === playlistIndex) {
+      this.seekTo(offset);
+    } else {
+      if (offset > 0) {
+        this._log(`Set queuedSeek to ${offset}`);
+        this._queuedSeekTo = offset;
+      }
+      this.skipToPlaylistIndex(playlistIndex);
+    }
+  }
+
+  public seekRelative(relativeOffset: number): void {
+    this.seekTo(Math.max(this.getCurrentTime() + relativeOffset, 0));
+  }
 
   public setPlaybackEventListener(listener: PlaybackEventListener) {
     this._listener = listener;
   }
 
-  protected _onPlaybackEvent(evt: PlaybackEvent) {
-    if (this._listener) this._listener.onPlaybackEvent(evt);
+  public getCurrentPlaylistUID(): string {
+    return this.playlist ? this.playlist.UID : null;
+  }
+
+  protected _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
+    if (this._listener) this._listener.onPlaybackEvent(evt, arg);
   }
   
   protected _log(...args: any[]) {
-    console.log('tns-audioplayer: ', ...args);
+    let platform = this.ios ? 'iOS' : 'Android';
+    console.log(`tns-audioplayer(${platform}): `, ...args);
   }
 }

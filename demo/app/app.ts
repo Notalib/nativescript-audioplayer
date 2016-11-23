@@ -60,4 +60,23 @@ application.on(application.uncaughtErrorEvent, function (args) {
     }
 });
 
+
+// var MyAppDelegate = UIResponder.extend({
+//     // Implement a method from UIApplicationDelegate.
+//     // We will obtain the method signature from the protocol.
+//     canBecomeFirstResponder: function() {
+//       return true;
+//     },
+//     applicationDidFinishLaunchingWithOptions: function (application, launchOptions) {
+//       console.log('========== APP LAUNCHED ==========');
+//       this.becomeFirstResponder();
+//     }
+// }, {
+//     // The name for the registered Objective-C class.
+//     name: "MyAppDelegate",
+//     // Declare that the native Objective-C class will implement the UIApplicationDelegate Objective-C protocol.
+//     protocols: [UIApplicationDelegate]
+// });
+
+// application.ios.delegate = MyAppDelegate;
 application.start({ moduleName: 'main-page' });
