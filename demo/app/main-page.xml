@@ -3,6 +3,7 @@
     <Label text="{{ message }}" class="message" textWrap="true"/>
     <Button text="Play" tap="{{ play }}"/>
     <Button text="Pause" tap="{{ pause }}"/>
+    <Button text="Stop" tap="{{ stop }}"/>
     <Button text="Toggle x2" tap="{{ toggleRate }}"/>
     <Button text="Skip Backward" tap="{{ skipToPrevious }}"/>
     <Button text="Skip Forward" tap="{{ skipToNext }}"/>

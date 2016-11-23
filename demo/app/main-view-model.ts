@@ -2,7 +2,7 @@ import {Observable} from 'data/observable';
 import {AudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent} from '@nota/nativescript-audioplayer';
 
 export class HelloWorldModel extends Observable implements PlaybackEventListener {
-  public message: string;
+  public message: string = 'Loading';
   private player: AudioPlayer;
   private rateToggled: boolean = false;
 
@@ -12,7 +12,6 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     this.player.setPlaybackEventListener(this);
     setTimeout(() => {
       this.loadAndSetupPlaylist();
-      this.message = 'Loading';
     }, 1000);
     setInterval(() => {
         if (this.player && this.player.isPlaying()) {
@@ -56,6 +55,11 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   public pause() {
     console.log("pause");
     this.player.pause();
+  }
+
+  public stop() {
+    console.log("stop");
+    this.player.stop();
   }
   
   public toggleRate() {
