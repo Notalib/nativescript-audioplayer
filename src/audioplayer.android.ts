@@ -78,6 +78,9 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public play() {
     if (this._service) {
+      // Ensure callbacks are setup properly,
+      // since service could have been reset during a pause.
+      this.setupServiceCallbacks(this._service);
       this._service.play();
     }
   }
