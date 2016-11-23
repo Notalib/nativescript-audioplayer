@@ -5,8 +5,9 @@
     "removeComments": true,
     "experimentalDecorators": true,
     "noFallthroughCasesInSwitch": true,
+    "noEmitHelpers": true,
     "declaration": true,
-    "sourceMap": true,
+    "inlineSourceMap": true,
     "rootDir": "src",
     "outDir": "."
   },
