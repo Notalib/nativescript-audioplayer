@@ -99,12 +99,13 @@ export class AudioPlayer extends CommonAudioPlayer
     // FIX: Play should resume playback if it was paused.
     if (this.playController.activeStream && this.playController.activeStream.isPaused()) {
       // FreeStreamer's pause is a toggle. This resumes playback.
-      this.pause();
+      this._log('Play (pause toggle)');
+      this.playController.pause();
     } else {
       this._log('Play');
       this.playController.play();
-      this.resumeSleepTimer();
     }
+    this.resumeSleepTimer();
   }
   
   public pause() {
