@@ -192,6 +192,7 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       this._log('seekInternal to\n '+ JSON.stringify(position));
       this.playController.activeStream.seekToPosition(position);
+      this.resumeSleepTimer();
     }
   }
 
