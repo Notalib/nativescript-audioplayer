@@ -5,8 +5,9 @@ import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audiopla
 // TODO: Do all exports in a main.ts instead?
 export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
-// See API Docs for native audio playback framework
-// http://muhku.github.io/FreeStreamer/api/
+// iOS uses the native audio playback framework FreeStreamer
+// API Docs: http://muhku.github.io/FreeStreamer/api/
+// Fork: https://github.com/dfg-nota/FreeStreamer.git
 
 export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioControllerDelegate {
   
@@ -248,11 +249,9 @@ export class AudioPlayer extends CommonAudioPlayer
     this.playController.stop();
     this.unsubscribeFromRemoteControlEvents();
     this.clearNowPlayingInfo();
-    this._log('Releasing all resources');
-    // setTimeout(() => {
-      this.playController.delegate = null;
-      this.playController = null;
-    // }, 50);
+    this._log('Releasing FreeStreamer resources');
+    this.playController.delegate = null;
+    this.playController = null;
   }
 
   // ------------------------------------------------------------------------------
