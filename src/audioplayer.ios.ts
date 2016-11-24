@@ -106,14 +106,12 @@ export class AudioPlayer extends CommonAudioPlayer
       this._log('Play');
       this.playController.play();
     }
-    this.resumeSleepTimer();
   }
   
   public pause() {
     if (this.playController.activeStream && !this.playController.activeStream.isPaused()) {
       this._log('Pause');
       this.playController.pause();
-      this.pauseSleepTimer();
     }
   }
   
@@ -193,7 +191,6 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       this._log('seekInternal to\n '+ JSON.stringify(position));
       this.playController.activeStream.seekToPosition(position);
-      this.resumeSleepTimer();
     }
   }
 
@@ -209,10 +206,14 @@ export class AudioPlayer extends CommonAudioPlayer
     this._sleepTimer = setInterval(() => {
       if (!this._sleepTimerPaused) {
         this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
-        this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+        this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
       }
       if (this._sleepTimerMillisecsLeft == 0) {
-        this.fadeOutVolumeAndPause();
+        // Fade out volume and pause if not already paused.
+        if (this.playController.activeStream
+            && !this.playController.activeStream.isPaused()) {
+          this.fadeOutVolumeAndPause();
+        }
         clearInterval(this._sleepTimer);
         this._sleepTimer = undefined;
       }
@@ -228,7 +229,7 @@ export class AudioPlayer extends CommonAudioPlayer
       clearInterval(this._sleepTimer);
       this._sleepTimer = undefined;
       this._sleepTimerMillisecsLeft = 0;
-      this._listener.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+      this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
     }
   }
 
@@ -266,7 +267,12 @@ export class AudioPlayer extends CommonAudioPlayer
       const newVolume = Math.max(this.playController.volume - decreaseBy, 0);
       this.playController.setVolume(newVolume);
       if (newVolume === 0) {
-        this.playController.pause();
+        if (this.playController.activeStream
+            && !this.playController.activeStream.isPaused()) {
+          // Extra check on paused state,
+          // since a pause() call would resume playing if already paused.
+          this.playController.pause();
+        }
         this.playController.setVolume(previousVolume);
         clearInterval(fadeInterval);
       }
@@ -388,12 +394,14 @@ export class AudioPlayer extends CommonAudioPlayer
           this.seekTo(this._queuedSeekTo);
           this._queuedSeekTo = null;
         }
+        this.resumeSleepTimer();
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPaused: {
         this._log("FreeStreamer: Paused");
         this._onPlaybackEvent(PlaybackEvent.Paused);
         this.updateNowPlayingInfoPositionTracking(true);
+        this.pauseSleepTimer();
         break;
       }
       case FSAudioStreamState.kFsAudioStreamStopped: {
