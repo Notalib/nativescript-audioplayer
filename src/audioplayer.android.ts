@@ -177,7 +177,14 @@ export class AudioPlayer extends CommonAudioPlayer
     }
   }
 
+  setSeekIntervalSeconds(seconds: number) {
+    if (this._service) {
+      this._service.setSeekIntervalSeconds(seconds);
+    }
+  }
+
   release() {
+    this._log('AudioPlayer.release');
     // Do not kill the background service if it is still playing.
     if (this._service && !this._service.isPlaying()) {
       this._log('Stopping PlaybackService');

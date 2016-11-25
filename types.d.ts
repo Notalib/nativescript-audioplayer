@@ -43,6 +43,7 @@ export interface AudioPlayer {
     getCurrentPlaylistUID(): string;
     seekTo(offset: number): void;
     seekRelative(relativeOffset: number): void;
+    setSeekIntervalSeconds(seconds: number): void;
     setPlaybackEventListener(listener: PlaybackEventListener): void;
     setSleepTimer(millisecs: number): any;
     getSleepTimerRemaining(): number;

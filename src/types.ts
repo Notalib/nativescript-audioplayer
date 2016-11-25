@@ -73,6 +73,10 @@ export interface AudioPlayer {
    * Seeks to an offset in miliseconds relative to the current time of the current track.
    */
   seekRelative(relativeOffset: number): void;
+  /**
+   * Sets seek interval. Supports 5, 15, 30 and 60 on Android, any on iOS.
+   */
+  setSeekIntervalSeconds(seconds: number): void;
   setPlaybackEventListener(listener: PlaybackEventListener): void;
   /**
    * Sets an inactivity sleep timer.

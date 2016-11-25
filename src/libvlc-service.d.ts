@@ -58,7 +58,8 @@ declare namespace dk.nota.lyt.libvlc {
     cancelSleepTimer(): void;
     pauseSleepTimer(): void;
     resumeSleepTimer(): void;
-    setSleepTimerVolumeFadeDuration(millisecs: number)
+    setSeekIntervalSeconds(seconds: number);
+    setSleepTimerVolumeFadeDuration(millisecs: number);
   }
   export class PlaybackServiceHelper {
     constructor(context: android.content.Context);

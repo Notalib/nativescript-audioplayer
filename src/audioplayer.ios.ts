@@ -244,6 +244,10 @@ export class AudioPlayer extends CommonAudioPlayer
       this._sleepTimerPaused = false;
     }
   }
+
+  public setSeekIntervalSeconds(seconds: number) {
+    this.seekIntervalSeconds = seconds;
+  }
   
   public release() {
     this.cancelSleepTimer();
