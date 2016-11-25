@@ -45,12 +45,13 @@ export class AudioPlayer extends CommonAudioPlayer
     super();
     this.ios = this;
     this.loadFreeStreamer();
+    this.subscribeToRemoteControlEvents();
   }
 
   private loadFreeStreamer() {
     let config = new FSStreamConfiguration();
     config.cacheEnabled = false;
-    config.maxRetryCount = 5;                         // Retry 3 times
+    config.maxRetryCount = 5;                         // Retry attempts before considering stream failed
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
     config.automaticAudioSessionHandlingEnabled = true;
@@ -73,7 +74,6 @@ export class AudioPlayer extends CommonAudioPlayer
     }
     this._log("FreeStreamer instance retrieved!", this.playController);
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
-    this.subscribeToRemoteControlEvents();
   }
 
   public get isReady(): Promise<any> {
@@ -81,26 +81,29 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public preparePlaylist(playlist: Playlist) {
-    if (this.playController) {
-      this.release();
-      this.loadFreeStreamer();
-    }
+    // NOTE: If we already have a playlist loaded, stop and reload FreeStreamer first.
+    // TODO: Make FreeStreamer support replacing the playlist.
     this.playlist = playlist;
+    const playlistArr: NSMutableArray = NSMutableArray.alloc().init();
     for (var track of playlist.tracks) {
       this._log('Creating FSPlaylistItem for: '+ track.title);
       let item = new FSPlaylistItem();
       item.url = NSURL.URLWithString(track.url);
       item.title = track.title;
       this._log('playController.addItem');
-      this.playController.addItem(item);
+      // this.playController.addItem(item);
+      playlistArr.addObject(item);
     }
+    this.playController.playFromPlaylist(playlistArr);
+    this.playController.stop();
+    this.setupRemoteControlCommands();
   }
   
   public play() {
     // FIX: Play should resume playback if it was paused.
     if (this.playController.activeStream && this.playController.activeStream.isPaused()) {
       // FreeStreamer's pause is a toggle. This resumes playback.
-      this._log('Play (pause toggle)');
+      this._log('Play (unpause)');
       this.playController.pause();
     } else {
       this._log('Play');
@@ -121,7 +124,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public isPlaying(): boolean {
-    return this.playController.isPlaying();
+    return this.playController && this.playController.isPlaying();
   }
   
   public skipToNext() {
@@ -250,10 +253,11 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   public release() {
+    this._log('AudioPlayer.release');
     this.cancelSleepTimer();
     this.playController.stop();
-    this.unsubscribeFromRemoteControlEvents();
     this.clearNowPlayingInfo();
+    this.unsubscribeFromRemoteControlEvents();
     this._log('Releasing FreeStreamer resources');
     this.playController.delegate = null;
     this.playController = null;
@@ -287,29 +291,36 @@ export class AudioPlayer extends CommonAudioPlayer
     this._log('Begin receiving remote control events');
     const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
     app.beginReceivingRemoteControlEvents();
-    
+  }
+
+  private setupRemoteControlCommands() {
     let remoteCommandCenter = MPRemoteCommandCenter.sharedCommandCenter();
+
+    // TODO: Commands crashes app when called after a playlist change 
+
+    // NOTE: iOS RemoteCommandCenter can have a max of 3 commands. Any others won't be shown.
     (<MPSkipIntervalCommand>remoteCommandCenter.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
     remoteCommandCenter.skipBackwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
-      this._log('RemoteControl - Skip Backwards');
+      this._log('RemoteControl - Skip Backward');
       this.seekRelative(this.seekIntervalSeconds * -1000);
       return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
     });
-    remoteCommandCenter.togglePlayPauseCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
-    remoteCommandCenter.playCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
-    remoteCommandCenter.pauseCommand.addTargetWithHandler(this.remoteTogglePlayPauseHandler);
+    remoteCommandCenter.playCommand.addTargetWithHandler(this.remotePlay);
+    remoteCommandCenter.pauseCommand.addTargetWithHandler(this.remotePause);
     (<MPSkipIntervalCommand>remoteCommandCenter.skipForwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
     remoteCommandCenter.skipForwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
       this._log('RemoteControl - Skip Forward');
       this.seekRelative(this.seekIntervalSeconds * 1000);
       return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
     });
-    remoteCommandCenter.changePlaybackRateCommand.enabled = true;
-    remoteCommandCenter.changePlaybackRateCommand.supportedPlaybackRates = <any>this.supportedPlaybackRate;
-    remoteCommandCenter.changePlaybackRateCommand.addTargetWithHandler((evt: MPChangePlaybackRateCommandEvent) => {
-      this._log('RemoteControl - Set playback rate: '+ evt.playbackRate);
-      return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-    });
+    // TODO: Cannot get changePlaybackRateCommand to work :(
+    // remoteCommandCenter.changePlaybackRateCommand.enabled = true;
+    // remoteCommandCenter.changePlaybackRateCommand.supportedPlaybackRates = <any>this.supportedPlaybackRate;
+    // remoteCommandCenter.changePlaybackRateCommand.addTargetWithHandler((evt: MPChangePlaybackRateCommandEvent) => {
+    //   this._log('RemoteControl - Set playback rate: '+ evt.playbackRate);
+    //   return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+    // });
+    // TODO: Would need to be able to set a localized title from the plugin client.
     // remoteCommandCenter.bookmarkCommand.enabled = true;
     // remoteCommandCenter.bookmarkCommand.localizedTitle = "Sæt Bogmærke";
     // remoteCommandCenter.bookmarkCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
@@ -319,17 +330,22 @@ export class AudioPlayer extends CommonAudioPlayer
     // });
   }
 
+  private remotePlay(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
+    this._log('RemoteControl - Play');
+    this.play();
+    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+  }
+
+  private remotePause(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
+    this._log('RemoteControl - Pause');
+    this.pause();
+    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+  }
+
   private unsubscribeFromRemoteControlEvents() {
     this._log('End receiving remote control events');
     const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
     app.endReceivingRemoteControlEvents();
-  }
- 
-  private remoteTogglePlayPauseHandler = (evt: MPRemoteCommandEvent) => {
-    // FreeStreamer's pause() command is already a toggle.
-    this._log('RemoteControl - Toggle play/pause');
-    this.pause();
-    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
   }
 
   private clearNowPlayingInfo() {
