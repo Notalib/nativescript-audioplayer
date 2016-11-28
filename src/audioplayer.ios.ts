@@ -292,47 +292,36 @@ export class AudioPlayer extends CommonAudioPlayer
     }, fadeTickMillis);
   }
 
-  private subscribeToRemoteControlEvents() {
-    this._log('Begin receiving remote control events');
-    const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
-    app.beginReceivingRemoteControlEvents();
+  private setupRemoteControlCommands() {
+    // NOTE: iOS RemoteCommandCenter can have a max of 3 commands. Any others won't be shown.
+    // NOTE: remoteTarget(null) removes all handlers
+    const remote = MPRemoteCommandCenter.sharedCommandCenter();
+
+    remote.skipBackwardCommand.removeTarget(null);
+    (<MPSkipIntervalCommand>remote.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
+    remote.skipBackwardCommand.addTargetWithHandler((evt) => this.remoteSkipBackward(evt));
+
+    remote.playCommand.removeTarget(null);
+    remote.playCommand.addTargetWithHandler((evt) => this.remotePlay(evt));
+
+    remote.pauseCommand.removeTarget(null);
+    remote.pauseCommand.addTargetWithHandler((evt) => this.remotePause(evt));
+
+    remote.skipForwardCommand.removeTarget(null);
+    (<MPSkipIntervalCommand>remote.skipForwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
+    remote.skipForwardCommand.addTargetWithHandler((evt) => this.remoteSkipForward(evt));
   }
 
-  private setupRemoteControlCommands() {
-    let remoteCommandCenter = MPRemoteCommandCenter.sharedCommandCenter();
+  private remoteSkipForward(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
+    this._log('RemoteControl - Skip Forward');
+    this.seekRelative(this.seekIntervalSeconds * 1000);
+    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+  }
 
-    // TODO: Commands crashes app when called after a playlist change 
-
-    // NOTE: iOS RemoteCommandCenter can have a max of 3 commands. Any others won't be shown.
-    (<MPSkipIntervalCommand>remoteCommandCenter.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
-    remoteCommandCenter.skipBackwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
-      this._log('RemoteControl - Skip Backward');
-      this.seekRelative(this.seekIntervalSeconds * -1000);
-      return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-    });
-    remoteCommandCenter.playCommand.addTargetWithHandler(this.remotePlay);
-    remoteCommandCenter.pauseCommand.addTargetWithHandler(this.remotePause);
-    (<MPSkipIntervalCommand>remoteCommandCenter.skipForwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
-    remoteCommandCenter.skipForwardCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
-      this._log('RemoteControl - Skip Forward');
-      this.seekRelative(this.seekIntervalSeconds * 1000);
-      return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-    });
-    // TODO: Cannot get changePlaybackRateCommand to work :(
-    // remoteCommandCenter.changePlaybackRateCommand.enabled = true;
-    // remoteCommandCenter.changePlaybackRateCommand.supportedPlaybackRates = <any>this.supportedPlaybackRate;
-    // remoteCommandCenter.changePlaybackRateCommand.addTargetWithHandler((evt: MPChangePlaybackRateCommandEvent) => {
-    //   this._log('RemoteControl - Set playback rate: '+ evt.playbackRate);
-    //   return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-    // });
-    // TODO: Would need to be able to set a localized title from the plugin client.
-    // remoteCommandCenter.bookmarkCommand.enabled = true;
-    // remoteCommandCenter.bookmarkCommand.localizedTitle = "Sæt Bogmærke";
-    // remoteCommandCenter.bookmarkCommand.addTargetWithHandler((evt: MPRemoteCommandEvent) => {
-    //   let feedback = evt.command as MPFeedbackCommand;
-    //   this._log('RemoteControl - Set bookmark: '+ feedback.active);
-    //   return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-    // });
+  private remoteSkipBackward(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
+    this._log('RemoteControl - Skip Backward');
+    this.seekRelative(this.seekIntervalSeconds * -1000);
+    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
   }
 
   private remotePlay(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
@@ -345,6 +334,12 @@ export class AudioPlayer extends CommonAudioPlayer
     this._log('RemoteControl - Pause');
     this.pause();
     return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+  }
+
+  private subscribeToRemoteControlEvents() {
+    this._log('Begin receiving remote control events');
+    const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+    app.beginReceivingRemoteControlEvents();
   }
 
   private unsubscribeFromRemoteControlEvents() {
