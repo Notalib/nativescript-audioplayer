@@ -10,21 +10,22 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     super();
     this.player = new AudioPlayer();
     this.player.setPlaybackEventListener(this);
+    this.player.setSeekIntervalSeconds(30);
     setTimeout(() => {
       this.loadAndSetupPlaylist();
     }, 1000);
     setInterval(() => {
-        if (this.player && this.player.isPlaying()) {
-            console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
-        }
+      if (this.player && this.player.isPlaying()) {
+        console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
+      }
     }, 1000);
   }
 
   public loadAndSetupPlaylist() {
     const playlistUID = "UID_12345";
-    if (this.player.getCurrentPlaylistUID() == playlistUID) {
-      console.log('Player already has playlist: '+ this.player.getCurrentPlaylistUID());
-    } else {
+    // if (this.player.getCurrentPlaylistUID() == playlistUID) {
+    //   console.log('Player already has playlist: '+ this.player.getCurrentPlaylistUID());
+    // } else {
       console.log('Loading new playlist. Old UID: '+ this.player.getCurrentPlaylistUID());
       const playlist = new Playlist(playlistUID,
         new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
@@ -37,8 +38,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
         new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
       );
       this.player.loadPlaylist(playlist);
-      this.player.setPlaybackEventListener(this);
-    }
+    // }
       // "http://www.noiseaddicts.com/samples_1w72b820/4357.mp3",
       // "http://www.noiseaddicts.com/samples_1w72b820/3816.mp3"]);
     // this.player.addToPlaylist([
@@ -96,10 +96,10 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public reload() {
-    this.player.release();
+    // this.player.release();
     setTimeout(() => {
-      this.player = new AudioPlayer();
-      this.player.setPlaybackEventListener(this);
+      // this.player = new AudioPlayer();
+      // this.player.setPlaybackEventListener(this);
       this.player.isReady.then(() => {
         this.loadAndSetupPlaylist();
       });
@@ -111,9 +111,10 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {
-    if (evt !== PlaybackEvent.TimeChanged)
-      console.log('Playback event received: '+ PlaybackEvent[evt]);
     if (evt == PlaybackEvent.SleepTimerChanged)
       console.log('SleepTimerChanged: '+ this.player.getSleepTimerRemaining());
+    else if (evt !== PlaybackEvent.TimeChanged)
+      console.log('Playback event received: '+ PlaybackEvent[evt]);
+    
   }
 }
