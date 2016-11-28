@@ -82,21 +82,19 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public preparePlaylist(playlist: Playlist) {
-    // NOTE: If we already have a playlist loaded, stop and reload FreeStreamer first.
-    // TODO: Make FreeStreamer support replacing the playlist.
+    if (this.playController) {
+      this._log('Reloading FreeStreamer before new playlist...');
+      this.reloadFreeStreamer();
+    }
     this.playlist = playlist;
-    const playlistArr: NSMutableArray = NSMutableArray.alloc().init();
     for (var track of playlist.tracks) {
       this._log('Creating FSPlaylistItem for: '+ track.title);
-      let item = new FSPlaylistItem();
+      const item = new FSPlaylistItem();
       item.url = NSURL.URLWithString(track.url);
       item.title = track.title;
       this._log('playController.addItem');
-      // this.playController.addItem(item);
-      playlistArr.addObject(item);
+      this.playController.addItem(item);
     }
-    this.playController.playFromPlaylist(playlistArr);
-    this.playController.stop();
     this.setupRemoteControlCommands();
   }
   
@@ -256,8 +254,7 @@ export class AudioPlayer extends CommonAudioPlayer
   
   public release() {
     this._log('AudioPlayer.release');
-    this.cancelSleepTimer();
-    this.playController.stop();
+    this.stop();
     this.clearNowPlayingInfo();
     this.unsubscribeFromRemoteControlEvents();
     this._log('Releasing FreeStreamer resources');
@@ -267,6 +264,12 @@ export class AudioPlayer extends CommonAudioPlayer
 
   // ------------------------------------------------------------------------------
   // Internal helpers and event handlers
+
+  private reloadFreeStreamer() {
+    this.stop();
+    this.clearNowPlayingInfo();
+    this.loadFreeStreamer();
+  }
 
   private fadeOutVolumeAndPause(): void {
     const fadeTickMillis = 250.0;
