@@ -55,7 +55,7 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   }
 
   public seekRelative(relativeOffset: number): void {
-    this.seekTo(Math.max(this.getCurrentTime() + relativeOffset, 0));
+    this.seekTo(Math.min(this.getDuration(), Math.max(0, this.getCurrentTime() + relativeOffset)));
   }
 
   public setPlaybackEventListener(listener: PlaybackEventListener) {
@@ -70,8 +70,8 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
     if (this._listener) this._listener.onPlaybackEvent(evt, arg);
   }
   
-  protected _log(...args: any[]) {
+  protected _log(logStr: string) {
     let platform = this.ios ? 'iOS' : 'Android';
-    console.log(`tns-audioplayer(${platform}): `, ...args);
+    console.log(`tns-audioplayer(${platform}): ${logStr}`);
   }
 }
