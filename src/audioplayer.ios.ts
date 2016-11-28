@@ -208,7 +208,7 @@ export class AudioPlayer extends CommonAudioPlayer
     const countdownTick = 1000;
     this._sleepTimerMillisecsLeft = millisecs;
     this._sleepTimer = setInterval(() => {
-      if (!this._sleepTimerPaused) {
+      if (!this._sleepTimerPaused && this.isPlaying()) {
         this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
         this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
       }
@@ -222,6 +222,7 @@ export class AudioPlayer extends CommonAudioPlayer
         this._sleepTimer = undefined;
       }
     }, countdownTick);
+    this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
   }
 
   public getSleepTimerRemaining(): number {
