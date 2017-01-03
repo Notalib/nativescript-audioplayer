@@ -203,13 +203,13 @@ export class AudioPlayer extends CommonAudioPlayer
         // this._log('progress');
       },
       onMediaEvent: (event: lyt.media.MediaEvent) => {
-        this._log('mediaEvent: '+ event.type);
+        // this._log('mediaEvent: '+ event.type);
         if (event.type == lyt.media.MediaEvent.MetaChanged) {
-          this._log('^ MetaChanged ==');
+          // this._log('^ MetaChanged ==');
         } else if (event.type == lyt.media.MediaEvent.ParsedChanged) {
-          this._log('^ ParsedChanged ==');
+          // this._log('^ ParsedChanged ==');
         } else if (event.type == lyt.media.MediaEvent.StateChanged) {
-          this._log('^ StateChanged ==');
+          // this._log('^ StateChanged ==');
         }
       },
       onMediaPlayerEvent: (event: PlayerEvent) => {
