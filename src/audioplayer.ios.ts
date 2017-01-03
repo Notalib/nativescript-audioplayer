@@ -250,6 +250,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public setSeekIntervalSeconds(seconds: number) {
     this.seekIntervalSeconds = seconds;
+    this.setupRemoteControlCommands();
   }
   
   public release() {
@@ -294,7 +295,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private setupRemoteControlCommands() {
     // NOTE: iOS RemoteCommandCenter can have a max of 3 commands. Any others won't be shown.
-    // NOTE: remoteTarget(null) removes all handlers
+    // NOTE: removeTarget(null) removes all registered handlers
     const remote = MPRemoteCommandCenter.sharedCommandCenter();
 
     remote.skipBackwardCommand.removeTarget(null);
