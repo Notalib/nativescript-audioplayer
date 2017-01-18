@@ -7,7 +7,7 @@ export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
 // iOS uses the native audio playback framework FreeStreamer
 // API Docs: http://muhku.github.io/FreeStreamer/api/
-// Fork: https://github.com/dfg-nota/FreeStreamer.git
+// Fork: https://github.com/ddfreiling/FreeStreamer.git
 
 export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioControllerDelegate {
   
