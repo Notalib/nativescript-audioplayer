@@ -281,10 +281,12 @@ export class AudioPlayer extends CommonAudioPlayer
       const newVolume = Math.max(this.playController.volume - decreaseBy, 0);
       this.playController.setVolume(newVolume);
       if (newVolume === 0) {
+        this._log(`FreeStreamer: Volume faded out!`);
         if (this.playController.activeStream
             && !this.playController.activeStream.isPaused()) {
           // Extra check on paused state,
           // since a pause() call would resume playing if already paused.
+          this._log(`FreeStreamer: Volume faded out, now pausing!`);
           this.playController.pause();
         }
         this.playController.setVolume(previousVolume);
@@ -391,8 +393,12 @@ export class AudioPlayer extends CommonAudioPlayer
     return NSURL.URLWithString(urlString);
   }
 
-  private getCurrentMediaTrack() {
+  private getCurrentMediaTrack(): MediaTrack {
     return this.playlist.tracks[this.getCurrentPlaylistIndex()];
+  }
+
+  private currentMediaTrackIsLocalFile(): boolean {
+    return this.getCurrentMediaTrack().url.substr(0, 4).toLowerCase() !== 'http';
   }
   
   private didChangeState(toState: FSAudioStreamState) {
@@ -405,15 +411,28 @@ export class AudioPlayer extends CommonAudioPlayer
       case FSAudioStreamState.kFsAudioStreamPlaying: {
         this._log('FreeStreamer: Playing');
         // Update playback rate on newly started tracks
-        if (this.getRate() != this._playbackRate && this.playController.activeStream) {
-          this.playController.activeStream.setPlayRate(this._playbackRate);
-        }
+        setTimeout(() => {
+          if (this.getRate() != this._playbackRate && this.playController.activeStream) {
+              this.playController.activeStream.setPlayRate(this._playbackRate);
+          }
+        }, 25);
         this._onPlaybackEvent(PlaybackEvent.Playing);
         this.setNowPlayingInfo();
         if (this._queuedSeekTo !== null) {
-          this._log('FreeStreamer: Queue Seek to '+ this._queuedSeekTo);
-          this.seekTo(this._queuedSeekTo);
-          this._queuedSeekTo = null;
+          if (this.currentMediaTrackIsLocalFile()) {
+            this._log(`FreeStreamer: Queued Seek to ${this._queuedSeekTo} (delayed)`);
+            this.playController.setVolume(0);
+            setTimeout(() => {
+              this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo + ' (now!)');
+              this.seekTo(this._queuedSeekTo);
+              this.playController.setVolume(1);
+              this._queuedSeekTo = null;
+            }, 50);
+          } else {
+            this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo);
+            this.seekTo(this._queuedSeekTo);
+            this._queuedSeekTo = null;
+          }
         }
         this.resumeSleepTimer();
         break;
