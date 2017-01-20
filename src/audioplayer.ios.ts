@@ -64,7 +64,11 @@ export class AudioPlayer extends CommonAudioPlayer
     this.playController = FSAudioController.alloc().init() as FSAudioController;
     this.playController.configuration = config;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
-      this.didChangeState(state);
+      try {
+        this.onFreeStreamerStateChange(state);
+      } catch (ex) {
+        this._log(`Error while updating audioplayer state`)
+      }
     }
     this.playController.onMetaDataAvailable = (meta: NSDictionary) => {
       this._log('FreeStreamer: metadata received...');
@@ -362,9 +366,15 @@ export class AudioPlayer extends CommonAudioPlayer
       return;
     }
     const playingInfo = NSMutableDictionary.alloc().init();
-    playingInfo.setObjectForKey(currentTrack.title, MPMediaItemPropertyTitle);
-    playingInfo.setObjectForKey(currentTrack.artist, MPMediaItemPropertyArtist);
-    playingInfo.setObjectForKey(currentTrack.album, MPMediaItemPropertyAlbumTitle);
+    if (currentTrack.title) {
+        playingInfo.setObjectForKey(currentTrack.title, MPMediaItemPropertyTitle);
+    }
+    if (currentTrack.artist) {
+        playingInfo.setObjectForKey(currentTrack.artist, MPMediaItemPropertyArtist);
+    }
+    if (currentTrack.album) {
+        playingInfo.setObjectForKey(currentTrack.album, MPMediaItemPropertyAlbumTitle);
+    }
     playingInfo.setObjectForKey(this.getCurrentPlaylistIndex(), MPNowPlayingInfoPropertyChapterNumber);
     playingInfo.setObjectForKey(this.playlist.tracks.length, MPNowPlayingInfoPropertyChapterCount);
     playingInfo.setObjectForKey(this.isPlaying() ? this.getRate() : 0, MPNowPlayingInfoPropertyPlaybackRate);
@@ -400,8 +410,8 @@ export class AudioPlayer extends CommonAudioPlayer
   private currentMediaTrackIsLocalFile(): boolean {
     return this.getCurrentMediaTrack().url.substr(0, 4).toLowerCase() !== 'http';
   }
-  
-  private didChangeState(toState: FSAudioStreamState) {
+
+  private onFreeStreamerStateChange(toState: FSAudioStreamState) {
     switch(toState) {
       case FSAudioStreamState.kFsAudioStreamBuffering:
       case FSAudioStreamState.kFsAudioStreamSeeking: {
