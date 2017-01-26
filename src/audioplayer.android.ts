@@ -58,6 +58,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public preparePlaylist(playlist: Playlist): void {
     if (this._service) {
+      this._service.stopPlayback();
       // Ensure callbacks are setup properly.
       this.setupServiceCallbacks(this._service);
       this.playlist = playlist;
