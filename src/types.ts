@@ -35,6 +35,18 @@ export enum PlaybackEvent {
   EncounteredError,
   TimeChanged,
   SleepTimerChanged,
+  NetworkStreamingError,
+}
+
+export interface Config {
+  /**
+   * Max number of retry attempts before considering streaming failed
+   */
+  maxNetworkRetryCount: number;
+  /**
+   * Required number of seconds buffered before starting playback
+   */
+  requiredPrebufferSizeInSeconds: number;
 }
 
 export interface AudioPlayer {

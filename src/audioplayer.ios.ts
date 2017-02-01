@@ -67,17 +67,17 @@ export class AudioPlayer extends CommonAudioPlayer
       try {
         this.onFreeStreamerStateChange(state);
       } catch (ex) {
-        this._log(`Error while updating audioplayer state`)
+        this._log(`FreeStreamer: Error while updating audioplayer state`);
       }
     }
     this.playController.onMetaDataAvailable = (meta: NSDictionary) => {
-      this._log('FreeStreamer: metadata received...');
+      this._log('FreeStreamer.onMetaDataAvailable');
       //this._log('FreeStreamer: metadata received '+ JSON.stringify(Object.keys(meta)));
     }
     this.playController.onFailure = (errorType: FSAudioStreamError, errorText: string) => {
-      this._log('FreeStreamer: FAILURE! '+ errorText);
+      this._log(`FreeStreamer.onFailure: (${errorType}) ${errorText}`);
     }
-    this._log('FreeStreamer instance succesfully created.');
+    this._log('FreeStreamer instance created.');
     this.playController.delegate = new FSAudioControllerDelegateImpl().withForwardingTo(this);
   }
 
@@ -270,6 +270,11 @@ export class AudioPlayer extends CommonAudioPlayer
   // ------------------------------------------------------------------------------
   // Internal helpers and event handlers
 
+  private onNetworkStreamingFailed() {
+    this._log(`FreeStreamer - onNetworkStreamingFailed`);
+    this._onPlaybackEvent(PlaybackEvent.NetworkStreamingError);
+  }
+
   private reloadFreeStreamer() {
     this.stop();
     this.clearNowPlayingInfo();
@@ -460,7 +465,7 @@ export class AudioPlayer extends CommonAudioPlayer
         break;
       }
       case FSAudioStreamState.kFSAudioStreamEndOfFile: {
-        this._log('FreeStreamer: Stream fully buffered');
+        this._log('FreeStreamer: EndOfFile (Fully Buffered)');
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPlaybackCompleted: {
@@ -475,10 +480,17 @@ export class AudioPlayer extends CommonAudioPlayer
         }
         break;
       }
-      case FSAudioStreamState.kFsAudioStreamFailed:
-      case FSAudioStreamState.kFsAudioStreamRetryingFailed: {
+      case FSAudioStreamState.kFsAudioStreamFailed: {
         this._log('FreeStreamer: StreamFailed');
         this._onPlaybackEvent(PlaybackEvent.EncounteredError);
+        if (this.playController.configuration.maxRetryCount === 0) {
+          this.onNetworkStreamingFailed();
+        }
+        break;
+      }
+      case FSAudioStreamState.kFsAudioStreamRetryingFailed: {
+        this._log('FreeStreamer: StreamRetryingFailed');
+        this.onNetworkStreamingFailed();
         break;
       }
       default: {

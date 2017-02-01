@@ -22,6 +22,11 @@ export declare enum PlaybackEvent {
     EncounteredError = 6,
     TimeChanged = 7,
     SleepTimerChanged = 8,
+    NetworkStreamingError = 9,
+}
+export interface Config {
+    maxNetworkRetryCount: number;
+    requiredPrebufferSizeInSeconds: number;
 }
 export interface AudioPlayer {
     playlist: Playlist;
