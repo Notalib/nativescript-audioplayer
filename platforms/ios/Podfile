@@ -1,1 +1,1 @@
-pod 'FreeStreamer', :git => 'https://github.com/dfg-nota/FreeStreamer.git', :branch => 'master'
+pod 'FreeStreamer', :git => 'https://github.com/dfg-nota/FreeStreamer.git', :branch => 'retry-fix'
