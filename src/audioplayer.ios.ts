@@ -294,7 +294,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private onNetworkStreamingFailed() {
     this._log(`FreeStreamer - onNetworkStreamingFailed`);
-    this._onPlaybackEvent(PlaybackEvent.NetworkStreamingError);
+    this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
   }
 
   private reloadFreeStreamer() {

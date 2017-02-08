@@ -27,7 +27,7 @@ export class Playlist {
 
 export enum PlaybackEvent {
   Stopped,
-  Opening,
+  Buffering,
   Playing,
   Paused,
   EndOfTrackReached,
@@ -35,7 +35,7 @@ export enum PlaybackEvent {
   EncounteredError,
   TimeChanged,
   SleepTimerChanged,
-  NetworkStreamingError,
+  WaitingForNetwork,
 }
 
 export interface Config {

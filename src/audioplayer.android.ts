@@ -216,7 +216,6 @@ export class AudioPlayer extends CommonAudioPlayer
       onMediaPlayerEvent: (event: PlayerEvent) => {
         //TODO: Simplify: VLCToClientEventMap
         if (event.type == PlayerEvent.SeekableChanged) {
-          //this._log('^ SeekableChanged ==');
           if (event.getSeekable() == true && this._queuedSeekTo !== null) {
             this._log('Executing queued SeekTo: '+ this._queuedSeekTo);
             this.seekTo(this._queuedSeekTo);
@@ -227,7 +226,7 @@ export class AudioPlayer extends CommonAudioPlayer
           this._onPlaybackEvent(PlaybackEvent.TimeChanged, event.getTimeChanged());
         } else if (event.type == PlayerEvent.MediaChanged) {
         } else if (event.type == PlayerEvent.Opening) {
-          this._onPlaybackEvent(PlaybackEvent.Opening);
+          this._onPlaybackEvent(PlaybackEvent.Buffering);
         } else if (event.type == PlayerEvent.Playing) {
           this._onPlaybackEvent(PlaybackEvent.Playing);
         } else if (event.type == PlayerEvent.Paused) {
@@ -241,12 +240,17 @@ export class AudioPlayer extends CommonAudioPlayer
           }
         } else if (event.type == PlayerEvent.SleepTimerChanged) {
           this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+        } else if (event.type == PlayerEvent.WaitingForNetwork) {
+          this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
+        } else if (event.type == PlayerEvent.Buffering) {
+          // This only tells % of the buffer-size required to start playback
+          //this._onPlaybackEvent(PlaybackEvent.Buffering, event.getBuffering());
         } else if (event.type == PlayerEvent.EncounteredError) {
           this._log('== Playback ERROR ==');
           this._onPlaybackEvent(PlaybackEvent.EncounteredError);
           //throw new Error("Android PlaybackService encountered an error");
         } else {
-          //this._log('^ Unhandled PlayerEvent: '+ event.type);
+          this._log('^ Unhandled PlayerEvent: '+ event.type);
         }
       }
     });

@@ -14,7 +14,7 @@ export declare class Playlist {
 }
 export declare enum PlaybackEvent {
     Stopped = 0,
-    Opening = 1,
+    Buffering = 1,
     Playing = 2,
     Paused = 3,
     EndOfTrackReached = 4,
@@ -22,7 +22,7 @@ export declare enum PlaybackEvent {
     EncounteredError = 6,
     TimeChanged = 7,
     SleepTimerChanged = 8,
-    NetworkStreamingError = 9,
+    WaitingForNetwork = 9,
 }
 export interface Config {
     maxNetworkRetryCount: number;
