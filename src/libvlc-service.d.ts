@@ -96,6 +96,7 @@ declare namespace dk.nota.lyt.libvlc {
     export class MediaPlayerEvent {
       static MediaChanged: number;
       static Opening: number;
+      static Buffering: number;
       static Playing: number;
       static Paused: number;
       static Stopped: number;
@@ -107,11 +108,13 @@ declare namespace dk.nota.lyt.libvlc {
       static ESAdded: number;
       static ESDeleted: number;
       static SleepTimerChanged: number;
+      static WaitingForNetwork: number;
       type: number;
       getTimeChanged(): number;
       getPositionChanged(): number;
       getPausable(): boolean;
       getSeekable(): boolean;
+      getBuffering(): number;
     }
   }
 }
