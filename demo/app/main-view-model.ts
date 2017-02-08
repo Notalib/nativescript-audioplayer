@@ -28,7 +28,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     // } else {
       console.log('Loading new playlist. Old UID: '+ this.player.getCurrentPlaylistUID());
       const playlist = new Playlist(playlistUID,
-        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
+        // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
         new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
         new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
         new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
@@ -96,18 +96,44 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public reload() {
-    // this.player.release();
-    setTimeout(() => {
-      // this.player = new AudioPlayer();
-      // this.player.setPlaybackEventListener(this);
-      this.player.isReady.then(() => {
-        this.loadAndSetupPlaylist();
-      });
-    }, 500);
+    this.player.setSeekIntervalSeconds(60);
   }
 
   public logDuration() {
     console.log('duration: '+ this.player.getDuration());
+  }
+
+  public doOne() {
+    const playlist = new Playlist('1',
+      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
+      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
+    );
+    this.player.loadPlaylist(playlist, 1, 10000);
+  }
+
+  public doTwo() {
+    const playlist = new Playlist('2',
+      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
+      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
+    );
+    this.player.loadPlaylist(playlist, 1, 10000);
+  }
+
+  public doThree() {
+    const playlist = new Playlist('3',
+      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
+      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
+    );
+    this.player.loadPlaylist(playlist, 1, 10000);
+  }
+
+  public seekFix() {
+    let seekTo = this.player.getCurrentTime() - 10;
+    console.log('demo - seekTo '+ seekTo);
+    this.player.seekTo(Math.min(seekTo, this.player.getDuration()));
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {
@@ -115,6 +141,5 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
       console.log('SleepTimerChanged: '+ this.player.getSleepTimerRemaining());
     else if (evt !== PlaybackEvent.TimeChanged)
       console.log('Playback event received: '+ PlaybackEvent[evt]);
-    
   }
 }

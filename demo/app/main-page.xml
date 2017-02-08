@@ -7,9 +7,9 @@
     <Button text="Toggle x2" tap="{{ toggleRate }}"/>
     <Button text="Skip Backward" tap="{{ skipToPrevious }}"/>
     <Button text="Skip Forward" tap="{{ skipToNext }}"/>
-    <Button text="Seek Specific" tap="{{ seekSpecific }}"/>
-    <Button text="Sleep(5)" tap="{{ sleep }}"/>
-    <Button text="CancelSleep" tap="{{ cancelSleep }}"/>
-    <Button text="Reload" tap="{{ reload }}"/>
+    <Button text="Seek Fix" tap="{{ seekFix }}"/>
+    <Button text="1" tap="{{ doOne }}"/>
+    <Button text="2" tap="{{ doTwo }}"/>
+    <Button text="3" tap="{{ doThree }}"/>
   </StackLayout>
 </Page>

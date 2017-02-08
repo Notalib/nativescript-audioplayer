@@ -3,11 +3,11 @@
   "version": "0.0.3",
   "nativescript": {
     "id": "dk.nota.nativescipt.audioplayer.demo",
-    "tns-ios": {
-      "version": "2.4.0"
-    },
     "tns-android": {
       "version": "2.4.1"
+    },
+    "tns-ios": {
+      "version": "2.4.0"
     }
   },
   "dependencies": {
