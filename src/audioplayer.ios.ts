@@ -1,4 +1,5 @@
 import * as utils from 'utils/utils';
+import * as application from 'application';
 
 import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
@@ -14,9 +15,9 @@ export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioCo
   public static ObjCProtocols = [ FSAudioControllerDelegate ]
   private audioPlayer: AudioPlayer;
   
-  public init(): FSAudioControllerDelegateImpl {
+  public init() {
     var self = super.init();
-    return self as FSAudioControllerDelegateImpl;
+    return self;
   }
   
   public withForwardingTo(player: AudioPlayer): FSAudioControllerDelegateImpl {
@@ -38,14 +39,17 @@ export class AudioPlayer extends CommonAudioPlayer
 {
   public playController: FSAudioController;
   public seekIntervalSeconds: number = 15;
+
   private _playbackRate: number = 1;
+  private _hasLoadedFreeStreamer = false;
+  private _routeChangeObs;
 
   constructor() {
     super();
+    this._log('init');
     this.ios = this;
-    this.loadFreeStreamer();
     this.subscribeToRemoteControlEvents();
-    this.setupRemoteControlCommands();
+    this.subscribeToAudioRouteChanges();
   }
 
   private loadFreeStreamer() {
@@ -54,15 +58,17 @@ export class AudioPlayer extends CommonAudioPlayer
     config.maxRetryCount = 3;                         // Retry attempts before considering stream failed
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
-    config.automaticAudioSessionHandlingEnabled = true;
+    config.automaticAudioSessionHandlingEnabled = false;
     config.httpConnectionBufferSize = 1024 * 64;      // 64 kB. bufferSize should match this.
     config.bufferSize = 1024 * 64;
     config.maxPrebufferedByteCount = 100000000;       // Max 100mb cache ahead. TODO: Time based maxBuffer
     config.requiredPrebufferSizeInSeconds = 5;        // Prebuffer 5 seconds before starting playback.
     //config.predefinedHttpHeaderValues               // Could be used to set auth headers
 
-    this.playController = FSAudioController.alloc().init() as FSAudioController;
+    this.playController = new FSAudioController();
     this.playController.configuration = config;
+    this.playController.enableDebugOutput = true;
+    this.playController.automaticAudioSessionHandlingEnabled = false;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
       try {
         this.onFreeStreamerStateChange(state);
@@ -86,10 +92,13 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public preparePlaylist(playlist: Playlist) {
-    if (this.playController) {
+    this._log('preparePlaylist');
+    if (!this._hasLoadedFreeStreamer || this.playController) {
       this._log('Reloading FreeStreamer before new playlist...');
       this.reloadFreeStreamer();
+      this._hasLoadedFreeStreamer = true;
     }
+    this.setupRemoteControlCommands();
     this.playlist = playlist;
     for (var track of playlist.tracks) {
       this._log('Creating FSPlaylistItem for: '+ track.title);
@@ -99,7 +108,6 @@ export class AudioPlayer extends CommonAudioPlayer
       this._log('playController.addItem');
       this.playController.addItem(item);
     }
-    this.setupRemoteControlCommands();
   }
   
   public play() {
@@ -115,15 +123,18 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   public pause() {
-    if (this.playController.activeStream && !this.playController.activeStream.isPaused()) {
-      this._log('Pause');
+    this._log('Pause');
+    if (this.playController && this.playController.activeStream && !this.playController.activeStream.isPaused()) {
       this.playController.pause();
     }
   }
   
   public stop() {
+    this._log('Stop');
     this.cancelSleepTimer();
-    this.playController.stop();
+    if (this.playController) {
+      this.playController.stop();
+    }
   }
 
   public isPlaying(): boolean {
@@ -131,22 +142,28 @@ export class AudioPlayer extends CommonAudioPlayer
   }
   
   public skipToNext() {
-    if (this.playController.hasNextItem()) {
+    this._log('skipToNext');
+    if (this.playController && this.playController.hasNextItem()) {
       this.playController.playNextItem();
     }
   }
   
   public skipToPrevious() {
-    if (this.playController.hasPreviousItem()) {
+    this._log('skipToPrevious');
+    if (this.playController && this.playController.hasPreviousItem()) {
       this.playController.playPreviousItem();
     }
   }
 
   public skipToPlaylistIndex(playlistIndex: number) {
+    this._log('skipToPlaylistIndex: '+ playlistIndex);
+    if (this.playController) {
       this.playController.playItemAtIndex(playlistIndex);
+    }
   }
   
   public setRate(rate: number) {
+    this._log('setRate: '+ rate);
     this._playbackRate = rate;
     // If we're currently playing
     if (this.getRate() !== rate && this.isPlaying()) {
@@ -167,13 +184,13 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public getDuration(): number {
-    if (this.playController.activeStream) {
+    if (this.playController && this.playController.activeStream) {
       return Math.floor(this.playController.activeStream.duration.playbackTimeInSeconds * 1000);
     }
   }
 
   public getCurrentTime(): number {
-    if (this.playController.activeStream) {
+    if (this.playController && this.playController.activeStream) {
       // Math.max because FreeStreamer can return negative playbackTime at beginning of playback.
       return Math.max(Math.floor(this.playController.activeStream.currentTimePlayed.playbackTimeInSeconds * 1000), 0);
     }
@@ -185,7 +202,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   public seekTo(offset: number) {
     // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
-    if (this.playController.activeStream) {
+    if (this.playController && this.playController.activeStream) {
       const knownDuration = this.getDuration();
       // In FreeStreamer if position (0-1 of full duration) is over 0 it is used, else it uses the less accurate minute/second variables.
       const seekToSeconds: number = +(offset / 1000).toFixed(3);
@@ -232,6 +249,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public cancelSleepTimer() {
+    this._log('cancelSleepTimer');
     if (this._sleepTimer != undefined) {
       clearInterval(this._sleepTimer);
       this._sleepTimer = undefined;
@@ -241,27 +259,31 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public pauseSleepTimer() {
+    this._log('pauseSleepTimer');
     if (this._sleepTimer != undefined) {
       this._sleepTimerPaused = true;
     }
   }
 
   public resumeSleepTimer() {
+    this._log('resumeSleepTimer');
     if (this._sleepTimer != undefined) {
       this._sleepTimerPaused = false;
     }
   }
 
   public setSeekIntervalSeconds(seconds: number) {
+    this._log('setSeekIntervalSeconds: '+ seconds);
     this.seekIntervalSeconds = seconds;
     this.setupRemoteControlCommands();
   }
   
   public release() {
-    this._log('AudioPlayer.release');
+    this._log('release');
     this.stop();
     this.clearNowPlayingInfo();
     this.unsubscribeFromRemoteControlEvents();
+    this.unsubscribeFromAudioRouteChanges();
     this._log('Releasing FreeStreamer resources');
     this.playController.delegate = null;
     this.playController = null;
@@ -276,6 +298,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private reloadFreeStreamer() {
+    this._log('reloadFreeStreamer');
     this.stop();
     this.clearNowPlayingInfo();
     this.loadFreeStreamer();
@@ -360,6 +383,27 @@ export class AudioPlayer extends CommonAudioPlayer
     app.endReceivingRemoteControlEvents();
   }
 
+  private subscribeToAudioRouteChanges() {
+    this._routeChangeObs = application.ios.addNotificationObserver(AVAudioSessionRouteChangeNotification, (notification: any) => {
+      const userInfo: NSDictionary = notification.userInfo;
+      const routeChangeReason: number = userInfo.objectForKey(AVAudioSessionRouteChangeReasonKey);
+      const previousRoute = userInfo.objectForKey(AVAudioSessionRouteChangePreviousRouteKey);
+      this._log('AVAudioSession -> RouteChange reason: '+ routeChangeReason);
+      // Check if headphones are unplugged (speakers cannot become unavailable)
+      if (routeChangeReason === AVAudioSessionRouteChangeReason.AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {
+        // FIX: callback not on main thread, execute pause in a resolved promise instead
+        // see https://github.com/Nativescript/Nativescript/issues/1673
+        Promise.resolve().then(() => {
+          this.pause();
+        });
+      }
+    });
+  }
+
+  private unsubscribeFromAudioRouteChanges() {
+    application.ios.removeNotificationObserver(this._routeChangeObs, AVAudioSessionRouteChangeNotification);
+  }
+
   private clearNowPlayingInfo() {
     this._log('Clear NowPlaying Info');
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = null;
@@ -416,15 +460,40 @@ export class AudioPlayer extends CommonAudioPlayer
     return this.getCurrentMediaTrack().url.substr(0, 4).toLowerCase() !== 'http';
   }
 
+  private get AVAudioSession() {
+    return utils.ios.getter(AVAudioSession, AVAudioSession.sharedInstance);
+  }
+
+  private audioSessionSetActive(active: boolean): boolean {
+    try {
+      let result;
+      if (active) {
+        result = 
+          this.AVAudioSession.setCategoryError(AVAudioSessionCategoryPlayback) &&
+          this.AVAudioSession.setActiveWithOptionsError(true, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
+        this._log('FreeStreamer: AVAudioSession - setActive = '+ result);
+      } else {
+        result = 
+          this.AVAudioSession.setActiveWithOptionsError(false, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
+        this._log('FreeStreamer: AVAudioSession - deactivate = '+ result);
+      }
+      return result;
+    } catch (error) {
+      this._log('FreeStreamer: ERROR - Unable to set AudioSession to '+ active);
+    }
+  }
+
   private onFreeStreamerStateChange(toState: FSAudioStreamState) {
     switch(toState) {
       case FSAudioStreamState.kFsAudioStreamBuffering:
       case FSAudioStreamState.kFsAudioStreamSeeking: {
-        this._onPlaybackEvent(PlaybackEvent.Opening);
+        // this.audioSessionSetActive(true);
+        this._onPlaybackEvent(PlaybackEvent.Buffering);
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPlaying: {
         this._log('FreeStreamer: Playing');
+        this.audioSessionSetActive(true);
         // Update playback rate on newly started tracks
         setTimeout(() => {
           if (this.getRate() != this._playbackRate && this.playController.activeStream) {
@@ -442,7 +511,7 @@ export class AudioPlayer extends CommonAudioPlayer
               this.seekTo(this._queuedSeekTo);
               this.playController.setVolume(1);
               this._queuedSeekTo = null;
-            }, 50);
+            }, 25);
           } else {
             this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo);
             this.seekTo(this._queuedSeekTo);
@@ -454,6 +523,7 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamPaused: {
         this._log('FreeStreamer: Paused');
+        this.audioSessionSetActive(false);
         this._onPlaybackEvent(PlaybackEvent.Paused);
         this.updateNowPlayingInfoPositionTracking(true);
         this.pauseSleepTimer();
@@ -461,6 +531,7 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamStopped: {
         this._log('FreeStreamer: Stopped');
+        this.audioSessionSetActive(false);
         this._onPlaybackEvent(PlaybackEvent.Stopped);
         break;
       }
@@ -474,6 +545,7 @@ export class AudioPlayer extends CommonAudioPlayer
         if (this.getCurrentPlaylistIndex() < this.playlist.length - 1) {
           this.setNowPlayingInfo();
         } else {
+          this.audioSessionSetActive(false);
           this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
           this.clearNowPlayingInfo();
           this.cancelSleepTimer();
@@ -482,6 +554,7 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamFailed: {
         this._log('FreeStreamer: StreamFailed');
+        this.audioSessionSetActive(false);
         this._onPlaybackEvent(PlaybackEvent.EncounteredError);
         if (this.playController.configuration.maxRetryCount === 0) {
           this.onNetworkStreamingFailed();
@@ -490,6 +563,7 @@ export class AudioPlayer extends CommonAudioPlayer
       }
       case FSAudioStreamState.kFsAudioStreamRetryingFailed: {
         this._log('FreeStreamer: StreamRetryingFailed');
+        this.audioSessionSetActive(false);
         this.onNetworkStreamingFailed();
         break;
       }
