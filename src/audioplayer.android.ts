@@ -24,14 +24,16 @@ export class AudioPlayer extends CommonAudioPlayer
     this._readyPromise = new Promise<any>((resolve, reject) => {
       this._serviceHelper = new lyt.PlaybackServiceHelper(app.android.context, new lyt.ConnectionCallback({
         onConnected: (service: lyt.PlaybackService) => {
-          this._log("===== SERVICE CONNECTED =====");
+          this._log("PlaybackService - Connected");
           this._service = service;
           this.setupServiceCallbacks(service);
-          this._log("- service has playlist UID: "+ service.getMediaListIdentifier());
+          if (service.getMediaListIdentifier()) {
+            this._log("- existing playlist ID: "+ service.getMediaListIdentifier());
+          }
           resolve();
         },
         onDisconnected: () => {
-          this._log("===== SERVICE DISCONNECTED =====");
+          this._log("PlaybackService - Disconnected");
           this._service = null;
           this._readyPromise = Promise.reject('disconnected');
         }
@@ -250,7 +252,7 @@ export class AudioPlayer extends CommonAudioPlayer
           this._onPlaybackEvent(PlaybackEvent.EncounteredError);
           //throw new Error("Android PlaybackService encountered an error");
         } else {
-          this._log('^ Unhandled PlayerEvent: '+ event.type);
+          // this._log('^ Unhandled PlayerEvent: '+ event.type);
         }
       }
     });
