@@ -9,6 +9,7 @@
     "declaration": true,
     "inlineSourceMap": true,
     "skipLibCheck": true,
+    "noLib": true,
     "rootDir": "src",
     "outDir": "."
   },
@@ -18,6 +19,7 @@
     "src/audioplayer.ios.ts",
     "src/libvlc-service.d.ts",
     "src/FreeStreamer.d.ts",
+    "node_modules/tns-core-modules/lib.core.d.ts",
     "node_modules/tns-core-modules/tns-core-modules.d.ts",
     "node_modules/tns-platform-declarations/tns-core-modules/android17.d.ts",
     "node_modules/tns-platform-declarations/tns-core-modules/ios.d.ts"
