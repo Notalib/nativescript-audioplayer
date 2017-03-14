@@ -50,6 +50,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this.ios = this;
     this.subscribeToRemoteControlEvents();
     this.subscribeToAudioRouteChanges();
+    this.setupRemoteControlCommands();
   }
 
   private loadFreeStreamer() {
@@ -98,7 +99,6 @@ export class AudioPlayer extends CommonAudioPlayer
       this.reloadFreeStreamer();
       this._hasLoadedFreeStreamer = true;
     }
-    this.setupRemoteControlCommands();
     this.playlist = playlist;
     for (var track of playlist.tracks) {
       this._log('Creating FSPlaylistItem for: '+ track.title);
@@ -275,7 +275,7 @@ export class AudioPlayer extends CommonAudioPlayer
   public setSeekIntervalSeconds(seconds: number) {
     this._log('setSeekIntervalSeconds: '+ seconds);
     this.seekIntervalSeconds = seconds;
-    this.setupRemoteControlCommands();
+    this.updateRemoteControlPreferredIntervals(seconds);
   }
   
   public release() {
@@ -333,42 +333,47 @@ export class AudioPlayer extends CommonAudioPlayer
     const remote = MPRemoteCommandCenter.sharedCommandCenter();
 
     remote.skipBackwardCommand.removeTarget(null);
-    (<MPSkipIntervalCommand>remote.skipBackwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
-    remote.skipBackwardCommand.addTargetWithHandler((evt) => this.remoteSkipBackward(evt));
+    remote.skipBackwardCommand.addTargetWithHandler((evt) => this.doRemoteEventOnMainThread(() => {
+      this._log(`RemoteControl - Skip Backward ${this.seekIntervalSeconds}s`);
+      this.seekRelative(this.seekIntervalSeconds * -1000);
+    }));
 
     remote.playCommand.removeTarget(null);
-    remote.playCommand.addTargetWithHandler((evt) => this.remotePlay(evt));
+    remote.playCommand.addTargetWithHandler((evt) => this.doRemoteEventOnMainThread(() => {
+      this._log('RemoteControl - Play');
+      this.play();
+    }));
 
     remote.pauseCommand.removeTarget(null);
-    remote.pauseCommand.addTargetWithHandler((evt) => this.remotePause(evt));
+    remote.pauseCommand.addTargetWithHandler((evt) => this.doRemoteEventOnMainThread(() => {
+      this._log('RemoteControl - Pause');
+      this.pause();
+    }));
 
     remote.skipForwardCommand.removeTarget(null);
-    (<MPSkipIntervalCommand>remote.skipForwardCommand).preferredIntervals = <any>[this.seekIntervalSeconds];
-    remote.skipForwardCommand.addTargetWithHandler((evt) => this.remoteSkipForward(evt));
+    remote.skipForwardCommand.addTargetWithHandler((evt) => this.doRemoteEventOnMainThread(() => {
+      this._log(`RemoteControl - Skip Forward ${this.seekIntervalSeconds}s`);
+      this.seekRelative(this.seekIntervalSeconds * 1000);
+    }));
+
+    this.updateRemoteControlPreferredIntervals(this.seekIntervalSeconds);
   }
 
-  private remoteSkipForward(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
-    this._log('RemoteControl - Skip Forward');
-    this.seekRelative(this.seekIntervalSeconds * 1000);
+  private updateRemoteControlPreferredIntervals(preferredInterval: number) {
+    const remote = MPRemoteCommandCenter.sharedCommandCenter();
+    (<MPSkipIntervalCommand>remote.skipBackwardCommand).preferredIntervals = <any>[preferredInterval];
+    (<MPSkipIntervalCommand>remote.skipForwardCommand).preferredIntervals = <any>[preferredInterval];
+  }
+
+  private doRemoteEventOnMainThread(func: () => void): MPRemoteCommandHandlerStatus {
+    this.doOnMainThread(func);
     return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
   }
 
-  private remoteSkipBackward(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
-    this._log('RemoteControl - Skip Backward');
-    this.seekRelative(this.seekIntervalSeconds * -1000);
-    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-  }
-
-  private remotePlay(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
-    this._log('RemoteControl - Play');
-    this.play();
-    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
-  }
-
-  private remotePause(evt: MPRemoteCommandEvent): MPRemoteCommandHandlerStatus {
-    this._log('RemoteControl - Pause');
-    this.pause();
-    return MPRemoteCommandHandlerStatus.MPRemoteCommandHandlerStatusSuccess;
+  private doOnMainThread<T>(func: () => T): Promise<T> {
+    return Promise.resolve().then(() => {
+      return func();
+    });
   }
 
   private subscribeToRemoteControlEvents() {
@@ -393,7 +398,7 @@ export class AudioPlayer extends CommonAudioPlayer
       if (routeChangeReason === AVAudioSessionRouteChangeReason.AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {
         // FIX: callback not on main thread, execute pause in a resolved promise instead
         // see https://github.com/Nativescript/Nativescript/issues/1673
-        Promise.resolve().then(() => {
+        this.doOnMainThread(() => {
           this.pause();
         });
       }
