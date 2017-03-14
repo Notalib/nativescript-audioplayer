@@ -1,5 +1,6 @@
 import * as utils from 'utils/utils';
 import * as application from 'application';
+import * as imageSrc from 'image-source';
 
 import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
@@ -42,6 +43,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private _playbackRate: number = 1;
   private _hasLoadedFreeStreamer = false;
+  private _isRetrievingArtwork = false;
   private _routeChangeObs;
 
   constructor() {
@@ -411,8 +413,8 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private clearNowPlayingInfo() {
-    this._log('Clear NowPlaying Info');
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = null;
+    this._log('NowPlayingInfo - cleared');
   }
 
   private setNowPlayingInfo() {
@@ -438,6 +440,19 @@ export class AudioPlayer extends CommonAudioPlayer
     if (knownDuration > 0) {
       playingInfo.setObjectForKey(knownDuration / 1000, MPMediaItemPropertyPlaybackDuration);
     }
+
+    const oldPlayingInfo = MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo;
+    if (oldPlayingInfo && oldPlayingInfo.objectForKey(MPMediaItemPropertyAlbumTitle) === currentTrack.album
+        && oldPlayingInfo.objectForKey(MPMediaItemPropertyArtwork)) {
+      // reuse album cover
+      console.log(`NowPlaying - artwork reused`);
+      playingInfo.setObjectForKey(oldPlayingInfo.objectForKey(MPMediaItemPropertyArtwork), MPMediaItemPropertyArtwork);
+    } else if (!this._isRetrievingArtwork && currentTrack.albumArtUrl) {
+      // get new album name
+      console.log(`NowPlaying - load async`);
+      this.loadRemoteControlArtworkAsync(currentTrack.albumArtUrl);
+    }
+
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
     //console.log('Updated NowPlayingInfo:\n '+ MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo.description);
   }
@@ -487,6 +502,30 @@ export class AudioPlayer extends CommonAudioPlayer
     } catch (error) {
       this._log('FreeStreamer: ERROR - Unable to set AudioSession to '+ active);
     }
+  }
+
+  private loadRemoteControlArtworkAsync(artworkUrl: string) {
+    this._isRetrievingArtwork = true;
+
+    const imagePromise = imageSrc.isFileOrResourcePath(artworkUrl) ?
+      Promise.resolve(imageSrc.fromFileOrResource(artworkUrl)) : imageSrc.fromUrl(artworkUrl);
+
+    imagePromise
+      .then((image) => {
+        console.log(`Received image for url: ${artworkUrl}`);
+        if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
+          const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
+          this.updateNowPlayingInfoKey(MPMediaItemPropertyArtwork, artwork);
+          console.log(`Updated NowPlayingInfo artwork`);
+        } else {
+          console.log(`Received artwork, but track changed in the meantime`);
+        }
+        this._isRetrievingArtwork = false;
+      })
+      .catch(() => {
+        console.log(`loadRemoteControlArtworkAsync failed for url: ${artworkUrl}`);
+        this._isRetrievingArtwork = false;
+      });
   }
 
   private onFreeStreamerStateChange(toState: FSAudioStreamState) {
