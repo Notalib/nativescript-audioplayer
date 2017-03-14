@@ -56,6 +56,7 @@ export class AudioPlayer extends CommonAudioPlayer
   private loadFreeStreamer() {
     const config = new FSStreamConfiguration();
     config.cacheEnabled = false;
+    config.seekingFromCacheEnabled = false;
     config.maxRetryCount = 3;                         // Retry attempts before considering stream failed
     config.enableTimeAndPitchConversion = true;
     config.requireStrictContentTypeChecking = false;
