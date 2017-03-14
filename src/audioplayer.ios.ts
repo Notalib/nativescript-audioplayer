@@ -13,7 +13,7 @@ export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
 
 export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioControllerDelegate {
   
-  public static ObjCProtocols = [ FSAudioControllerDelegate ]
+  public static ObjCProtocols = [ FSAudioControllerDelegate ];
   private audioPlayer: AudioPlayer;
   
   public init() {
@@ -137,6 +137,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this.cancelSleepTimer();
     if (this.playController) {
       this.playController.stop();
+      this.clearNowPlayingInfo();
     }
   }
 
