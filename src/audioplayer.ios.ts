@@ -125,7 +125,6 @@ export class AudioPlayer extends CommonAudioPlayer
       const item = new FSPlaylistItem();
       item.url = NSURL.URLWithString(track.url);
       item.title = track.title;
-      this._log('playController.addItem');
       this.playController.addItem(item);
     }
   }
@@ -134,23 +133,23 @@ export class AudioPlayer extends CommonAudioPlayer
     // FIX: Play should resume playback if it was paused.
     if (this.playController.activeStream && this.playController.activeStream.isPaused()) {
       // FreeStreamer's pause is a toggle. This resumes playback.
-      this._log('Play (unpause)');
+      this._log('play (unpause)');
       this.playController.pause();
-    } else {
-      this._log('Play');
+    } else if (this.playController) {
+      this._log('play');
       this.playController.play();
     }
   }
   
   public pause() {
-    this._log('Pause');
+    this._log('pause');
     if (this.playController && this.playController.activeStream && !this.playController.activeStream.isPaused()) {
       this.playController.pause();
     }
   }
   
   public stop() {
-    this._log('Stop');
+    this._log('stop');
     this.cancelSleepTimer();
     if (this.playController) {
       this.playController.stop();
@@ -179,6 +178,10 @@ export class AudioPlayer extends CommonAudioPlayer
   public skipToPlaylistIndex(playlistIndex: number) {
     this._log('skipToPlaylistIndex: '+ playlistIndex);
     if (this.playController) {
+      if (this._queuedSeekTo) {
+        this._log(`setVolume(0)`);
+        this.playController.setVolume(0);
+      }
       this.playController.playItemAtIndex(playlistIndex);
     }
   }
@@ -186,7 +189,7 @@ export class AudioPlayer extends CommonAudioPlayer
   public setRate(rate: number) {
     this._log('setRate: '+ rate);
     this._playbackRate = rate;
-    // If we're currently playing
+    // If we're currently playing update FreeStreamer playRate
     if (this.getRate() !== rate && this.isPlaying()) {
       this.playController.activeStream.setPlayRate(rate);
       this.updateNowPlayingInfoPositionTracking(false);
@@ -222,6 +225,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public seekTo(offset: number) {
+    this._log(`seekTo: ${offset}`);
     // See https://github.com/dfg-nota/FreeStreamer/blob/master/FreeStreamer/FreeStreamer/FSAudioStream.mm#L1431
     if (this.playController && this.playController.activeStream) {
       const knownDuration = this.getDuration();
@@ -280,15 +284,15 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   public pauseSleepTimer() {
-    this._log('pauseSleepTimer');
     if (this._sleepTimer != undefined) {
+      this._log('pauseSleepTimer');
       this._sleepTimerPaused = true;
     }
   }
 
   public resumeSleepTimer() {
-    this._log('resumeSleepTimer');
     if (this._sleepTimer != undefined) {
+      this._log('resumeSleepTimer');
       this._sleepTimerPaused = false;
     }
   }
@@ -306,7 +310,7 @@ export class AudioPlayer extends CommonAudioPlayer
     this.unsubscribeFromAudioRouteChanges();
     this.enableRemoteControlCommands(false);
     this.clearNowPlayingInfo();
-    this._log('Releasing FreeStreamer resources');
+    this._log('releasing FreeStreamer resources');
     this.playController.delegate = null;
     this.playController = null;
   }
@@ -446,6 +450,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private setNowPlayingInfo() {
+    console.log(`setNowPlayingInfo`);
     const currentTrack: MediaTrack = this.getCurrentMediaTrack();
     if (currentTrack === null) {
       return;
