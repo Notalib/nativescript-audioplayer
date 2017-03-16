@@ -50,9 +50,8 @@ export class AudioPlayer extends CommonAudioPlayer
     super();
     this._log('init');
     this.ios = this;
-    this.subscribeToRemoteControlEvents();
+    this.registerRemoteControlHandlers();
     this.subscribeToAudioRouteChanges();
-    this.setupRemoteControlCommands();
   }
 
   private loadFreeStreamer() {
@@ -285,9 +284,9 @@ export class AudioPlayer extends CommonAudioPlayer
   public release() {
     this._log('release');
     this.stop();
-    this.clearNowPlayingInfo();
-    this.unsubscribeFromRemoteControlEvents();
     this.unsubscribeFromAudioRouteChanges();
+    this.enableRemoteControlCommands(false);
+    this.clearNowPlayingInfo();
     this._log('Releasing FreeStreamer resources');
     this.playController.delegate = null;
     this.playController = null;
@@ -331,9 +330,9 @@ export class AudioPlayer extends CommonAudioPlayer
     }, fadeTickMillis);
   }
 
-  private setupRemoteControlCommands() {
+  private registerRemoteControlHandlers() {
     // NOTE: iOS RemoteCommandCenter can have a max of 3 commands. Any others won't be shown.
-    // NOTE: removeTarget(null) removes all registered handlers
+    // NOTE: removeTarget(null) removes all previously registered handlers
     const remote = MPRemoteCommandCenter.sharedCommandCenter();
 
     remote.skipBackwardCommand.removeTarget(null);
@@ -363,6 +362,15 @@ export class AudioPlayer extends CommonAudioPlayer
     this.updateRemoteControlPreferredIntervals(this.seekIntervalSeconds);
   }
 
+  private enableRemoteControlCommands(enabled : boolean) {
+    const remote = MPRemoteCommandCenter.sharedCommandCenter();
+    remote.skipBackwardCommand.enabled = enabled;
+    remote.playCommand.enabled = enabled;
+    remote.pauseCommand.enabled = enabled;
+    remote.togglePlayPauseCommand.enabled = enabled;
+    remote.skipForwardCommand.enabled = enabled;
+  }
+
   private updateRemoteControlPreferredIntervals(preferredInterval: number) {
     const remote = MPRemoteCommandCenter.sharedCommandCenter();
     (<MPSkipIntervalCommand>remote.skipBackwardCommand).preferredIntervals = <any>[preferredInterval];
@@ -378,18 +386,6 @@ export class AudioPlayer extends CommonAudioPlayer
     return Promise.resolve().then(() => {
       return func();
     });
-  }
-
-  private subscribeToRemoteControlEvents() {
-    this._log('Begin receiving remote control events');
-    const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
-    app.beginReceivingRemoteControlEvents();
-  }
-
-  private unsubscribeFromRemoteControlEvents() {
-    this._log('End receiving remote control events');
-    const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
-    app.endReceivingRemoteControlEvents();
   }
 
   private subscribeToAudioRouteChanges() {
@@ -415,7 +411,8 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private clearNowPlayingInfo() {
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = null;
-    this._log('NowPlayingInfo - cleared');
+    this.enableRemoteControlCommands(false);
+    this._log('NowPlayingInfo cleared');
   }
 
   private setNowPlayingInfo() {
@@ -455,6 +452,7 @@ export class AudioPlayer extends CommonAudioPlayer
     }
 
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
+    this.enableRemoteControlCommands(true);
     //console.log('Updated NowPlayingInfo:\n '+ MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo.description);
   }
 
@@ -619,4 +617,19 @@ export class AudioPlayer extends CommonAudioPlayer
       }
     }
   }
+
+  /**
+   * Should not be necessary since iOS 7.1
+   * See http://lukagabric.com/ios-audio-player-with-lock-screen-controls/
+   */
+  // private subscribeToRemoteControlEvents() {
+  //   this._log('Begin receiving remote control events');
+  //   const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+  //   app.beginReceivingRemoteControlEvents();
+  // }
+  // private unsubscribeFromRemoteControlEvents() {
+  //   this._log('End receiving remote control events');
+  //   const app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+  //   app.endReceivingRemoteControlEvents();
+  // }
 }
