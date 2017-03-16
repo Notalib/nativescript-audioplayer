@@ -450,7 +450,6 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private setNowPlayingInfo() {
-    console.log(`setNowPlayingInfo`);
     const currentTrack: MediaTrack = this.getCurrentMediaTrack();
     if (currentTrack === null) {
       return;
@@ -477,7 +476,7 @@ export class AudioPlayer extends CommonAudioPlayer
     let usedCachedCover = false;
     if (this._cachedCover && this._cachedCover.url === currentTrack.albumArtUrl) {
       // reuse cached cover
-      console.log(`NowPlaying - reuse cached artwork`);
+      // this._log(`NowPlaying - reuse cached artwork`);
       playingInfo.setObjectForKey(this._cachedCover.artwork, MPMediaItemPropertyArtwork);
       usedCachedCover = true;
     }
@@ -488,10 +487,8 @@ export class AudioPlayer extends CommonAudioPlayer
 
     if (!usedCachedCover && currentTrack.albumArtUrl && !this._isRetrievingArtwork) {
       // get new album name
-      console.log(`NowPlaying - load album artwork async`);
+      // this._log(`NowPlaying - load album artwork async`);
       this.loadRemoteControlAlbumArtworkAsync(currentTrack.albumArtUrl);
-    } else {
-      console.log(`NowPlaying - skip artwork`);
     }
   }
 
@@ -524,6 +521,7 @@ export class AudioPlayer extends CommonAudioPlayer
   }
 
   private audioSessionSetActive(active: boolean): boolean {
+    this._log(`AVAudioSession.setActive: ${active}`);
     try {
       let result;
       if (active) {
@@ -534,10 +532,10 @@ export class AudioPlayer extends CommonAudioPlayer
         result = 
           this.AVAudioSession.setActiveWithFlagsError(false, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
       }
-      this._log(`FreeStreamer: AVAudioSession - active=${active},result=${result}`);
       return result;
-    } catch (error) {
-      this._log('FreeStreamer: ERROR - Unable to set AudioSession to '+ active);
+    } catch (err) {
+      this._log(`ERROR - AudioSession.setActive(${active}) failed. ${err}`);
+      return false;
     }
   }
 
@@ -549,19 +547,17 @@ export class AudioPlayer extends CommonAudioPlayer
 
     imagePromise
       .then((image) => {
-        console.log(`Received image for url: ${artworkUrl}`);
         if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
           const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
           this._cachedCover = { url: artworkUrl, artwork: artwork };
-          console.log(`Updated NowPlayingInfo artwork`);
           this.updateNowPlayingInfoKey(MPMediaItemPropertyArtwork, artwork);
         } else {
-          console.log(`Received artwork, but current track changed in the meantime`);
+          this._log(`Received artwork, but current track changed in meantime`);
         }
         this._isRetrievingArtwork = false;
       })
       .catch((err) => {
-        console.log(`loadRemoteControlArtworkAsync failed for url: ${artworkUrl}. ${err}`);
+        this._log(`loadRemoteControlArtworkAsync failed for url: ${artworkUrl}. ${err}`);
         this._isRetrievingArtwork = false;
       });
   }
@@ -580,7 +576,6 @@ export class AudioPlayer extends CommonAudioPlayer
             this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo + ' (now!)');
             this.seekTo(this._queuedSeekTo);
             this._queuedSeekTo = null;
-            this._log(`setVolume(1)`);
             this.playController.setVolume(1);
         } else {
           this._log('FreeStreamer: Playing');
