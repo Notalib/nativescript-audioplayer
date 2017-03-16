@@ -53,6 +53,7 @@ export interface AudioPlayer {
     setSleepTimer(millisecs: number): any;
     getSleepTimerRemaining(): number;
     cancelSleepTimer(): any;
+    destroy(): void;
     release(): void;
 }
 export declare var AudioPlayer: {
