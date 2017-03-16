@@ -513,13 +513,12 @@ export class AudioPlayer extends CommonAudioPlayer
       if (active) {
         result = 
           this.AVAudioSession.setCategoryError(AVAudioSessionCategoryPlayback) &&
-          this.AVAudioSession.setActiveWithOptionsError(true, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
-        this._log('FreeStreamer: AVAudioSession - setActive = '+ result);
+          this.AVAudioSession.setActiveWithFlagsError(true, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
       } else {
         result = 
-          this.AVAudioSession.setActiveWithOptionsError(false, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
-        this._log('FreeStreamer: AVAudioSession - deactivate = '+ result);
+          this.AVAudioSession.setActiveWithFlagsError(false, AVAudioSessionSetActiveFlags_NotifyOthersOnDeactivation);
       }
+      this._log(`FreeStreamer: AVAudioSession - active=${active},result=${result}`);
       return result;
     } catch (error) {
       this._log('FreeStreamer: ERROR - Unable to set AudioSession to '+ active);
