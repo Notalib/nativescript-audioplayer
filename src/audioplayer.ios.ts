@@ -226,7 +226,7 @@ export class AudioPlayer extends CommonAudioPlayer
         minute: Math.floor(seekToSeconds / 60),
         second: seekToSeconds % 60,
         playbackTimeInSeconds:  seekToSeconds,
-        position: knownDuration > 0 ? offset / knownDuration : 0
+        position: knownDuration > 0 ? Math.min(1, offset / knownDuration) : 0
       }
       this._log(`seekInternal to: ${position.position}`);
       this.playController.activeStream.seekToPosition(position);
