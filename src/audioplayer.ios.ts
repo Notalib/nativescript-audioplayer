@@ -554,38 +554,28 @@ export class AudioPlayer extends CommonAudioPlayer
     switch(toState) {
       case FSAudioStreamState.kFsAudioStreamBuffering:
       case FSAudioStreamState.kFsAudioStreamSeeking: {
-        // this.audioSessionSetActive(true);
         this._onPlaybackEvent(PlaybackEvent.Buffering);
+        this.audioSessionSetActive(true);
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPlaying: {
-        this._log('FreeStreamer: Playing');
         this.audioSessionSetActive(true);
-        // Update playback rate on newly started tracks
-        setTimeout(() => {
-          if (this.getRate() != this._playbackRate && this.playController.activeStream) {
-              this.playController.activeStream.setPlayRate(this._playbackRate);
-          }
-        }, 25);
-        this._onPlaybackEvent(PlaybackEvent.Playing);
-        this.setNowPlayingInfo();
         if (this._queuedSeekTo !== null) {
-          if (this.currentMediaTrackIsLocalFile()) {
-            this._log(`FreeStreamer: Queued Seek to ${this._queuedSeekTo} (delayed)`);
-            this.playController.setVolume(0);
-            setTimeout(() => {
-              this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo + ' (now!)');
-              this.seekTo(this._queuedSeekTo);
-              this.playController.setVolume(1);
-              this._queuedSeekTo = null;
-            }, 25);
-          } else {
-            this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo);
+            this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo + ' (now!)');
             this.seekTo(this._queuedSeekTo);
             this._queuedSeekTo = null;
+            this._log(`setVolume(1)`);
+            this.playController.setVolume(1);
+        } else {
+          this._log('FreeStreamer: Playing');
+          this.setNowPlayingInfo();
+          if (this.getRate() != this._playbackRate) {
+            this.setRate(this._playbackRate);
           }
+          this.updateNowPlayingInfoPositionTracking(false);
+          this.resumeSleepTimer();
+          this._onPlaybackEvent(PlaybackEvent.Playing);
         }
-        this.resumeSleepTimer();
         break;
       }
       case FSAudioStreamState.kFsAudioStreamPaused: {
@@ -612,7 +602,6 @@ export class AudioPlayer extends CommonAudioPlayer
         if (this.getCurrentPlaylistIndex() < this.playlist.length - 1) {
           this.setNowPlayingInfo();
         } else {
-          this.audioSessionSetActive(false);
           this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
           this.clearNowPlayingInfo();
           this.cancelSleepTimer();
