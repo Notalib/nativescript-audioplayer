@@ -372,6 +372,17 @@ export class AudioPlayer extends CommonAudioPlayer
       this.pause();
     }));
 
+    // Toggle adds support for headphone play/pause command
+    remote.togglePlayPauseCommand.removeTarget(null);
+    remote.togglePlayPauseCommand.addTargetWithHandler((evt) => this.doRemoteEventOnMainThread(() => {
+      this._log('RemoteControl - togglePlayPause');
+      if (this.isPlaying()) {
+        this.pause();
+      } else {
+        this.play();
+      }
+    }));
+
     remote.skipForwardCommand.removeTarget(null);
     remote.skipForwardCommand.addTargetWithHandler((evt) => this.doRemoteEventOnMainThread(() => {
       this._log(`RemoteControl - Skip Forward ${this.seekIntervalSeconds}s`);
