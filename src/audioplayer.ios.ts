@@ -588,7 +588,6 @@ export class AudioPlayer extends CommonAudioPlayer
           if (this.getRate() != this._playbackRate) {
             this.setRate(this._playbackRate);
           }
-          this.updateNowPlayingInfoPositionTracking(false);
           this.resumeSleepTimer();
           this._onPlaybackEvent(PlaybackEvent.Playing);
         }
