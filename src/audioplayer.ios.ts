@@ -41,10 +41,13 @@ export class AudioPlayer extends CommonAudioPlayer
   public playController: FSAudioController;
   public seekIntervalSeconds: number = 15;
 
+  private static TIME_CHANGED_UPDATE_INTERVAL = 200;
   private _playbackRate: number = 1;
   private _hasLoadedFreeStreamer = false;
   private _isRetrievingArtwork = false;
   private _routeChangeObs;
+  private _timeChangedInterval;
+  private _lastTimeChanged;
 
   constructor() {
     super();
@@ -52,6 +55,16 @@ export class AudioPlayer extends CommonAudioPlayer
     this.ios = this;
     this.registerRemoteControlHandlers();
     this.subscribeToAudioRouteChanges();
+
+    this._timeChangedInterval = setInterval(() => {
+      if (this.playController && this.playController.isPlaying() && this._queuedSeekTo === null) {
+        const time = this.getCurrentTime();
+        if (time !== this._lastTimeChanged) {
+          this._lastTimeChanged = time;
+          this._onPlaybackEvent(PlaybackEvent.TimeChanged, time);
+        }
+      }
+    }, AudioPlayer.TIME_CHANGED_UPDATE_INTERVAL);
   }
 
   private loadFreeStreamer() {
@@ -283,6 +296,7 @@ export class AudioPlayer extends CommonAudioPlayer
   
   public destroy() {
     this._log('destroy');
+    clearInterval(this._timeChangedInterval);
     this.stop();
     this.unsubscribeFromAudioRouteChanges();
     this.enableRemoteControlCommands(false);
