@@ -31,7 +31,14 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public abstract setSleepTimer(millisecs: number);
   public abstract getSleepTimerRemaining(): number;
   public abstract cancelSleepTimer();
-  public abstract release();
+  public abstract destroy();
+
+  /**
+   * Kept for backwards compatibility
+   */
+  public release() {
+    this.destroy();
+  }
 
   public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
     this.preparePlaylist(playlist);

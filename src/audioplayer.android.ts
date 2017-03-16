@@ -186,8 +186,8 @@ export class AudioPlayer extends CommonAudioPlayer
     }
   }
 
-  release() {
-    this._log('AudioPlayer.release');
+  destroy() {
+    this._log('AudioPlayer.destroy');
     // Do not kill the background service if it is still playing.
     if (this._service && !this._service.isPlaying()) {
       this._log('Stopping PlaybackService');

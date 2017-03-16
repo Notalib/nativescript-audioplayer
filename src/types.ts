@@ -98,6 +98,14 @@ export interface AudioPlayer {
   setSleepTimer(millisecs: number);
   getSleepTimerRemaining(): number;
   cancelSleepTimer();
+  /** 
+   * Destroys all resources associated with the player.
+   */
+  destroy(): void;
+  /**
+   * Old name of destroy call, will be deprecated.
+   * Kept for backwards compatibility for now.
+   */
   release(): void;
 }
 

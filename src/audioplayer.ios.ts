@@ -281,8 +281,8 @@ export class AudioPlayer extends CommonAudioPlayer
     this.updateRemoteControlPreferredIntervals(seconds);
   }
   
-  public release() {
-    this._log('release');
+  public destroy() {
+    this._log('destroy');
     this.stop();
     this.unsubscribeFromAudioRouteChanges();
     this.enableRemoteControlCommands(false);
