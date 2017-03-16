@@ -49,6 +49,11 @@ export class AudioPlayer extends CommonAudioPlayer
   private _timeChangedInterval;
   private _lastTimeChanged;
 
+  /**
+   * For now we just cache a single cover at a time.
+   */
+  private _cachedCover: { url: string, artwork: MPMediaItemArtwork };
+
   constructor() {
     super();
     this._log('init');
@@ -446,28 +451,32 @@ export class AudioPlayer extends CommonAudioPlayer
     }
     playingInfo.setObjectForKey(this.getCurrentPlaylistIndex(), MPNowPlayingInfoPropertyChapterNumber);
     playingInfo.setObjectForKey(this.playlist.tracks.length, MPNowPlayingInfoPropertyChapterCount);
-    playingInfo.setObjectForKey(this.isPlaying() ? this.getRate() : 0, MPNowPlayingInfoPropertyPlaybackRate);
+    playingInfo.setObjectForKey(this.isPlaying() ? this._playbackRate : 0, MPNowPlayingInfoPropertyPlaybackRate);
     playingInfo.setObjectForKey(this.getCurrentTime() / 1000, MPNowPlayingInfoPropertyElapsedPlaybackTime);
     const knownDuration = this.getDuration();
     if (knownDuration > 0) {
       playingInfo.setObjectForKey(knownDuration / 1000, MPMediaItemPropertyPlaybackDuration);
     }
 
-    const oldPlayingInfo = MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo;
-    if (oldPlayingInfo && oldPlayingInfo.objectForKey(MPMediaItemPropertyAlbumTitle) === currentTrack.album
-        && oldPlayingInfo.objectForKey(MPMediaItemPropertyArtwork)) {
-      // reuse album cover
-      console.log(`NowPlaying - artwork reused`);
-      playingInfo.setObjectForKey(oldPlayingInfo.objectForKey(MPMediaItemPropertyArtwork), MPMediaItemPropertyArtwork);
-    } else if (!this._isRetrievingArtwork && currentTrack.albumArtUrl) {
-      // get new album name
-      console.log(`NowPlaying - load async`);
-      this.loadRemoteControlArtworkAsync(currentTrack.albumArtUrl);
+    let usedCachedCover = false;
+    if (this._cachedCover && this._cachedCover.url === currentTrack.albumArtUrl) {
+      // reuse cached cover
+      console.log(`NowPlaying - reuse cached artwork`);
+      playingInfo.setObjectForKey(this._cachedCover.artwork, MPMediaItemPropertyArtwork);
+      usedCachedCover = true;
     }
 
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
-    this.enableRemoteControlCommands(true);
     //console.log('Updated NowPlayingInfo:\n '+ MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo.description);
+    this.enableRemoteControlCommands(true);
+
+    if (!usedCachedCover && currentTrack.albumArtUrl && !this._isRetrievingArtwork) {
+      // get new album name
+      console.log(`NowPlaying - load album artwork async`);
+      this.loadRemoteControlAlbumArtworkAsync(currentTrack.albumArtUrl);
+    } else {
+      console.log(`NowPlaying - skip artwork`);
+    }
   }
 
   private updateNowPlayingInfoKey(key: string, value: any) {
@@ -517,7 +526,7 @@ export class AudioPlayer extends CommonAudioPlayer
     }
   }
 
-  private loadRemoteControlArtworkAsync(artworkUrl: string) {
+  private loadRemoteControlAlbumArtworkAsync(artworkUrl: string) {
     this._isRetrievingArtwork = true;
 
     const imagePromise = imageSrc.isFileOrResourcePath(artworkUrl) ?
@@ -528,15 +537,16 @@ export class AudioPlayer extends CommonAudioPlayer
         console.log(`Received image for url: ${artworkUrl}`);
         if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
           const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
-          this.updateNowPlayingInfoKey(MPMediaItemPropertyArtwork, artwork);
+          this._cachedCover = { url: artworkUrl, artwork: artwork };
           console.log(`Updated NowPlayingInfo artwork`);
+          this.updateNowPlayingInfoKey(MPMediaItemPropertyArtwork, artwork);
         } else {
-          console.log(`Received artwork, but track changed in the meantime`);
+          console.log(`Received artwork, but current track changed in the meantime`);
         }
         this._isRetrievingArtwork = false;
       })
-      .catch(() => {
-        console.log(`loadRemoteControlArtworkAsync failed for url: ${artworkUrl}`);
+      .catch((err) => {
+        console.log(`loadRemoteControlArtworkAsync failed for url: ${artworkUrl}. ${err}`);
         this._isRetrievingArtwork = false;
       });
   }
