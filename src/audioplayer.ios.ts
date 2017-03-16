@@ -573,18 +573,25 @@ export class AudioPlayer extends CommonAudioPlayer
       case FSAudioStreamState.kFsAudioStreamPlaying: {
         this.audioSessionSetActive(true);
         if (this._queuedSeekTo !== null) {
+          // Local file needs more delay before we execute a queued seek...
+          const seekDelay = this.currentMediaTrackIsLocalFile() ? 50 : 5;
+          setTimeout(() => {
             this._log('FreeStreamer: Queued Seek to '+ this._queuedSeekTo + ' (now!)');
             this.seekTo(this._queuedSeekTo);
             this._queuedSeekTo = null;
             this.playController.setVolume(1);
+          }, seekDelay);
         } else {
           this._log('FreeStreamer: Playing');
           this.setNowPlayingInfo();
-          if (this.getRate() != this._playbackRate) {
-            this.setRate(this._playbackRate);
-          }
           this.resumeSleepTimer();
           this._onPlaybackEvent(PlaybackEvent.Playing);
+          if (this.getRate() != this._playbackRate) {
+            // TODO: do we still need the timeout?
+            setTimeout(() => {
+              this.setRate(this._playbackRate);
+            }, 25);
+          }
         }
         break;
       }
