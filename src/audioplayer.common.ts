@@ -8,6 +8,7 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   public android: any;
   public ios: any;
   public playlist: Playlist;
+  public debugOutputEnabled: boolean = false;
 
   protected _queuedSeekTo: number = null;
   protected _listener: PlaybackEventListener;
@@ -78,7 +79,9 @@ export abstract class CommonAudioPlayer implements AudioPlayer {
   }
   
   protected _log(logStr: string) {
-    let platform = this.ios ? 'iOS' : 'Android';
-    console.log(`tns-audioplayer(${platform}): ${logStr}`);
+    if (this.debugOutputEnabled) {
+      let platform = this.ios ? 'iOS' : 'Android';
+      console.log(`tns-audioplayer(${platform}): ${logStr}`);
+    }
   }
 }

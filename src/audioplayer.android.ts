@@ -66,7 +66,7 @@ export class AudioPlayer extends CommonAudioPlayer
       this.playlist = playlist;
       let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
       for (var track of this.playlist.tracks) {
-        this._log('Creating MediaWrapper for: '+ track.title);
+        // this._log('Creating MediaWrapper for: '+ track.title);
         mediaList.add(this.getNewMediaWrapper(track));
       }
       this._service.load(mediaList);

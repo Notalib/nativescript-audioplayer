@@ -27,12 +27,12 @@ export class FSAudioControllerDelegateImpl extends NSObject implements FSAudioCo
   }
   
   public audioControllerAllowPreloadingForStream(audioController: FSAudioController, stream: FSAudioStream): boolean {
-    console.log('FreeStreamer: PRELOAD allowed for '+ stream.url.absoluteString);
+    // console.log('FreeStreamer: PRELOAD allowed for '+ stream.url.absoluteString);
     return true;
   }
 
 	public audioControllerPreloadStartedForStream(audioController: FSAudioController, stream: FSAudioStream): void {
-    console.log('FreeStreamer: PRELOAD started for '+ stream.url.absoluteString);
+    // console.log('FreeStreamer: PRELOAD started for '+ stream.url.absoluteString);
   }
 }
 
@@ -88,7 +88,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
     this.playController = new FSAudioController();
     this.playController.configuration = config;
-    this.playController.enableDebugOutput = true;
+    this.playController.enableDebugOutput = this.debugOutputEnabled;
     this.playController.automaticAudioSessionHandlingEnabled = false;
     this.playController.onStateChange = (state: FSAudioStreamState) => {
       try {
@@ -482,7 +482,7 @@ export class AudioPlayer extends CommonAudioPlayer
     }
 
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
-    //console.log('Updated NowPlayingInfo:\n '+ MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo.description);
+    // this._log('Updated NowPlayingInfo:\n '+ MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo.description);
     this.enableRemoteControlCommands(true);
 
     if (!usedCachedCover && currentTrack.albumArtUrl && !this._isRetrievingArtwork) {
@@ -494,7 +494,7 @@ export class AudioPlayer extends CommonAudioPlayer
 
   private updateNowPlayingInfoKey(key: string, value: any) {
     const playingInfo = NSMutableDictionary.alloc().initWithDictionary(MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo);
-    //console.log('Update NowPlayingInfo with: '+ JSON.stringify({key: key, value: value}));
+    // this._log('Update NowPlayingInfo with: '+ JSON.stringify({key: key, value: value}));
     playingInfo.setObjectForKey(value, key);
     MPNowPlayingInfoCenter.defaultCenter().nowPlayingInfo = playingInfo;
   }

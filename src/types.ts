@@ -50,6 +50,7 @@ export interface Config {
 }
 
 export interface AudioPlayer {
+  debugOutputEnabled: boolean;
   playlist: Playlist;
   /**
    * Promise which resolves when the AudioPlayer is ready to receive commands.

@@ -29,6 +29,7 @@ export interface Config {
     requiredPrebufferSizeInSeconds: number;
 }
 export interface AudioPlayer {
+    debugOutputEnabled: boolean;
     playlist: Playlist;
     isReady: Promise<any>;
     loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): any;
