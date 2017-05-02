@@ -1,1 +1,6 @@
-pod 'FreeStreamer', :git => 'https://github.com/dfg-nota/FreeStreamer.git', :branch => 'retry-fix'
+use_frameworks!
+platform :ios, '8.0'
+
+source 'https://github.com/ddfreiling/CocoaPodSpecs.git'
+
+pod 'LYTAudio', :git => 'https://github.com/ddfreiling/LYTAudio.git', :branch => 'master'
