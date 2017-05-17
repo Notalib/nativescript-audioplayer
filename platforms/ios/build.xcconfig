@@ -1,1 +1,1 @@
-OTHER_LDFLAGS = $(inherited) -weak_framework AVFoundation
+EMBEDDED_CONTENT_CONTAINS_SWIFT = YES

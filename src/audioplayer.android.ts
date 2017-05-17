@@ -1,13 +1,13 @@
 //import {PlaybackEvent} from 'nativescript-audioplayer';
-import {CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
+import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 import * as app from 'application';
 
-export {MediaTrack, Playlist, PlaybackEvent} from './audioplayer.common';
+export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
 import lyt = dk.nota.lyt.libvlc;
 import PlayerEvent = dk.nota.lyt.libvlc.media.MediaPlayerEvent;
 
-export class AudioPlayer extends CommonAudioPlayer
+export class TNSAudioPlayer extends CommonAudioPlayer
 {
   public _serviceHelper: lyt.PlaybackServiceHelper;
   public _service: lyt.PlaybackService;

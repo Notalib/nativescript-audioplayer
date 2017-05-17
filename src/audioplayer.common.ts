@@ -1,9 +1,9 @@
 import * as app from 'application';
-import { AudioPlayer, MediaTrack, Playlist, PlaybackEvent, PlaybackEventListener } from './types';
+import { TNSAudioPlayer, MediaTrack, Playlist, PlaybackEvent, PlaybackEventListener } from './types';
 
 export * from './types';
 
-export abstract class CommonAudioPlayer implements AudioPlayer {
+export abstract class CommonAudioPlayer implements TNSAudioPlayer {
   
   public android: any;
   public ios: any;

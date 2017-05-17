@@ -49,7 +49,7 @@ export interface Config {
   requiredPrebufferSizeInSeconds: number;
 }
 
-export interface AudioPlayer {
+export interface TNSAudioPlayer {
   debugOutputEnabled: boolean;
   playlist: Playlist;
   /**
@@ -110,8 +110,8 @@ export interface AudioPlayer {
   release(): void;
 }
 
-export var AudioPlayer: {
-  new() : AudioPlayer;
+export var TNSAudioPlayer: {
+  new() : TNSAudioPlayer;
 }
 
 export interface PlaybackEventListener {

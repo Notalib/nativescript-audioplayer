@@ -1,31 +1,31 @@
-import {Observable} from 'data/observable';
-import {AudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent} from '@nota/nativescript-audioplayer';
+import { Observable } from 'data/observable';
+import { TNSAudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent } from '@nota/nativescript-audioplayer';
 
 export class HelloWorldModel extends Observable implements PlaybackEventListener {
-  public message: string = 'Loading';
-  private player: AudioPlayer;
+  public message: string = 'Demo';
+  private player: TNSAudioPlayer;
   private rateToggled: boolean = false;
 
   constructor() {
     super();
-    this.player = new AudioPlayer();
+    this.player = new LYTAudioPlayer();
     this.player.setPlaybackEventListener(this);
     this.player.setSeekIntervalSeconds(30);
     setTimeout(() => {
       this.loadAndSetupPlaylist();
-    }, 1000);
-    setInterval(() => {
-      if (this.player && this.player.isPlaying()) {
-        console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
-      }
-    }, 1000);
+    }, 500);
+    // setInterval(() => {
+    //   if (this.player && this.player.isPlaying()) {
+    //     console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
+    //   }
+    // }, 1000);
   }
 
   public loadAndSetupPlaylist() {
     const playlistUID = "UID_12345";
-    // if (this.player.getCurrentPlaylistUID() == playlistUID) {
-    //   console.log('Player already has playlist: '+ this.player.getCurrentPlaylistUID());
-    // } else {
+    if (this.player.getCurrentPlaylistUID() == playlistUID) {
+      console.log('Player already has playlist: '+ this.player.getCurrentPlaylistUID());
+    } else {
       console.log('Loading new playlist. Old UID: '+ this.player.getCurrentPlaylistUID());
       const playlist = new Playlist(playlistUID,
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
@@ -38,7 +38,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
         new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
       );
       this.player.loadPlaylist(playlist);
-    // }
+    }
       // "http://www.noiseaddicts.com/samples_1w72b820/4357.mp3",
       // "http://www.noiseaddicts.com/samples_1w72b820/3816.mp3"]);
     // this.player.addToPlaylist([
@@ -106,7 +106,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   public doOne() {
     const playlist = new Playlist('1',
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
-      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
     );
     this.player.loadPlaylist(playlist, 1, 10000);
@@ -115,7 +115,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   public doTwo() {
     const playlist = new Playlist('2',
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
-      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
     );
     this.player.loadPlaylist(playlist, 1, 10000);
@@ -124,22 +124,22 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   public doThree() {
     const playlist = new Playlist('3',
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
-      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
     );
     this.player.loadPlaylist(playlist, 1, 10000);
   }
 
   public seekFix() {
-    let seekTo = this.player.getCurrentTime() - 10;
-    console.log('demo - seekTo '+ seekTo);
-    this.player.seekTo(Math.min(seekTo, this.player.getDuration()));
+    const relativeSeek = -5000;
+    console.log('demo - seekRelative '+ relativeSeek);
+    this.player.seekRelative(relativeSeek);
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {
     if (evt == PlaybackEvent.SleepTimerChanged)
       console.log('SleepTimerChanged: '+ this.player.getSleepTimerRemaining());
-    else if (evt !== PlaybackEvent.TimeChanged)
-      console.log('Playback event received: '+ PlaybackEvent[evt]);
+    else
+      console.log(`Playback event received: ${PlaybackEvent[evt]} - ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()}`);
   }
 }

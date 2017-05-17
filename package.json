@@ -18,7 +18,7 @@
     "prepublish": "npm run build",
     "reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add .. && tns install",
     "apk": "cd demo && tns build android --copy-to .",
-    "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios && cd .. && cp gen-typings-i386/objc!FreeStreamer.d.ts src/FreeStreamer.gen.d.ts"
+    "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios"
   },
   "repository": {
     "type": "git",
@@ -43,5 +43,6 @@
     "typescript": "^2.0.3",
     "tns-core-modules": "^2.4.0",
     "tns-platform-declarations": "^2.2.0"
-  }
+  },
+  "dependencies": {}
 }

@@ -28,7 +28,7 @@ export interface Config {
     maxNetworkRetryCount: number;
     requiredPrebufferSizeInSeconds: number;
 }
-export interface AudioPlayer {
+export interface TNSAudioPlayer {
     debugOutputEnabled: boolean;
     playlist: Playlist;
     isReady: Promise<any>;
@@ -57,8 +57,8 @@ export interface AudioPlayer {
     destroy(): void;
     release(): void;
 }
-export declare var AudioPlayer: {
-    new (): AudioPlayer;
+export declare var TNSAudioPlayer: {
+    new (): TNSAudioPlayer;
 };
 export interface PlaybackEventListener {
     onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
