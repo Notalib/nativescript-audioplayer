@@ -8,7 +8,8 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
 
   constructor() {
     super();
-    this.player = new LYTAudioPlayer();
+    this.player = new TNSAudioPlayer();
+    this.player.debugOutputEnabled = true;
     this.player.setPlaybackEventListener(this);
     this.player.setSeekIntervalSeconds(30);
     setTimeout(() => {
