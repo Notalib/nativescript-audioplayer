@@ -100,14 +100,9 @@ export interface TNSAudioPlayer {
   getSleepTimerRemaining(): number;
   cancelSleepTimer();
   /** 
-   * Destroys all resources associated with the player.
+   * Destroys the player and all its associated resources
    */
   destroy(): void;
-  /**
-   * Old name of destroy call, will be deprecated.
-   * Kept for backwards compatibility for now.
-   */
-  release(): void;
 }
 
 export var TNSAudioPlayer: {

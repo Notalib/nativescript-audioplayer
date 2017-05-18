@@ -55,7 +55,6 @@ export interface TNSAudioPlayer {
     getSleepTimerRemaining(): number;
     cancelSleepTimer(): any;
     destroy(): void;
-    release(): void;
 }
 export declare var TNSAudioPlayer: {
     new (): TNSAudioPlayer;
