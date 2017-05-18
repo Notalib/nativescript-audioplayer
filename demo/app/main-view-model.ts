@@ -132,9 +132,8 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public seekFix() {
-    const relativeSeek = -5000;
-    console.log('demo - seekRelative '+ relativeSeek);
-    this.player.seekRelative(relativeSeek);
+    console.log('demo - skipToPlaylistIndexAndOffset 1:1000000');
+    this.player.skipToPlaylistIndexAndOffset(1, 1000000);
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {

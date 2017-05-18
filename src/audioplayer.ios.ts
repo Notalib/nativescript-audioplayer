@@ -10,11 +10,9 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 
     public static ObjCProtocols = [AudioPlayerDelegate];
 
-    public latestLoadedDuration: number;
-    public latestCurrentDuration: number;
-    public latestCurrentTime: number;
-
     public onTimeUpdate: (seconds: number) => void;
+    public onFoundDuration: (item: AudioItem, duration: number) => void;
+    public onWillStartPlayingItem: (item: AudioItem) => void;
     public onFinishedPlayingItem: (item: AudioItem) => void;
     public onMetadataReceived: (item: AudioItem, data: NSArray) => void;
     public onBufferingUpdate: (item: AudioItem, earliestBufferSec: number, latestBufferSec: number) => void;
@@ -31,12 +29,12 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
     }
 
 	public audioPlayerDidFindDurationFor(audioPlayer: AudioPlayer, duration: number, item: AudioItem): void {
-        // console.log(`didFindDurationFor: ${item.title}: ${duration}`);
-        this.latestCurrentDuration = duration;
+        if (this.onFoundDuration) {
+            this.onFoundDuration(item, duration);
+        }
     }
 
     public audioPlayerDidLoadEarliestLatestFor?(audioPlayer: AudioPlayer, earliest: number, latest: number, item: AudioItem): void {
-        this.latestLoadedDuration = latest - earliest;
         if (this.onBufferingUpdate) {
             this.onBufferingUpdate(item, earliest, latest);
         }
@@ -51,7 +49,6 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 
 	public audioPlayerDidUpdateProgressionToPercentageRead(audioPlayer: AudioPlayer, time: number, percentageRead: number): void {
         // console.log(`didUpdateProgress: ${time} - ${percentageRead}`);
-        this.latestCurrentTime = time;
         if (this.onTimeUpdate) {
             this.onTimeUpdate(time);
         }
@@ -59,7 +56,9 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 
     public audioPlayerWillStartPlaying(audioPlayer: AudioPlayer, item: AudioItem): void {
         // console.log('willStartPlaying '+ item.title);
-        this.latestCurrentTime = 0;
+        if (this.onWillStartPlayingItem) {
+            this.onWillStartPlayingItem(item);
+        }
     }
 
     public audioPlayerFinishedPlaying?(audioPlayer: AudioPlayer, item: AudioItem): void {
@@ -76,8 +75,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     private delegate: AudioPlayerDelegateImpl;
 
-    private iosPlaylist: NSArray;
     private seekIntervalSeconds = 15;
+
+    private _iosPlaylist: NSArray;
+    private _iosItemDurationMap = new Map<number, number>();
+
+    // TODO: This is messy, KDEAudioPlayer should expose a currentTime variable
+    private _iosLatestCurrentTime = 0;
 
     constructor() {
         super();
@@ -93,19 +97,42 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this.stop();
         }
         const audioItems = NSMutableArray.alloc().init()
+        
         for (const track of playlist.tracks) {
             audioItems.addObject(this.getAudioItemForMediaTrack(track));
         }
-        this.iosPlaylist = audioItems;
+        this._iosPlaylist = audioItems;
+        this._iosItemDurationMap = new Map<number, number>();
     }
 
     private setupAudioPlayer() {
         this.player = AudioPlayer.new();
         this.delegate = AudioPlayerDelegateImpl.new();
-        this.delegate.onTimeUpdate = (time) => this._iosTimeUpdate(time);
+        this.delegate.onTimeUpdate = (seconds) => {
+            this._iosLatestCurrentTime = Math.floor(seconds * 1000);
+            this._onPlaybackEvent(PlaybackEvent.TimeChanged, this._iosLatestCurrentTime);
+        };
+        this.delegate.onBufferingUpdate = (item, earliest, latest) => {
+            this._log(`bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`);
+        }
+        this.delegate.onFoundDuration = (item, duration) => {
+            this._iosItemDurationMap[this._iosPlaylist.indexOfObject(item)] = Math.floor(duration * 1000);
+            this._log(`found duration for '${item.title}': ${this._iosItemDurationMap[this.getIndexForItem(item)]}ms`);
+            
+        };
+        this.delegate.onWillStartPlayingItem = (item) => {
+            this._log(`will start playing '${item.title}`);
+            this._iosLatestCurrentTime = 0;
+        };
+        this.delegate.onFinishedPlayingItem = (item) => {
+            this._log(`finished playing '${item.title}`);
+            const finishedIndex = this._iosPlaylist.indexOfObject(item);
+            this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached, finishedIndex);
+            if (finishedIndex >= this._iosPlaylist.count - 1) {
+                this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+            }
+        };
         this.delegate.onStateChanged = (from, to) => this._iosPlayerStateChanged(from, to);
-        this.delegate.onFinishedPlayingItem = (item) => this._iosFinishedPlayingItem(item);
-        this.delegate.onBufferingUpdate = (item, earliest, latest) => this._iosBufferingUpdate(item, earliest, latest);
         //this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
         this.player.delegate = this.delegate;
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
@@ -144,7 +171,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 this.player.resume();
             }
             else if (this.player.state == AudioPlayerState.Stopped) {
-                this.player.playWithItemsStartAtIndex(this.iosPlaylist, 0);
+                this.player.playWithItemsStartAtIndex(this._iosPlaylist, 0);
             }
         } catch(err) {
             this._log(`Err: ${err}`);
@@ -153,61 +180,89 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public pause() {
         this._log('pause');
-        this.player.pause()
+        if (this.player) {
+            this.player.pause()
+        }
     }
 
     public stop() {
         this._log('stop');
-        this.cancelSleepTimer();
         if (this.player) {
             this.player.stop();
         }
     }
     
     public isPlaying(): boolean {
-        return this.player.state == AudioPlayerState.Playing;
+        return this.player && this.player.state == AudioPlayerState.Playing;
     }
     
     public skipToNext() {
-        this.player.nextOrStop();
+        if (this.player) {
+            this._iosLatestCurrentTime = 0;
+            this.player.nextOrStop();
+        }
     }
     
     public skipToPrevious() {
-        this.player.previous();
+        if (this.player) {
+            this._iosLatestCurrentTime = 0;
+            this.player.previous();
+        }
     }
 
     public skipToPlaylistIndex(playlistIndex: number) {
-        this.player.playWithItemsStartAtIndex(this.iosPlaylist, playlistIndex);
+        if (this.player) {
+            // Set latestCurrentTime, to where we expect to play from after skip.
+            if (this._queuedSeekTo != null) {
+                this._iosLatestCurrentTime = this._queuedSeekTo;
+            } else {
+                this._iosLatestCurrentTime = 0;
+            }
+            
+            this.player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
+        }
     }
     
     public setRate(rate: number) {
-        this.player.rate = rate;
+        if (this.player) {
+            this.player.rate = rate;
+        }
     }
 
     public getRate(): number {
-        return this.player.rate
+        return this.player ? this.player.rate : 0;
     }
 
     public getDuration(): number {
-        return Math.floor(this.delegate.latestCurrentDuration * 1000);
+        return this.player && this.player.currentItem ? this._iosItemDurationMap[this.getCurrentPlaylistIndex()] : null;
     }
 
     public getCurrentTime(): number {
-        return Math.floor(this.delegate.latestCurrentTime * 1000);
+        return this.player && this.player.currentItem ? this._iosLatestCurrentTime : 0;
+    }
+
+    private getIndexForItem(item: AudioItem) {
+        const result = this._iosPlaylist.indexOfObject(this.player.currentItem);
+        if (result != NSNotFound) {
+            return result;
+        } else {
+            return null;
+        }
     }
 
     public getCurrentPlaylistIndex() {
-        if (this.iosPlaylist && this.player && this.player.currentItem) {
-            const result = this.iosPlaylist.indexOfObject(this.player.currentItem);
-            if (result != NSNotFound) {
-                return result;
-            }
+        if (this._iosPlaylist && this.player && this.player.currentItem) {
+            return this.getIndexForItem(this.player.currentItem);
         }
-        return -1;
+        return null;
     }
 
-    public seekTo(milisecs: number) {
-        this._iosSeekTo(milisecs);
+    public seekTo(millisecs: number) {
+        if (this.player) {
+            this._iosSeekTo(millisecs, false, kCMTimeZero, kCMTimeZero, (succeeded) => {
+                this._log(`seekTo succeeded: ${succeeded}`);
+            });
+        }
     }
 
     private _sleepTimer: number;
@@ -276,36 +331,22 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.stop();
         this.player = null;
         this.delegate = null;
-        this.iosPlaylist = null;
+        this._iosPlaylist = null;
     }
 
     //* PRIVATE HELPERS *//
 
-    private _iosSeekTo(milisecs: number, completionHandler?: (boolean) => void) {
-        const seekToSeconds = milisecs / 1000.0;
+    private _iosSeekTo(millisecs: number, adaptToSeekableRanges = false, beforeTolerance: CMTime = kCMTimeZero, afterTolerance: CMTime = kCMTimeZero, completionHandler?: (boolean) => void) {
+        this._log(`seekTo: ${millisecs}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
+        const seekToSeconds = millisecs / 1000.0;
         this.player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
-                seekToSeconds, false, kCMTimePositiveInfinity, kCMTimePositiveInfinity, (succeeded) => {
-            this._log(`Seek to ${milisecs}ms succeeded: ${succeeded}`);
-            if (completionHandler) {
-                completionHandler(succeeded);
-            }
-        });
+                seekToSeconds, adaptToSeekableRanges, beforeTolerance, afterTolerance, completionHandler
+        );
     }
 
-    private _iosTimeUpdate(seconds: number) {
-        this._onPlaybackEvent(PlaybackEvent.TimeChanged, Math.floor(seconds * 1000));
-    }
-
-    private _iosBufferingUpdate(item: AudioItem, earliestBufferSec: number, latestBufferSec: number) {
-        this._log(`bufferingUpdate  '${item.title}' now has buffered: ${earliestBufferSec}s - ${latestBufferSec}s`);
-    }
-
-    private _iosFinishedPlayingItem(item: AudioItem) {
-        const finishedIndex = this.iosPlaylist.indexOfObject(item);
-        this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached, finishedIndex);
-        if (finishedIndex >= this.iosPlaylist.count - 1) {
-            this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
-        }
+    private _iosSetPlayingState() {
+        this._onPlaybackEvent(PlaybackEvent.Playing);
+        this.resumeSleepTimer();
     }
 
     private _iosPlayerStateChanged(from: AudioPlayerState, to: AudioPlayerState) {
@@ -318,15 +359,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             }
             case AudioPlayerState.Playing: {
                 if (this._queuedSeekTo) {
-                    this._iosSeekTo(this._queuedSeekTo, (succeeded) => {
-                        this._queuedSeekTo = null;
-                        if (succeeded) {
-                            this._onPlaybackEvent(PlaybackEvent.Playing);
-                        }
+                    // TODO: Queued seek may not use a completion-handler, that only works when item is fully ready??
+                    // ^ is this true, needs testing.
+                    this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero, (succeeded) => {
+                        this._log(`queued seek done, succeeded? ${succeeded}`);
+                        this._iosSetPlayingState();
                     });
+                    this._queuedSeekTo = null;
                 } else {
-                    this._onPlaybackEvent(PlaybackEvent.Playing);
-                    this.resumeSleepTimer();
+                    this._iosSetPlayingState();
                 }
                 break;
             }
@@ -337,14 +378,17 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             }
             case AudioPlayerState.Stopped: {
                 this._onPlaybackEvent(PlaybackEvent.Stopped);
+                this.cancelSleepTimer();
                 break;
             }
             case AudioPlayerState.WaitingForConnection: {
                 this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
+                this.pauseSleepTimer();
                 break;
             }
-            case AudioPlayerState.Buffering: {
+            case AudioPlayerState.Failed: {
                 this._onPlaybackEvent(PlaybackEvent.EncounteredError);
+                this.pauseSleepTimer();
                 break;
             }
             default: {
