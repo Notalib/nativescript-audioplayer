@@ -148,6 +148,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
         this.player.preferredBufferDurationBeforePlayback = 10;
         this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(15);
+        this.player.remoteCommandsEnabled = NSArrayFromItems([
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackPosition),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
+        ]);
         this._log(`Player: ${this.player}`);
         this._log(`Delegate: ${this.delegate}`);
     }
@@ -429,4 +435,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             });
     }
 }
+
+function NSArrayFromItems(items: any[]): NSArray {
+    const arr = NSMutableArray.alloc().init();
+    for (const item of items) {
+        arr.addObject(item);
+    }
+    return arr;
 }
