@@ -77,8 +77,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     private seekIntervalSeconds = 15;
 
+    // TODO: use this to avoid TimeUpdate below _queuedSeek during a seek
+    private _isSeeking = false;
+
     private _iosPlaylist: NSArray;
     private _iosItemDurationMap = new Map<number, number>();
+    private _iosState: AudioPlayerState;
 
     // TODO: This is messy, KDEAudioPlayer should expose a currentTime variable
     private _iosLatestCurrentTime = 0;
@@ -132,7 +136,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
             }
         };
-        this.delegate.onStateChanged = (from, to) => this._iosPlayerStateChanged(from, to);
+        this.delegate.onStateChanged = (from, to) => {
+            this._iosState = to;
+            this._iosPlayerStateChanged(from, to);
+        }
         //this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
         this.player.delegate = this.delegate;
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
@@ -259,9 +266,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public seekTo(millisecs: number) {
         if (this.player) {
-            this._iosSeekTo(millisecs, false, kCMTimeZero, kCMTimeZero, (succeeded) => {
-                this._log(`seekTo succeeded: ${succeeded}`);
-            });
+            this._isSeeking = true;
+            this._iosSeekTo(millisecs, false, kCMTimeZero, kCMTimeZero);
         }
     }
 
@@ -361,10 +367,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 if (this._queuedSeekTo) {
                     // TODO: Queued seek may not use a completion-handler, that only works when item is fully ready??
                     // ^ is this true, needs testing.
-                    this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero, (succeeded) => {
-                        this._log(`queued seek done, succeeded? ${succeeded}`);
-                        this._iosSetPlayingState();
-                    });
+                    this._isSeeking = true;
+                    this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero);
                     this._queuedSeekTo = null;
                 } else {
                     this._iosSetPlayingState();
