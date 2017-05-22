@@ -57,7 +57,11 @@ declare class AudioPlayer extends NSObject {
 
 	readonly currentItem: AudioItem;
 
+	readonly currentItemDuration: number;
+
 	readonly currentItemLoadedRange: TimeRange;
+
+	readonly currentItemProgression: number;
 
 	readonly currentItemSeekableRange: TimeRange;
 
@@ -78,6 +82,8 @@ declare class AudioPlayer extends NSObject {
 	preferredForwardBufferDuration: number;
 
 	rate: number;
+
+	remoteCommandsEnabled: NSArray;
 
 	remoteControlSkipIntervals: NSArray;
 

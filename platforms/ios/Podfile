@@ -1,18 +1,18 @@
 # use_frameworks!
 # platform :ios, '8.0'
 
-# # develop
+# local development
 # pod 'LYTAudio', :path => '~/Code/LYTAudio'
 
 # publish
 # source 'https://github.com/ddfreiling/CocoaPodSpecs.git'
-pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-2'
+pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-3'
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['SWIFT_VERSION'] = '3.0'
-      # config.build_settings['ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES'] = 1
+      # config.build_settings['ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES'] = 'NO'
     end
   end
 end

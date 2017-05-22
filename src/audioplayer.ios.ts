@@ -1,5 +1,6 @@
-import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 import * as app from 'application';
+
+import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
 // TODO: Do all exports in a main.ts instead?
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
@@ -81,14 +82,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     private _isSeeking = false;
 
     private _iosPlaylist: NSArray;
-    private _iosItemDurationMap = new Map<number, number>();
     private _iosState: AudioPlayerState;
-
-    // TODO: This is messy, KDEAudioPlayer should expose a currentTime variable
-    // They are exposed through .currentItemDuration and .currentItemProgression,
-    // but are currently not available through TNS obj-c runtime...
-    // ... possibly due to AVPlayerItem extensions used in KDEAudioPlayer
-    private _iosLatestCurrentTime = 0;
 
     constructor() {
         super();
@@ -98,6 +92,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public preparePlaylist(playlist: Playlist) {
         this._log('preparePlaylist');
+        this.playlist = playlist;
         if (!this.player) {
             this.setupAudioPlayer();
         } else {
@@ -106,30 +101,26 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         const audioItems = NSMutableArray.alloc().init()
         
         for (const track of playlist.tracks) {
-            audioItems.addObject(this.getAudioItemForMediaTrack(track));
+            audioItems.addObject(this.createAudioItemForMediaTrack(track));
         }
         this._iosPlaylist = audioItems;
-        this._iosItemDurationMap = new Map<number, number>();
     }
 
     private setupAudioPlayer() {
         this.player = AudioPlayer.new();
         this.delegate = AudioPlayerDelegateImpl.new();
         this.delegate.onTimeUpdate = (seconds) => {
-            this._iosLatestCurrentTime = Math.floor(seconds * 1000);
-            this._onPlaybackEvent(PlaybackEvent.TimeChanged, this._iosLatestCurrentTime);
+            this._onPlaybackEvent(PlaybackEvent.TimeChanged, Math.floor(seconds * 1000));
         };
         this.delegate.onBufferingUpdate = (item, earliest, latest) => {
             this._log(`bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`);
         }
         this.delegate.onFoundDuration = (item, duration) => {
-            this._iosItemDurationMap[this._iosPlaylist.indexOfObject(item)] = Math.floor(duration * 1000);
-            this._log(`found duration for '${item.title}': ${this._iosItemDurationMap[this.getIndexForItem(item)]}ms`);
+            this._log(`found duration for '${item.title}': ${Math.floor(duration * 1000)}ms`);
             
         };
         this.delegate.onWillStartPlayingItem = (item) => {
             this._log(`will start playing '${item.title}`);
-            this._iosLatestCurrentTime = 0;
         };
         this.delegate.onFinishedPlayingItem = (item) => {
             this._log(`finished playing '${item.title}`);
@@ -150,24 +141,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(15);
         this._log(`Player: ${this.player}`);
         this._log(`Delegate: ${this.delegate}`);
-    }
-
-    private getAudioItemForMediaTrack(track: MediaTrack): AudioItem {
-        const url = this.getNSURL(track.url)
-        let audioItem = new AudioItem({ highQualitySoundURL: url, mediumQualitySoundURL: null, lowQualitySoundURL: null });
-        audioItem.title = track.title;
-        audioItem.artist = track.artist;
-        audioItem.album = track.album
-        // TODO: album art!
-        return audioItem;
-    }
-
-    private getNSArrayForItems(items: any[]): NSArray {
-        const arr = NSMutableArray.alloc().init();
-        for (const item of items) {
-            arr.addObject(item);
-        }
-        return arr;
     }
 
     private getNSURL(urlString: string) {
@@ -209,14 +182,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     
     public skipToNext() {
         if (this.player) {
-            this._iosLatestCurrentTime = 0;
             this.player.nextOrStop();
         }
     }
     
     public skipToPrevious() {
         if (this.player) {
-            this._iosLatestCurrentTime = 0;
             this.player.previous();
         }
     }
@@ -224,12 +195,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     public skipToPlaylistIndex(playlistIndex: number) {
         if (this.player) {
             // Set latestCurrentTime, to where we expect to play from after skip.
-            if (this._queuedSeekTo != null) {
-                this._iosLatestCurrentTime = this._queuedSeekTo;
-            } else {
-                this._iosLatestCurrentTime = 0;
-            }
-            
             this.player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
         }
     }
@@ -245,11 +210,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     }
 
     public getDuration(): number {
-        return this.player && this.player.currentItem ? this._iosItemDurationMap[this.getCurrentPlaylistIndex()] : null;
+        return this.player && this.player.currentItem ? this.player.currentItemDuration : null;
     }
 
     public getCurrentTime(): number {
-        return this.player && this.player.currentItem ? this._iosLatestCurrentTime : 0;
+        return this.player && this.player.currentItem ? this.player.currentItemProgression : null;
     }
 
     private getIndexForItem(item: AudioItem) {
@@ -352,7 +317,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this._log(`seekTo: ${millisecs}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
         const seekToSeconds = millisecs / 1000.0;
         this.player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
-                seekToSeconds, adaptToSeekableRanges, beforeTolerance, afterTolerance, completionHandler
+            seekToSeconds, adaptToSeekableRanges, beforeTolerance, afterTolerance, completionHandler
         );
     }
 
@@ -405,5 +370,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 this._log(`unknown stateChange: ${from} -> ${to}`);
             }
         }
+    }
+
+    private createAudioItemForMediaTrack(track: MediaTrack): AudioItem {
+        const url = this.getNSURL(track.url)
+        let audioItem = new AudioItem({ highQualitySoundURL: url, mediumQualitySoundURL: null, lowQualitySoundURL: null });
+        audioItem.title = track.title;
+        audioItem.artist = track.artist;
+        audioItem.album = track.album
+        // TODO: album art!
+        return audioItem;
     }
 }
