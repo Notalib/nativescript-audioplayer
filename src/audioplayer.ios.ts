@@ -1,4 +1,5 @@
 import * as app from 'application';
+import * as imageSrc from 'image-source';
 
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
@@ -101,7 +102,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         const audioItems = NSMutableArray.alloc().init()
         
         for (const track of playlist.tracks) {
-            audioItems.addObject(this.createAudioItemForMediaTrack(track));
+            audioItems.addObject(this.makeAudioItemForMediaTrack(track));
         }
         this._iosPlaylist = audioItems;
     }
@@ -121,6 +122,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         };
         this.delegate.onWillStartPlayingItem = (item) => {
             this._log(`will start playing '${item.title}`);
+            if (item.artwork == null) {
+                if (this._cachedCover && this._cachedCover.url == this.getMediaTrackForItem(item).albumArtUrl) {
+                    this._log(`got artwork from cache for: ${item.title}`);
+                    item.artwork = this._cachedCover.artwork;
+                } else if (!this._isRetrievingArtwork) {
+                    this.loadRemoteControlAlbumArtworkAsync(item);
+                }
+            }
         };
         this.delegate.onFinishedPlayingItem = (item) => {
             this._log(`finished playing '${item.title}`);
@@ -372,7 +381,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         }
     }
 
-    private createAudioItemForMediaTrack(track: MediaTrack): AudioItem {
+    private makeAudioItemForMediaTrack(track: MediaTrack): AudioItem {
         const url = this.getNSURL(track.url)
         let audioItem = new AudioItem({ highQualitySoundURL: url, mediumQualitySoundURL: null, lowQualitySoundURL: null });
         audioItem.title = track.title;
@@ -381,4 +390,43 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         // TODO: album art!
         return audioItem;
     }
+
+    private getMediaTrackForItem(item: AudioItem): MediaTrack {
+        return this.playlist.tracks[this.getIndexForItem(item)];
+    }
+
+    private getCurrentMediaTrack(): MediaTrack {
+        return this.getMediaTrackForItem(this.player.currentItem);
+    }
+
+    private _isRetrievingArtwork = false;
+    private _cachedCover: { url: string, artwork: MPMediaItemArtwork } = null;
+
+    private loadRemoteControlAlbumArtworkAsync(item: AudioItem) {
+        const artworkUrl = this.playlist.tracks[this.getIndexForItem(item)].albumArtUrl;
+        if (artworkUrl == undefined || artworkUrl == null) {
+            return;
+        }
+
+        this._isRetrievingArtwork = true;
+        const imagePromise = imageSrc.isFileOrResourcePath(artworkUrl) ?
+        Promise.resolve(imageSrc.fromFileOrResource(artworkUrl)) : imageSrc.fromUrl(artworkUrl);
+
+        imagePromise
+            .then((image) => {
+                if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
+                    const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
+                    this._cachedCover = { url: artworkUrl, artwork: artwork };
+                    item.artwork = artwork;
+                } else {
+                    this._log(`loadRemoteControlArtwork loaded, but current track was changed`);
+                }
+                this._isRetrievingArtwork = false;
+            })
+            .catch((err) => {
+                this._log(`loadRemoteControlArtwork error for url '${artworkUrl}': ${err}`);
+                this._isRetrievingArtwork = false;
+            });
+    }
+}
 }
