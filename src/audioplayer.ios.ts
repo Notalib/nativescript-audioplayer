@@ -85,6 +85,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     private _iosState: AudioPlayerState;
 
     // TODO: This is messy, KDEAudioPlayer should expose a currentTime variable
+    // They are exposed through .currentItemDuration and .currentItemProgression,
+    // but are currently not available through TNS obj-c runtime...
+    // ... possibly due to AVPlayerItem extensions used in KDEAudioPlayer
     private _iosLatestCurrentTime = 0;
 
     constructor() {
@@ -144,6 +147,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.delegate = this.delegate;
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
         this.player.preferredBufferDurationBeforePlayback = 10;
+        this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(15);
         this._log(`Player: ${this.player}`);
         this._log(`Delegate: ${this.delegate}`);
     }
@@ -329,7 +333,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     public setSeekIntervalSeconds(seconds: number) {
         this._log('setSeekIntervalSeconds: '+ seconds);
         this.seekIntervalSeconds = seconds;
-        // this.updateRemoteControlPreferredIntervals(seconds);
+        if (this.player) {
+            this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(seconds);
+        }
     }
 
     public destroy() {

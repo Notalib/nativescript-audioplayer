@@ -79,6 +79,8 @@ declare class AudioPlayer extends NSObject {
 
 	rate: number;
 
+	remoteControlSkipIntervals: NSArray;
+
 	resumeAfterConnectionLoss: boolean;
 
 	resumeAfterInterruption: boolean;
@@ -117,13 +119,13 @@ declare class AudioPlayer extends NSObject {
 
 	previous(): void;
 
-	remoteControlReceivedWith(event: UIEvent): void;
-
 	removeItemAt(index: number): void;
 
 	resume(): void;
 
 	seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(time: number, byAdaptingTimeToFitSeekableRanges: boolean, toleranceBefore: CMTime, toleranceAfter: CMTime, completionHandler: (p1: boolean) => void): void;
+
+	seekToRelativeTimeCompletionHandler(relativeTime: number, completionHandler: (p1: boolean) => void): void;
 
 	seekToSeekableRangeEndWithPaddingCompletionHandler(padding: number, completionHandler: (p1: boolean) => void): void;
 
@@ -153,14 +155,49 @@ interface AudioPlayerDelegate {
 
 	audioPlayerDidUpdateProgressionToPercentageRead?(audioPlayer: AudioPlayer, time: number, percentageRead: number): void;
 
-	audioPlayerWillStartPlaying?(audioPlayer: AudioPlayer, item: AudioItem): void;
-
 	audioPlayerFinishedPlaying?(audioPlayer: AudioPlayer, item: AudioItem): void;
+
+	audioPlayerWillStartPlaying?(audioPlayer: AudioPlayer, item: AudioItem): void;
 }
 declare var AudioPlayerDelegate: {
 
 	prototype: AudioPlayerDelegate;
 };
+
+declare const enum AudioPlayerRemoteCommand {
+
+	PlayPause = 0,
+
+	Stop = 1,
+
+	NextTrack = 2,
+
+	PreviousTrack = 3,
+
+	SkipForward = 4,
+
+	SkipBackward = 5,
+
+	SeekForward = 6,
+
+	SeekBackward = 7,
+
+	ChangePlaybackRate = 8,
+
+	ChangePlaybackPosition = 9,
+
+	Rate = 10,
+
+	Like = 11,
+
+	Dislike = 12,
+
+	Bookmark = 13,
+
+	ChangeRepeatMode = 14,
+
+	ChangeShuffleMode = 15
+}
 
 declare const enum AudioPlayerState {
 
