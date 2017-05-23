@@ -80,7 +80,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     private seekIntervalSeconds = 15;
 
     // TODO: use this to avoid TimeUpdate below _queuedSeek during a seek
-    private _isSeeking = false;
+    private _isSeekingTo: { index: number, millisecs: number };
 
     private _iosPlaylist: NSArray;
     private _iosState: AudioPlayerState;
@@ -114,17 +114,23 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player = AudioPlayer.new();
         this.delegate = AudioPlayerDelegateImpl.new();
         this.delegate.onTimeUpdate = (seconds) => {
-            this._onPlaybackEvent(PlaybackEvent.TimeChanged, Math.floor(seconds * 1000));
+            const timeMillis = Math.floor(seconds * 1000);
+            if (this._isSeekingTo && this._isSeekingTo.index == this.getCurrentPlaylistIndex() && 5000 < Math.abs(timeMillis - this._isSeekingTo.millisecs)) {
+                this._log(`IGNORE time-update, we're seeking and this time-update is way off`);
+            } else {
+                this._isSeekingTo = null;
+                this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMillis);
+            }
         };
         this.delegate.onBufferingUpdate = (item, earliest, latest) => {
             this._log(`bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`);
         }
         this.delegate.onFoundDuration = (item, duration) => {
-            this._log(`found duration for '${item.title}': ${Math.floor(duration * 1000)}ms`);
-            
+            this._log(`found duration for '${item.title}': ${duration}s`);
         };
         this.delegate.onWillStartPlayingItem = (item) => {
             this._log(`will start playing '${item.title}`);
+            this._isSeekingTo = null;
             if (item.artwork == null) {
                 if (this._cachedCover && this._cachedCover.url == this.getMediaTrackForItem(item).albumArtUrl) {
                     this._log(`got artwork from cache for: ${item.title}`);
@@ -136,6 +142,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         };
         this.delegate.onFinishedPlayingItem = (item) => {
             this._log(`finished playing '${item.title}`);
+            this._isSeekingTo = null;
             const finishedIndex = this._iosPlaylist.indexOfObject(item);
             this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached, finishedIndex);
             if (finishedIndex >= this._iosPlaylist.count - 1) {
@@ -255,7 +262,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public seekTo(millisecs: number) {
         if (this.player) {
-            this._isSeeking = true;
+            this._isSeekingTo = { index: this.getCurrentPlaylistIndex(), millisecs };
             this._iosSeekTo(millisecs, false, kCMTimeZero, kCMTimeZero);
         }
     }
@@ -356,9 +363,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             }
             case AudioPlayerState.Playing: {
                 if (this._queuedSeekTo) {
-                    // TODO: Queued seek may not use a completion-handler, that only works when item is fully ready??
-                    // ^ is this true, needs testing.
-                    this._isSeeking = true;
+                    // TODO: Queued seek may not use a completion-handler, that only works on "safe" seeks.
                     this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero);
                     this._queuedSeekTo = null;
                 } else {
