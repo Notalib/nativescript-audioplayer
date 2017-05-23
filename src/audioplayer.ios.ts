@@ -224,11 +224,17 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     }
 
     public getDuration(): number {
-        return this.player && this.player.currentItem ? this.player.currentItemDuration : null;
+        if (this.player && this.player.currentItem && this.player.currentItemDuration) {
+            return Math.floor(this.player.currentItemDuration * 1000);
+        }
+        return -1;
     }
 
     public getCurrentTime(): number {
-        return this.player && this.player.currentItem ? this.player.currentItemProgression : null;
+        if (this.player && this.player.currentItem && this.player.currentItemProgression) {
+            return Math.floor(this.player.currentItemProgression * 1000);
+        }
+        return 0;
     }
 
     private getIndexForItem(item: AudioItem) {
