@@ -102,7 +102,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         const audioItems = NSMutableArray.alloc().init()
         
         for (const track of playlist.tracks) {
-            audioItems.addObject(this.makeAudioItemForMediaTrack(track));
+            const audioItem = this.makeAudioItemForMediaTrack(track);
+            if (audioItem != null) {
+                audioItems.addObject(audioItem);
+            }
         }
         this._iosPlaylist = audioItems;
     }
@@ -156,10 +159,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         ]);
         this._log(`Player: ${this.player}`);
         this._log(`Delegate: ${this.delegate}`);
-    }
-
-    private getNSURL(urlString: string) {
-        return NSURL.URLWithString(urlString);
     }
 
     public addToPlaylist(track: MediaTrack) {}
@@ -388,13 +387,22 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     }
 
     private makeAudioItemForMediaTrack(track: MediaTrack): AudioItem {
-        const url = this.getNSURL(track.url)
-        let audioItem = new AudioItem({ highQualitySoundURL: url, mediumQualitySoundURL: null, lowQualitySoundURL: null });
-        audioItem.title = track.title;
-        audioItem.artist = track.artist;
-        audioItem.album = track.album
-        // TODO: album art!
-        return audioItem;
+        try {
+            this._log(`Track: ${JSON.stringify(track)}`);
+            const url = track.url.substr(0, 7) == 'file://' ?
+                NSURL.fileURLWithPath(track.url.substr(7)) :
+                NSURL.URLWithString(track.url);
+            this._log(`URL: ${url}`);
+            let audioItem = new AudioItem({ highQualitySoundURL: null, mediumQualitySoundURL: url, lowQualitySoundURL: null });
+            this._log(`AudioItem: ${JSON.stringify(audioItem)}`);
+            audioItem.title = track.title;
+            audioItem.artist = track.artist;
+            audioItem.album = track.album;
+            return audioItem;
+        } catch(err) {
+            this._log(`Error: Failed to create AudioItem for MediaTrack: ${err}`);
+            return null;
+        }
     }
 
     private getMediaTrackForItem(item: AudioItem): MediaTrack {
