@@ -50,7 +50,7 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
     }
 
 	public audioPlayerDidUpdateProgressionToPercentageRead(audioPlayer: AudioPlayer, time: number, percentageRead: number): void {
-        // console.log(`didUpdateProgress: ${time} - ${percentageRead}`);
+        console.log(`didUpdateProgress: ${time} - ${percentageRead}`);
         if (this.onTimeUpdate) {
             this.onTimeUpdate(time);
         }
@@ -114,13 +114,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player = AudioPlayer.new();
         this.delegate = AudioPlayerDelegateImpl.new();
         this.delegate.onTimeUpdate = (seconds) => {
+            this._log(`- timeUpdate: ${seconds}s`);
             const timeMillis = Math.floor(seconds * 1000);
-            if (this._isSeekingTo && this._isSeekingTo.index == this.getCurrentPlaylistIndex() && 5000 < Math.abs(timeMillis - this._isSeekingTo.millisecs)) {
-                this._log(`IGNORE time-update, we're seeking and this time-update is way off`);
-            } else {
-                this._isSeekingTo = null;
+            this._log(`- timeUpdate: ${timeMillis}ms`);
+            // if (this._isSeekingTo && this._isSeekingTo.index == this.getCurrentPlaylistIndex() && 5000 < Math.abs(timeMillis - this._isSeekingTo.millisecs)) {
+            //     this._log(`IGNORE time-update, we're seeking and this time-update is way off`);
+            // } else {
+            //     this._isSeekingTo = null;
                 this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMillis);
-            }
+            // }
         };
         this.delegate.onBufferingUpdate = (item, earliest, latest) => {
             this._log(`bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`);
