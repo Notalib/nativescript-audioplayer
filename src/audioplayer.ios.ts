@@ -50,7 +50,7 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
     }
 
 	public audioPlayerDidUpdateProgressionToPercentageRead(audioPlayer: AudioPlayer, time: number, percentageRead: number): void {
-        console.log(`didUpdateProgress: ${time} - ${percentageRead}`);
+        // console.log(`didUpdateProgress: ${time} - ${percentageRead}`);
         if (this.onTimeUpdate) {
             this.onTimeUpdate(time);
         }
@@ -115,9 +115,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.ios = this.player;
         this.delegate = AudioPlayerDelegateImpl.new();
         this.delegate.onTimeUpdate = (seconds) => {
-            this._log(`- timeUpdate: ${seconds}s`);
+            // this._log(`- timeUpdate: ${seconds}s`);
             const timeMillis = Math.floor(seconds * 1000);
-            this._log(`- timeUpdate: ${timeMillis}ms`);
             if (this._isSeeking) {
                 this._log(`IGNORE time-update, we're seeking`);
             } else {
