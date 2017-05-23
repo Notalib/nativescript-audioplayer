@@ -1,4 +1,5 @@
 import * as app from 'application';
+import { isIOS } from 'platform';
 import { TNSAudioPlayer, MediaTrack, Playlist, PlaybackEvent, PlaybackEventListener } from './types';
 
 export * from './types';
@@ -73,7 +74,7 @@ export abstract class CommonAudioPlayer implements TNSAudioPlayer {
   
   protected _log(logStr: string) {
     if (this.debugOutputEnabled) {
-      let platform = this.ios ? 'iOS' : 'Android';
+      let platform = isIOS ? 'iOS' : 'Android';
       console.log(`tns-audioplayer(${platform}): ${logStr}`);
     }
   }
