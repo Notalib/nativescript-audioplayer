@@ -215,7 +215,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public skipToPlaylistIndex(playlistIndex: number) {
         if (this.player) {
-            // Set latestCurrentTime, to where we expect to play from after skip.
             this.player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
         }
     }
@@ -239,7 +238,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public getCurrentTime(): number {
         if (this.player && this.player.currentItem && this.player.currentItemProgression) {
-            return Math.floor(this.player.currentItemProgression * 1000);
+            return Math.max(0, Math.floor(this.player.currentItemProgression * 1000));
         }
         return 0;
     }
