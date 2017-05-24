@@ -261,13 +261,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     public seekTo(millisecs: number) {
         if (this.player) {
             this._iosSeekTo(millisecs, false, kCMTimeZero, kCMTimeZero);
-            // Delay TimeUpdates for a short time after initiating a seek
-            // Easiest method we have right now to avoid TimeUpdates at the old position during a seek.
-            // TODO: Find a way to use completionHandler on seek without failing, or pause playback before the seek, and resume after somehow?
-            this._isSeeking = true;
-            setTimeout(() => {
-                this._isSeeking = false;
-            }, 100);
         }
     }
 
@@ -346,10 +339,20 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     private _iosSeekTo(millisecs: number, adaptToSeekableRanges = false, beforeTolerance: CMTime = kCMTimeZero, afterTolerance: CMTime = kCMTimeZero, completionHandler?: (boolean) => void) {
         this._log(`seekTo: ${millisecs}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
+
+        // Delay TimeUpdates for 500ms after initiating a seek
+        // Easiest method we have right now to avoid TimeUpdates at the old position during a seek.
+        // TODO: Find a way to use completionHandler on seek without failing, or pause playback before the seek, and resume after somehow?
+        this._isSeeking = true;
+
         const seekToSeconds = millisecs / 1000.0;
         this.player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
             seekToSeconds, adaptToSeekableRanges, beforeTolerance, afterTolerance, completionHandler
         );
+        
+        setTimeout(() => {
+            this._isSeeking = false;
+        }, 500);
     }
 
     private _iosSetPlayingState() {
@@ -390,6 +393,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 break;
             }
             case AudioPlayerState.Failed: {
+                // TODO: Send error message as arg.
                 this._onPlaybackEvent(PlaybackEvent.EncounteredError);
                 this.pauseSleepTimer();
                 break;
