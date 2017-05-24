@@ -370,9 +370,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                     // TODO: Queued seek may not use a completion-handler, that only works on "safe" seeks.
                     this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero);
                     this._queuedSeekTo = null;
-                } else {
-                    this._iosSetPlayingState();
                 }
+                this._iosSetPlayingState();
                 break;
             }
             case AudioPlayerState.Paused: {
