@@ -281,8 +281,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             if (this._sleepTimerMillisecsLeft == 0) {
                 // Fade out volume and pause if not already paused.
                 if (this.isPlaying()) {
-                    // TODO: fade out volume
-                    //   this.fadeOutVolumeAndPause();
+                    this.fadeOutVolumeAndPause();
                 }
                 clearInterval(this._sleepTimer);
                 this._sleepTimer = undefined;
@@ -337,6 +336,26 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     //* PRIVATE HELPERS *//
 
+    private fadeOutVolumeAndPause(): void {
+        const fadeTickMillis = 250.0;
+        const sleepTimerFadeDuration = 5000.0;
+        const previousVolume = this.player.volume;
+        const fadeInterval = setInterval(() => {
+            const decreaseBy = fadeTickMillis / sleepTimerFadeDuration;
+            const newVolume = Math.max(this.player.volume - decreaseBy, 0);
+            this.player.volume = newVolume;
+            if (newVolume === 0) {
+                this._log(`Volume faded out!`);
+                if (this.player && this.player.state !== AudioPlayerState.Paused) {
+                    this._log(`Volume faded out, now pausing!`);
+                    this.player.pause();
+                }
+                this.player.volume = previousVolume;
+                clearInterval(fadeInterval);
+            }
+        }, fadeTickMillis);
+    }
+
     private _iosSeekTo(millisecs: number, adaptToSeekableRanges = false, beforeTolerance: CMTime = kCMTimeZero, afterTolerance: CMTime = kCMTimeZero, completionHandler?: (boolean) => void) {
         this._log(`seekTo: ${millisecs}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
 
@@ -369,12 +388,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 break;
             }
             case AudioPlayerState.Playing: {
+                this._iosSetPlayingState();
                 if (this._queuedSeekTo) {
                     // TODO: Queued seek may not use a completion-handler, that only works on "safe" seeks.
                     this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero);
                     this._queuedSeekTo = null;
                 }
-                this._iosSetPlayingState();
                 break;
             }
             case AudioPlayerState.Paused: {
