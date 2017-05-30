@@ -1,4 +1,5 @@
 import { Observable } from 'data/observable';
+import * as fs from 'file-system';
 import { TNSAudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent } from '@nota/nativescript-audioplayer';
 
 export class HelloWorldModel extends Observable implements PlaybackEventListener {
@@ -27,16 +28,36 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     if (this.player.getCurrentPlaylistUID() == playlistUID) {
       console.log('Player already has playlist: '+ this.player.getCurrentPlaylistUID());
     } else {
+
+      console.log(`Folder: currentApp`);
+      fs.knownFolders.currentApp().getEntities().then((entities) => {
+        entities.forEach(entity => {
+          console.log(`- ${entity.name}`);
+        });
+      });
+
+      const filePath = fs.path.join(fs.knownFolders.currentApp().path, '1984.mp3');
+      console.log(`mp3 file exists? ${fs.File.exists(filePath)}`);
+      fs.knownFolders.currentApp().getFile('1984.mp3').readText().then((text) => {
+        console.log(`mp3 file (readText) length: ${text.length}`);
+      });
+
+      const localFile = fs.knownFolders.currentApp().getFile('1984.mp3');
+      console.log(`local file: ${localFile}: file://${localFile.path}`);
+      console.log(`local file: ${localFile}: ${filePath}`);
+
       console.log('Loading new playlist. Old UID: '+ this.player.getCurrentPlaylistUID());
       const playlist = new Playlist(playlistUID,
-        // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
-        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
-        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
-        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
-        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3", "1986", "George Orwell", "Del 4 af 4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
-        //new MediaTrack("http://mean2u.rfshq.com/downloads/music/giveyouup.mp3", "Rick n' Roll", "Rick Astley", "album", null),
-        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam2", "SoundSnap.com", "Short Test", null),
-        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
+        // new MediaTrack(`file://${filePath}`, "Title", "Artist", "Album", null),
+        // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam", "Short Test", null),
+        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam", "Short Test", null),
+        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", null, null, null, null),
+        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "George Orwell", "1986", "Album 2/4", "httpasda://bookcover.nota.dk/714070_w140_h200.jpg"),
+        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "George Orwell", "1986", "Album 3/4", null),
+        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3", "George Orwell", "1986", "Album 4/4", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+        // //new MediaTrack("http://mean2u.rfshq.com/downloads/music/giveyouup.mp3", "Rick Astley", "Rick n' Roll", "album", null),
+        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam2", "Short Test", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
+        // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam3", "Short Test", null)
       );
       this.player.loadPlaylist(playlist);
     }
@@ -132,8 +153,11 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public seekFix() {
-    console.log('demo - skipToPlaylistIndexAndOffset 1:1000000');
-    this.player.skipToPlaylistIndexAndOffset(1, 1000000);
+    // console.log('demo - skipToPlaylistIndexAndOffset 1:1000000');
+    // this.player.skipToPlaylistIndexAndOffset(1, 1000000);
+    console.log('sleep in 5 sec!');
+    this.player.setSleepTimer(5000);
+    // console.log(`Player position: ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()} / ${this.player.getDuration()}`);
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {
