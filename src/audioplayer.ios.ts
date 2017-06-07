@@ -111,6 +111,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     }
 
     private setupAudioPlayer() {
+        this._log(`setupAudioPlayer`);
         this.player = AudioPlayer.new();
         this.ios = this.player;
         this.delegate = AudioPlayerDelegateImpl.new();
@@ -167,7 +168,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this._log(`Delegate: ${this.delegate}`);
     }
 
-    public addToPlaylist(track: MediaTrack) {}
+    public addToPlaylist(track: MediaTrack) {
+        this._log('ERROR: addToPlaylist not implemented');
+    }
 
     public play() {
         try {
