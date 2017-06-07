@@ -158,8 +158,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
         this.player.preferredBufferDurationBeforePlayback = 10;
         this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(15);
-        this.player.remoteCommandsEnabled = NSArrayFromItems([
-            NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackPosition),
+        this.player.remoteCommandsEnabled = NSArrayFromItems([,
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
