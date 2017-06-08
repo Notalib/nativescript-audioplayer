@@ -6,7 +6,8 @@ import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audiop
 // TODO: Do all exports in a main.ts instead
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
-// declare var LYTAudioPlayer: any;
+// Available on iOS 9+
+declare var AVAudioSessionModeSpokenAudio: string;
 
 class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 
@@ -157,7 +158,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.delegate = this.delegate;
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
         this.player.preferredBufferDurationBeforePlayback = 10;
-        this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(15);
+        this.player.audioSessionCategory = AVAudioSessionCategoryPlayback;
+        // Set AVAudioSession mode to SpokenAudio if it's defined (iOS 9+)
+        // this ensures better mix with navigation, siri etc.
+        if (AVAudioSessionModeSpokenAudio) {
+            this._log(`AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`);
+            this.player.audioSessionMode = AVAudioSessionModeSpokenAudio;
+        }
         this.player.remoteCommandsEnabled = NSArrayFromItems([
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
