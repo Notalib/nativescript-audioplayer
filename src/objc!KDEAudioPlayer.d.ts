@@ -53,6 +53,12 @@ declare class AudioPlayer extends NSObject {
 
 	adjustQualityTimeInternal: number;
 
+	allowExternalPlayback: boolean;
+
+	audioSessionCategory: string;
+
+	audioSessionMode: string;
+
 	bufferingStrategy: AudioPlayerBufferingStrategy;
 
 	readonly currentItem: AudioItem;
@@ -105,10 +111,6 @@ declare class AudioPlayer extends NSObject {
 
 	clearAssetCache(): void;
 
-	getAVPlayerItemForUrl(forUrl: NSURL): AVPlayerItem;
-
-	getAVURLAssetForUrl(forUrl: NSURL): AVURLAsset;
-
 	next(): void;
 
 	nextOrStop(): void;
@@ -118,10 +120,6 @@ declare class AudioPlayer extends NSObject {
 	playWithItem(item: AudioItem): void;
 
 	playWithItemsStartAtIndex(items: NSArray, index: number): void;
-
-	preloadItemAssetWithAssetOnComplete(asset: AVURLAsset, onComplete: (p1: AVURLAsset) => void): void;
-
-	preloadNextItemAsset(): void;
 
 	previous(): void;
 
