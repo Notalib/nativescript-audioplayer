@@ -165,6 +165,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this._log(`AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`);
             this.player.audioSessionMode = AVAudioSessionModeSpokenAudio;
         }
+        this.player.allowExternalPlayback = true;
+        this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(this.seekIntervalSeconds);
         this.player.remoteCommandsEnabled = NSArrayFromItems([
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
