@@ -6,7 +6,7 @@
 
 # publish
 # source 'https://github.com/ddfreiling/CocoaPodSpecs.git'
-pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-4'
+pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-5'
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
