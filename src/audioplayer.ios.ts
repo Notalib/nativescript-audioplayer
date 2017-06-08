@@ -3,7 +3,7 @@ import * as imageSrc from 'image-source';
 
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
-// TODO: Do all exports in a main.ts instead?
+// TODO: Do all exports in a main.ts instead
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
 // declare var LYTAudioPlayer: any;
@@ -131,10 +131,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this._log(`found duration for '${item.title}': ${duration}s`);
         };
         this.delegate.onWillStartPlayingItem = (item) => {
-            this._log(`will start playing '${item.title}`);
+            this._log(`will start playing '${item.title}'`);
             if (item.artwork == null) {
                 if (this._cachedCover && this._cachedCover.url == this.getMediaTrackForItem(item).albumArtUrl) {
-                    this._log(`got artwork from cache for: ${item.title}`);
+                    this._log(`got artwork from cache for '${item.title}'`);
                     item.artwork = this._cachedCover.artwork;
                 } else if (!this._isRetrievingArtwork) {
                     this.loadRemoteControlAlbumArtworkAsync(item);
@@ -142,7 +142,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             }
         };
         this.delegate.onFinishedPlayingItem = (item) => {
-            this._log(`finished playing '${item.title}`);
+            this._log(`finished playing '${item.title}'`);
             const finishedIndex = this._iosPlaylist.indexOfObject(item);
             this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached, finishedIndex);
             if (finishedIndex >= this._iosPlaylist.count - 1) {
