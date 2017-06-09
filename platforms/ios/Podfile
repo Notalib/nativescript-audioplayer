@@ -1,12 +1,8 @@
 # use_frameworks!
 # platform :ios, '8.0'
 
-# local development
-# pod 'LYTAudio', :path => '~/Code/LYTAudio'
-
 # publish
-# source 'https://github.com/ddfreiling/CocoaPodSpecs.git'
-pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-5'
+pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-6'
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
