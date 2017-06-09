@@ -471,8 +471,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         }
 
         this._isRetrievingArtwork = true;
-        const imagePromise = imageSrc.isFileOrResourcePath(artworkUrl) ?
-        Promise.resolve(imageSrc.fromFileOrResource(artworkUrl)) : imageSrc.fromUrl(artworkUrl);
+        let imagePromise: Promise<imageSrc.ImageSource>;
+        if (imageSrc.isFileOrResourcePath(artworkUrl)) {
+            imagePromise = Promise.resolve(imageSrc.fromFileOrResource(artworkUrl));
+        } else {
+            imagePromise = imageSrc.fromUrl(artworkUrl);
+        }
 
         imagePromise
             .then((image) => {
