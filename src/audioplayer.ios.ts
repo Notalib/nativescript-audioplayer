@@ -79,12 +79,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     private delegate: AudioPlayerDelegateImpl;
 
     private seekIntervalSeconds = 15;
-
-    // Only set true for a short time using a timeout when seeking.
     private _isSeeking = false;
-
     private _iosPlaylist: NSArray;
-    private _iosState: AudioPlayerState;
 
     constructor() {
         super();
@@ -151,7 +147,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             }
         };
         this.delegate.onStateChanged = (from, to) => {
-            this._iosState = to;
             this._iosPlayerStateChanged(from, to);
         }
         //this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
