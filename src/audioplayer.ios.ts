@@ -120,7 +120,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             // this._log(`- timeUpdate: ${seconds}s`);
             const timeMillis = Math.floor(seconds * 1000);
             if (this._isSeeking) {
-                this._log(`IGNORE time-update, we're seeking`);
+                this._log(`time-update skipped, we're seeking`);
             } else {
                 this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMillis);
             }
@@ -271,7 +271,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     public seekTo(millisecs: number) {
         if (this.player) {
-            this._iosSeekTo(millisecs, false, kCMTimeZero, kCMTimeZero);
+            this._iosSeekTo(millisecs);
         }
     }
 
@@ -370,19 +370,18 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     private _iosSeekTo(millisecs: number, adaptToSeekableRanges = false, beforeTolerance: CMTime = kCMTimeZero, afterTolerance: CMTime = kCMTimeZero, completionHandler?: (boolean) => void) {
         this._log(`seekTo: ${millisecs}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
 
-        // Delay TimeUpdates for 500ms after initiating a seek
-        // Easiest method we have right now to avoid TimeUpdates at the old position during a seek.
-        // TODO: Find a way to use completionHandler on seek without failing, or pause playback before the seek, and resume after somehow?
+        // avoid sending TimeUpdates white a seek is in progress
         this._isSeeking = true;
 
         const seekToSeconds = millisecs / 1000.0;
         this.player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
-            seekToSeconds, adaptToSeekableRanges, beforeTolerance, afterTolerance, completionHandler
-        );
-        
-        setTimeout(() => {
+                seekToSeconds, adaptToSeekableRanges, beforeTolerance, afterTolerance, (completed) => {
+            this._log(`seek completed = ${completed}`);
             this._isSeeking = false;
-        }, 500);
+            if (completionHandler) {
+                completionHandler(completed);
+            }
+        });
     }
 
     private _iosSetPlayingState() {
