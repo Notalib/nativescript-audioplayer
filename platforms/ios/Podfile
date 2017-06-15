@@ -2,7 +2,7 @@
 # platform :ios, '8.0'
 
 # publish
-pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-8'
+pod 'KDEAudioPlayer', :git => 'https://github.com/ddfreiling/AudioPlayer.git', :tag => 'merged-9'
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
