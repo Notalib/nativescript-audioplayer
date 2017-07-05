@@ -3,12 +3,15 @@
         "module": "commonjs",
         "target": "es5",
         "experimentalDecorators": true,
-        "noEmitHelpers": true
+        "noEmitHelpers": true,
+        "skipLibCheck": true,
+        "noLib": true
     },
     "files": [
         "app/app.ts",
         "app/main-page.ts",
         "app/main-view-model.ts",
+        "node_modules/tns-core-modules/lib.core.d.ts",
         "node_modules/tns-core-modules/tns-core-modules.d.ts",
         "../audioplayer.common.d.ts"
     ],
