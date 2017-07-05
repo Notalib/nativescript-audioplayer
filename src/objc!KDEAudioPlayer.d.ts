@@ -29,7 +29,7 @@ declare class AudioItem extends NSObject {
 
 	initWithHighQualitySoundURLMediumQualitySoundURLLowQualitySoundURL(highQualitySoundURL: NSURL, mediumQualitySoundURL: NSURL, lowQualitySoundURL: NSURL): this;
 
-	parseMetadata(items: NSArray): void;
+	parseMetadata(items: NSArray<AVMetadataItem>): void;
 }
 
 declare class AudioItemURL extends NSObject {
@@ -55,17 +55,13 @@ declare class AudioPlayer extends NSObject {
 
 	allowExternalPlayback: boolean;
 
-	sessionCategory: string;
-
-	sessionMode: string;
-
-	timePitchAlgorithm: string;
-
 	bufferingStrategy: AudioPlayerBufferingStrategy;
 
 	readonly currentItem: AudioItem;
 
 	readonly currentItemDuration: number;
+
+	readonly currentItemIsReady: boolean;
 
 	readonly currentItemLoadedRange: TimeRange;
 
@@ -79,7 +75,7 @@ declare class AudioPlayer extends NSObject {
 
 	readonly hasPrevious: boolean;
 
-	readonly items: NSArray;
+	readonly items: NSArray<AudioItem>;
 
 	maximumConnectionLossTime: number;
 
@@ -91,9 +87,9 @@ declare class AudioPlayer extends NSObject {
 
 	rate: number;
 
-	remoteCommandsEnabled: NSArray;
+	remoteCommandsEnabled: NSArray<number>;
 
-	remoteControlSkipIntervals: NSArray;
+	remoteControlSkipIntervals: NSArray<number>;
 
 	resumeAfterConnectionLoss: boolean;
 
@@ -101,15 +97,19 @@ declare class AudioPlayer extends NSObject {
 
 	retryTimeout: number;
 
+	sessionCategory: string;
+
+	sessionMode: string;
+
 	readonly state: AudioPlayerState;
+
+	timePitchAlgorithm: string;
 
 	volume: number;
 
-	static readonly assetPreloadKeys: NSArray;
-
 	addWithItem(item: AudioItem): void;
 
-	addWithItems(items: NSArray): void;
+	addWithItems(items: NSArray<AudioItem>): void;
 
 	clearAssetCache(): void;
 
@@ -121,7 +121,7 @@ declare class AudioPlayer extends NSObject {
 
 	playWithItem(item: AudioItem): void;
 
-	playWithItemsStartAtIndex(items: NSArray, index: number): void;
+	playWithItemsStartAtIndex(items: NSArray<AudioItem>, index: number): void;
 
 	previous(): void;
 
@@ -157,7 +157,7 @@ interface AudioPlayerDelegate {
 
 	audioPlayerDidLoadEarliestLatestFor?(audioPlayer: AudioPlayer, earliest: number, latest: number, item: AudioItem): void;
 
-	audioPlayerDidUpdateEmptyMetadataOnWithData?(audioPlayer: AudioPlayer, item: AudioItem, data: NSArray): void;
+	audioPlayerDidUpdateEmptyMetadataOnWithData?(audioPlayer: AudioPlayer, item: AudioItem, data: NSArray<AVMetadataItem>): void;
 
 	audioPlayerDidUpdateProgressionToPercentageRead?(audioPlayer: AudioPlayer, time: number, percentageRead: number): void;
 
@@ -223,6 +223,23 @@ declare const enum AudioPlayerState {
 declare var KDEAudioPlayerVersionNumber: number;
 
 declare var KDEAudioPlayerVersionString: interop.Reference<number>;
+
+declare class SeekOperation extends NSObject {
+
+	static alloc(): SeekOperation; // inherited from NSObject
+
+	static new(): SeekOperation; // inherited from NSObject
+
+	adaptToFitSeekableRanges: boolean;
+
+	completionHandler: (p1: boolean) => void;
+
+	time: number;
+
+	toleranceAfter: CMTime;
+
+	toleranceBefore: CMTime;
+}
 
 declare class TimeRange extends NSObject {
 

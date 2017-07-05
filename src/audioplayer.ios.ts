@@ -17,7 +17,7 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
     public onFoundDuration: (item: AudioItem, duration: number) => void;
     public onWillStartPlayingItem: (item: AudioItem) => void;
     public onFinishedPlayingItem: (item: AudioItem) => void;
-    public onMetadataReceived: (item: AudioItem, data: NSArray) => void;
+    public onMetadataReceived: (item: AudioItem, data: NSArray<any>) => void;
     public onBufferingUpdate: (item: AudioItem, earliestBufferSec: number, latestBufferSec: number) => void;
     public onStateChanged: (from: AudioPlayerState, to: AudioPlayerState) => void;
 
@@ -43,7 +43,7 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
         }
     }
 
-	public audioPlayerDidUpdateEmptyMetadataOnWithData(audioPlayer: AudioPlayer, item: AudioItem, data: NSArray): void {
+	public audioPlayerDidUpdateEmptyMetadataOnWithData(audioPlayer: AudioPlayer, item: AudioItem, data: NSArray<AVMetadataItem>): void {
         // console.log('didUpdateEmptyMetadata for '+ item.title);
         if (this.onMetadataReceived) {
             this.onMetadataReceived(item, data);
@@ -80,7 +80,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
     private seekIntervalSeconds = 15;
     private _isSeeking = false;
-    private _iosPlaylist: NSArray;
+    private _iosPlaylist: NSArray<AudioItem>;
 
     constructor() {
         super();
@@ -96,7 +96,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         } else {
             this.stop();
         }
-        const audioItems = NSMutableArray.alloc().init()
+        const audioItems = NSMutableArray.alloc<AudioItem>().init()
         
         for (const track of playlist.tracks) {
             const audioItem = this.makeAudioItemForMediaTrack(track);
@@ -163,7 +163,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         }
         this.player.allowExternalPlayback = true;
         this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(this.seekIntervalSeconds);
-        this.player.remoteCommandsEnabled = NSArrayFromItems([
+        this.player.remoteCommandsEnabled = NSArrayFromItems<number>([
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
             NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
@@ -491,8 +491,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     }
 }
 
-function NSArrayFromItems(items: any[]): NSArray {
-    const arr = NSMutableArray.alloc().init();
+function NSArrayFromItems<T>(items: any[]): NSArray<T> {
+    const arr = NSMutableArray.alloc<T>().init();
     for (const item of items) {
         arr.addObject(item);
     }
