@@ -153,12 +153,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.delegate = this.delegate;
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
         this.player.preferredBufferDurationBeforePlayback = 10;
-        this.player.audioSessionCategory = AVAudioSessionCategoryPlayback;
+        this.player.sessionCategory = AVAudioSessionCategoryPlayback;
         // Set AVAudioSession mode to SpokenAudio if it's defined (iOS 9+)
         // this ensures better mix with navigation, siri etc.
         if (AVAudioSessionModeSpokenAudio) {
             this._log(`AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`);
-            this.player.audioSessionMode = AVAudioSessionModeSpokenAudio;
+            this.player.sessionMode = AVAudioSessionModeSpokenAudio;
         }
         this.player.allowExternalPlayback = true;
         this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(this.seekIntervalSeconds);

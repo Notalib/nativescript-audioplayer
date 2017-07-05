@@ -55,9 +55,11 @@ declare class AudioPlayer extends NSObject {
 
 	allowExternalPlayback: boolean;
 
-	audioSessionCategory: string;
+	sessionCategory: string;
 
-	audioSessionMode: string;
+	sessionMode: string;
+
+	timePitchAlgorithm: string;
 
 	bufferingStrategy: AudioPlayerBufferingStrategy;
 
