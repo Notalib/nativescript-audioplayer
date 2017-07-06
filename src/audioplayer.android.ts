@@ -4,13 +4,33 @@ import * as app from 'application';
 
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
-import lyt = dk.nota.lyt.libvlc;
 import PlayerEvent = dk.nota.lyt.libvlc.media.MediaPlayerEvent;
+
+@Interfaces([dk.nota.lyt.libvlc.ConnectionCallback])
+export class TNSConnectionCallback extends java.lang.Object {
+
+  constructor(private owner: TNSAudioPlayer,
+              private resolve: (value?: any) => void,
+              private reject: (reason?: any) => void) {
+    super();
+    return global.__native(this);
+  }
+
+  public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
+    this.owner.onConnected(service);
+    this.resolve();
+  }
+
+  public onDisconnected() {
+    this.owner.onDisconnected();
+    this.reject();
+  }
+}
 
 export class TNSAudioPlayer extends CommonAudioPlayer
 {
-  public _serviceHelper: lyt.PlaybackServiceHelper;
-  public _service: lyt.PlaybackService;
+  public _serviceHelper: dk.nota.lyt.libvlc.PlaybackServiceHelper;
+  public _service: dk.nota.lyt.libvlc.PlaybackService;
 
   private _readyPromise: Promise<any>;
   
@@ -22,35 +42,36 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     super();
     this.android = this;
     this._readyPromise = new Promise<any>((resolve, reject) => {
-      this._serviceHelper = new lyt.PlaybackServiceHelper(app.android.context, new lyt.ConnectionCallback({
-        onConnected: (service: lyt.PlaybackService) => {
-          this._log("PlaybackService - Connected");
-          this._service = service;
-          this.setupServiceCallbacks(service);
-          if (service.getMediaListIdentifier()) {
-            this._log("- existing playlist ID: "+ service.getMediaListIdentifier());
-          }
-          resolve();
-        },
-        onDisconnected: () => {
-          this._log("PlaybackService - Disconnected");
-          this._service = null;
-          this._readyPromise = Promise.reject('disconnected');
-        }
-      }));
+      const callback = new TNSConnectionCallback(this, resolve, reject);
+      this._serviceHelper = new dk.nota.lyt.libvlc.PlaybackServiceHelper(app.android.context, callback);
       this._serviceHelper.onStart();
     });
   }
 
-  private setupServiceCallbacks(service: lyt.PlaybackService) {
+  public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
+    this._log("PlaybackService - Connected");
+    this._service = service;
+    this.setupServiceCallbacks(service);
+    if (service.getMediaListIdentifier()) {
+      this._log("- existing playlist ID: "+ service.getMediaListIdentifier());
+    }
+  }
+
+  public onDisconnected() {
+    this._log("PlaybackService - Disconnected");
+    this._service = null;
+    this._readyPromise = Promise.reject('playbackservice disconnected');
+  }
+
+  private setupServiceCallbacks(service: dk.nota.lyt.libvlc.PlaybackService) {
       service.setNotificationActivity(app.android.startActivity, "LAUNCHED_FROM_NOTIFICATION");
       service.removeAllCallbacks();
       service.addCallback(this.lytPlaybackEventHandler);
   }
 
-  private getNewMediaWrapper(track: MediaTrack): lyt.media.MediaWrapper {
-    let uri: android.net.Uri = lyt.Utils.LocationToUri(track.url);
-    let media: lyt.media.MediaWrapper = new lyt.media.MediaWrapper(uri);
+  private getNewMediaWrapper(track: MediaTrack): dk.nota.lyt.libvlc.media.MediaWrapper {
+    let uri: android.net.Uri = dk.nota.lyt.libvlc.Utils.LocationToUri(track.url);
+    let media: dk.nota.lyt.libvlc.media.MediaWrapper = new dk.nota.lyt.libvlc.media.MediaWrapper(uri);
     media.setDisplayTitle(track.title);
     media.setArtist(track.artist);
     media.setAlbum(track.album);
@@ -64,7 +85,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
       // Ensure callbacks are setup properly.
       this.setupServiceCallbacks(this._service);
       this.playlist = playlist;
-      let mediaList = new java.util.ArrayList<lyt.media.MediaWrapper>();
+      let mediaList = new java.util.ArrayList<dk.nota.lyt.libvlc.media.MediaWrapper>();
       for (var track of this.playlist.tracks) {
         // this._log('Creating MediaWrapper for: '+ track.title);
         mediaList.add(this.getNewMediaWrapper(track));
@@ -198,20 +219,20 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     delete this._serviceHelper;
   }
 
-  private lytPlaybackEventHandler = new lyt.PlaybackEventHandler({
+  private lytPlaybackEventHandler = new dk.nota.lyt.libvlc.PlaybackEventHandler({
       update: () => {
         // this._log('update');
       },
       updateProgress: () => {
         // this._log('progress');
       },
-      onMediaEvent: (event: lyt.media.MediaEvent) => {
+      onMediaEvent: (event: dk.nota.lyt.libvlc.media.MediaEvent) => {
         // this._log('mediaEvent: '+ event.type);
-        if (event.type == lyt.media.MediaEvent.MetaChanged) {
+        if (event.type == dk.nota.lyt.libvlc.media.MediaEvent.MetaChanged) {
           // this._log('^ MetaChanged ==');
-        } else if (event.type == lyt.media.MediaEvent.ParsedChanged) {
+        } else if (event.type == dk.nota.lyt.libvlc.media.MediaEvent.ParsedChanged) {
           // this._log('^ ParsedChanged ==');
-        } else if (event.type == lyt.media.MediaEvent.StateChanged) {
+        } else if (event.type == dk.nota.lyt.libvlc.media.MediaEvent.StateChanged) {
           // this._log('^ StateChanged ==');
         }
       },

@@ -15,6 +15,7 @@ declare namespace dk.nota.lyt.libvlc {
     onConnected(service: PlaybackService): void;
     onDisconnected(): void;
   }
+  
   export class ConnectionCallback {
     constructor(impl: any);
   }
