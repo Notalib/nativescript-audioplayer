@@ -14,9 +14,9 @@
     "build": "tsc",
     "demo.ios": "npm run prepdemo && cd demo && tns run ios",
     "demo.android": "npm run prepdemo && cd demo && tns run android",
-    "prepdemo": "npm run build && npm run reload",
-    "prepublish": "npm run build",
-    "reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add .. && tns install",
+    "prepdemo": "npm run build && npm pack && npm run reload",
+    "prepublishOnly": "npm run build",
+    "reload": "cd demo && tns plugin remove @nota/nativescript-audioplayer && tns plugin add ../nota-nativescript-audioplayer-1.3.8.tar.gz && tns install",
     "apk": "cd demo && tns build android --copy-to .",
     "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios"
   },
