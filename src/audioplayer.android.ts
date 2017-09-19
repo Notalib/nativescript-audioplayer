@@ -1,10 +1,11 @@
-//import {PlaybackEvent} from 'nativescript-audioplayer';
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 import * as app from 'application';
 
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
-let TNSConnectionCallback: new (owner: TNSAudioPlayer, resolve: (value?: any) => void, reject: (reason?: any) => void) => dk.nota.lyt.libvlc.ConnectionCallback;
+let TNSConnectionCallback: new (owner: WeakRef<TNSAudioPlayer>,
+                                resolve: (value?: any) => void,
+                                reject: (reason?: any) => void) => dk.nota.lyt.libvlc.ConnectionCallback;
 function ensureTNSConnectionCallback() {
   if (TNSConnectionCallback) {
     return;
@@ -13,7 +14,7 @@ function ensureTNSConnectionCallback() {
   @Interfaces([dk.nota.lyt.libvlc.ConnectionCallback])
   class TNSConnectionCallbackImpl extends java.lang.Object {
 
-    constructor(private owner: TNSAudioPlayer,
+    constructor(private owner: WeakRef<TNSAudioPlayer>,
                 private resolve: (value?: any) => void,
                 private reject: (reason?: any) => void) {
       super();
@@ -21,12 +22,18 @@ function ensureTNSConnectionCallback() {
     }
 
     public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
-      this.owner.onConnected(service);
-      this.resolve();
+      if (this.owner.get()) {
+        this.owner.get().onConnected(service);
+        this.resolve();
+      } else {
+        this.reject();
+      }
     }
 
     public onDisconnected() {
-      this.owner.onDisconnected();
+      if (this.owner.get()) {
+        this.owner.get().onDisconnected();
+      }
       this.reject();
     }
   }
@@ -50,8 +57,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     this.android = this;
     this._readyPromise = new Promise<any>((resolve, reject) => {
       ensureTNSConnectionCallback();
-
-      const callback = new TNSConnectionCallback(this, resolve, reject);
+      const callback = new TNSConnectionCallback(new WeakRef(this), resolve, reject);
       this._serviceHelper = new dk.nota.lyt.libvlc.PlaybackServiceHelper(app.android.context, callback);
       this._serviceHelper.onStart();
     });
@@ -69,7 +75,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
   public onDisconnected() {
     this._log("PlaybackService - Disconnected");
     this._service = null;
-    this._readyPromise = Promise.reject('playbackservice disconnected');
+    this._readyPromise = Promise.reject('PlaybackService - Disconnected');
   }
 
   private setupServiceCallbacks(service: dk.nota.lyt.libvlc.PlaybackService) {
@@ -279,7 +285,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
           // This only tells % of the buffer-size required to start playback
           //this._onPlaybackEvent(PlaybackEvent.Buffering, event.getBuffering());
         } else if (event.type == PlayerEvent.EncounteredError) {
-          this._log('== Playback ERROR ==');
+          this._log('PlayerEvent.EncounteredError');
           this._onPlaybackEvent(PlaybackEvent.EncounteredError);
           //throw new Error("Android PlaybackService encountered an error");
         } else {

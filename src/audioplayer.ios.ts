@@ -156,7 +156,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         this.player.timePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
         this.player.sessionCategory = AVAudioSessionCategoryPlayback;
         // Set AVAudioSession mode to SpokenAudio if it's defined (iOS 9+)
-        // this ensures better mix with navigation, siri etc.
+        // this ensures better audio mix with Navigation, Siri etc.
         if (AVAudioSessionModeSpokenAudio) {
             this._log(`AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`);
             this.player.sessionMode = AVAudioSessionModeSpokenAudio;
