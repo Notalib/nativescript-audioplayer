@@ -1,5 +1,5 @@
-import * as app from 'application';
-import { isIOS } from 'platform';
+import * as app from 'tns-core-modules/application';
+import { isIOS } from 'tns-core-modules/platform';
 import { TNSAudioPlayer, MediaTrack, Playlist, PlaybackEvent, PlaybackEventListener } from './types';
 
 export * from './types';

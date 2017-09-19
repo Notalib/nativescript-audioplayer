@@ -1,5 +1,5 @@
-import * as app from 'application';
-import * as imageSrc from 'image-source';
+import * as app from 'tns-core-modules/application';
+import * as imageSrc from 'tns-core-modules/image-source';
 
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 

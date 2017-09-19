@@ -1,4 +1,4 @@
-﻿import * as application from 'application';
+﻿import * as application from 'tns-core-modules/application';
 
 application.on(application.launchEvent, function (args) {
     if (args.android) {

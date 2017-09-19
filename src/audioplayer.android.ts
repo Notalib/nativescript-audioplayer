@@ -1,5 +1,5 @@
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
-import * as app from 'application';
+import * as app from 'tns-core-modules/application';
 
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
@@ -180,12 +180,16 @@ export class TNSAudioPlayer extends CommonAudioPlayer
   public getDuration() {
     if (this._service) {
       return this._service.getLength();
+    } else {
+      return 0;
     }
   }
 
   public getCurrentTime(): number {
     if (this._service) {
       return this._service.getTime();
+    } else {
+      return 0;
     }
   }
 
@@ -207,6 +211,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer
   getSleepTimerRemaining(): number {
     if (this._service) {
       return this._service.getSleepTimerRemaining();
+    } else {
+      return 0;
     }
   }
 
