@@ -1,8 +1,13 @@
+/// <reference path="./native-definitions/libvlc-service.d.ts" />
+
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 import * as app from 'tns-core-modules/application';
 
 export { MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
 
+interface TNSConnectionCallback {
+  isConnected: boolean;
+}
 let TNSConnectionCallback: new (owner: WeakRef<TNSAudioPlayer>,
                                 resolve: (value?: any) => void,
                                 reject: (reason?: any) => void) => dk.nota.lyt.libvlc.ConnectionCallback;
@@ -43,30 +48,38 @@ function ensureTNSConnectionCallback() {
 
 export class TNSAudioPlayer extends CommonAudioPlayer
 {
-  public _serviceHelper: dk.nota.lyt.libvlc.PlaybackServiceHelper;
-  public _service: dk.nota.lyt.libvlc.PlaybackService;
+  public service: dk.nota.lyt.libvlc.PlaybackService;
 
+  private _serviceHelper: dk.nota.lyt.libvlc.PlaybackServiceHelper;
+  private _callback: any;
   private _readyPromise: Promise<any>;
 
   public get isReady(): Promise<any> {
+    if (!this._readyPromise) {
+      this._readyPromise = new Promise<any>((resolve, reject) => {
+        ensureTNSConnectionCallback();
+        this._callback = new TNSConnectionCallback(new WeakRef(this), resolve, reject);
+        this._serviceHelper = new dk.nota.lyt.libvlc.PlaybackServiceHelper(app.android.context, this._callback);
+        this._serviceHelper.onStart();
+      });
+    }
     return this._readyPromise;
   }
 
   constructor() {
     super();
     this.android = this;
-    this._readyPromise = new Promise<any>((resolve, reject) => {
-      ensureTNSConnectionCallback();
-      const callback = new TNSConnectionCallback(new WeakRef(this), resolve, reject);
-      this._serviceHelper = new dk.nota.lyt.libvlc.PlaybackServiceHelper(app.android.context, callback);
-      this._serviceHelper.onStart();
+    this.isReady.then(() => {
+      this._log(`PlaybackService -> Ready!`);
+    }).catch(() => {
+      this._log(`PlaybackService -> Failed to ready!`);
     });
   }
 
   public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
     this._log("PlaybackService - Connected");
-    this._service = service;
     this.setupServiceCallbacks(service);
+    this.service = service;
     if (service.getMediaListIdentifier()) {
       this._log("- existing playlist ID: "+ service.getMediaListIdentifier());
     }
@@ -74,14 +87,16 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
   public onDisconnected() {
     this._log("PlaybackService - Disconnected");
-    this._service = null;
-    this._readyPromise = Promise.reject('PlaybackService - Disconnected');
+    this.service = null;
+    this._serviceHelper.onStop();
+    this._serviceHelper = null;
+    this._readyPromise = null;
   }
 
   private setupServiceCallbacks(service: dk.nota.lyt.libvlc.PlaybackService) {
-      service.setNotificationActivity(app.android.startActivity, "LAUNCHED_FROM_NOTIFICATION");
-      service.removeAllCallbacks();
-      service.addCallback(this.lytPlaybackEventHandler);
+    service.setNotificationActivity(app.android.startActivity, "LAUNCHED_FROM_NOTIFICATION");
+    service.removeAllCallbacks();
+    service.addCallback(this.lytPlaybackEventHandler);
   }
 
   private getNewMediaWrapper(track: MediaTrack): dk.nota.lyt.libvlc.media.MediaWrapper {
@@ -95,44 +110,44 @@ export class TNSAudioPlayer extends CommonAudioPlayer
   }
 
   public preparePlaylist(playlist: Playlist): void {
-    if (this._service) {
-      this._service.stopPlayback();
+    if (this.service) {
+      this.service.stopPlayback();
       // Ensure callbacks are setup properly.
-      this.setupServiceCallbacks(this._service);
+      this.setupServiceCallbacks(this.service);
       this.playlist = playlist;
       let mediaList = new java.util.ArrayList<dk.nota.lyt.libvlc.media.MediaWrapper>();
       for (var track of this.playlist.tracks) {
         // this._log('Creating MediaWrapper for: '+ track.title);
         mediaList.add(this.getNewMediaWrapper(track));
       }
-      this._service.load(mediaList);
+      this.service.load(mediaList);
       this._log('Set playlist identifier = '+ playlist.UID);
-      this._service.setMediaListIdentifier(playlist.UID);
+      this.service.setMediaListIdentifier(playlist.UID);
     }
   }
 
   public getCurrentPlaylistIndex(): number {
-    return this._service ? this._service.getCurrentMediaPosition() : -1;
+    return this.service ? this.service.getCurrentMediaPosition() : -1;
   }
 
   public play() {
-    if (this._service) {
+    if (this.service) {
       // Ensure callbacks are setup properly,
       // since service could have been reset during a pause.
-      this.setupServiceCallbacks(this._service);
-      this._service.play();
+      this.setupServiceCallbacks(this.service);
+      this.service.play();
     }
   }
 
   public pause() {
-    if (this._service) {
-      this._service.pause();
+    if (this.service) {
+      this.service.pause();
     }
   }
 
   public stop() {
-    if (this._service) {
-      this._service.stopPlayback();
+    if (this.service) {
+      this.service.stopPlayback();
       // On Android the playback service is stopped on stopPlayback,
       // so we have to manually send the Stopped event to our listener.
       this._listener.onPlaybackEvent(PlaybackEvent.Stopped);
@@ -140,54 +155,54 @@ export class TNSAudioPlayer extends CommonAudioPlayer
   }
 
   public isPlaying(): boolean {
-    return this._service && this._service.isPlaying();
+    return !!(this.service && this.service.isPlaying());
   }
 
   public seekTo(offset: number) {
-    if (this._service && this._service.hasMedia()) {
-      this._service.setTime(offset);
+    if (this.service && this.service.hasMedia()) {
+      this.service.setTime(offset);
     }
   }
 
   public skipToNext() {
-    if (this._service && this._service.hasNext()) {
-      this._service.next();
+    if (this.service && this.service.hasNext()) {
+      this.service.next();
     }
   }
 
   public skipToPrevious() {
-    if (this._service && this._service.hasPrevious()) {
-      this._service.previous();
+    if (this.service && this.service.hasPrevious()) {
+      this.service.previous();
     }
   }
 
   public skipToPlaylistIndex(playlistIndex: number) {
-    if (this._service) {
-      this._service.playIndex(playlistIndex, 0);
+    if (this.service) {
+      this.service.playIndex(playlistIndex, 0);
     }
   }
 
   public setRate(rate: number) {
-    if (this._service) {
-      this._service.setRate(rate);
+    if (this.service) {
+      this.service.setRate(rate);
     }
   }
 
   public getRate() {
-    return this._service ? this._service.getRate() : 1;
+    return this.service ? this.service.getRate() : 1;
   }
 
   public getDuration() {
-    if (this._service) {
-      return this._service.getLength();
+    if (this.service) {
+      return this.service.getLength();
     } else {
       return 0;
     }
   }
 
   public getCurrentTime(): number {
-    if (this._service) {
-      return this._service.getTime();
+    if (this.service) {
+      return this.service.getTime();
     } else {
       return 0;
     }
@@ -195,49 +210,51 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
   /* Override */
   public getCurrentPlaylistUID(): string {
-    if (this._service) {
-      return this._service.getMediaListIdentifier();
+    if (this.service) {
+      return this.service.getMediaListIdentifier();
     } else {
       return null;
     }
   }
 
   setSleepTimer(millisecs: number) {
-    if (this._service) {
-      this._service.setSleepTimer(millisecs);
+    if (this.service) {
+      this.service.setSleepTimer(millisecs);
     }
   }
 
   getSleepTimerRemaining(): number {
-    if (this._service) {
-      return this._service.getSleepTimerRemaining();
+    if (this.service) {
+      return this.service.getSleepTimerRemaining();
     } else {
       return 0;
     }
   }
 
   cancelSleepTimer() {
-    if (this._service) {
-      this._service.cancelSleepTimer();
+    if (this.service) {
+      this.service.cancelSleepTimer();
     }
   }
 
   setSeekIntervalSeconds(seconds: number) {
-    if (this._service) {
-      this._service.setSeekIntervalSeconds(seconds);
+    if (this.service) {
+      this.service.setSeekIntervalSeconds(seconds);
     }
   }
 
   destroy() {
-    this._log('AudioPlayer.destroy');
+    this._log('Destroy');
     // Do not kill the background service if it is still playing.
-    if (this._service && !this._service.isPlaying()) {
+    if (this.service && !this.service.isPlaying()) {
       this._log('Stopping PlaybackService');
-      this._service.stopService();
+      this.service.stopService();
     }
     this._serviceHelper.onStop();
-    delete this._service;
+    delete this.service;
+    delete this._callback;
     delete this._serviceHelper;
+    delete this._readyPromise;
   }
 
   private lytPlaybackEventHandler = new dk.nota.lyt.libvlc.PlaybackEventHandler({
@@ -300,5 +317,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer
       }
     });
 
-  
+  private isServiceRunning(serviceClassName: string) {
+    const manager: android.app.ActivityManager = app.android.context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+    const runningServices = manager.getRunningServices(100000);
+    for (let i = 0; i < runningServices.size(); i++) {
+      const service = runningServices.get(i);
+      if (serviceClassName === service.service.getClassName()) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

@@ -1,3 +1,4 @@
+native-definitions/
 *.map
 *.ts
 !*.d.ts

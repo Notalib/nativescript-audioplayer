@@ -1,3 +1,5 @@
+/// <reference path="./native-definitions/KDEAudioPlayer.d.ts" />
+
 import * as app from 'tns-core-modules/application';
 import * as imageSrc from 'tns-core-modules/image-source';
 
@@ -72,10 +74,9 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
     }
 }
 
-export class TNSAudioPlayer extends CommonAudioPlayer 
+export class TNSAudioPlayer extends CommonAudioPlayer
 {
-    public player: AudioPlayer;
-
+    private player: AudioPlayer;
     private delegate: AudioPlayerDelegateImpl;
 
     private seekIntervalSeconds = 15;
@@ -97,7 +98,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this.stop();
         }
         const audioItems = NSMutableArray.alloc<AudioItem>().init()
-        
+
         for (const track of playlist.tracks) {
             const audioItem = this.makeAudioItemForMediaTrack(track);
             if (audioItem != null) {
@@ -202,17 +203,17 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this.player.stop();
         }
     }
-    
+
     public isPlaying(): boolean {
         return this.player && this.player.state == AudioPlayerState.Playing;
     }
-    
+
     public skipToNext() {
         if (this.player) {
             this.player.nextOrStop();
         }
     }
-    
+
     public skipToPrevious() {
         if (this.player) {
             this.player.previous();
@@ -224,7 +225,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this.player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
         }
     }
-    
+
     public setRate(rate: number) {
         if (this.player) {
             this.player.rate = rate;
@@ -274,7 +275,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
     private _sleepTimer: number;
     private _sleepTimerPaused: boolean = false;
     private _sleepTimerMillisecsLeft: number = 0;
-    
+
     public setSleepTimer(millisecs: number) {
         this.cancelSleepTimer();
 

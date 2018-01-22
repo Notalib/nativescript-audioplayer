@@ -1,11 +1,63 @@
 import * as app from 'tns-core-modules/application';
 import { isIOS } from 'tns-core-modules/platform';
-import { TNSAudioPlayer, MediaTrack, Playlist, PlaybackEvent, PlaybackEventListener } from './types';
 
-export * from './types';
+export class MediaTrack {
+  constructor(url: string, title: string, artist: string, album: string, albumArtUrl: string) {
+    this.url = url;
+    this.title = title;
+    this.artist = artist;
+    this.album = album;
+    this.albumArtUrl = albumArtUrl;
+  }
+  public url: string;
+  public title: string;
+  public artist: string;
+  public album: string;
+  public albumArtUrl: string;
+}
 
-export abstract class CommonAudioPlayer implements TNSAudioPlayer {
-  
+export class Playlist {
+  constructor(UID: string, ...tracks: MediaTrack[]) {
+    this.UID = UID;
+    this.tracks = tracks;
+  }
+  public UID: string;
+  public tracks: MediaTrack[];
+  public get length(): number {
+    return this.tracks.length;
+  }
+}
+
+export enum PlaybackEvent {
+  Stopped,
+  Buffering,
+  Playing,
+  Paused,
+  EndOfTrackReached,
+  EndOfPlaylistReached,
+  EncounteredError,
+  TimeChanged,
+  SleepTimerChanged,
+  WaitingForNetwork,
+}
+
+export interface Config {
+  /**
+   * Max number of retry attempts before considering streaming failed
+   */
+  maxNetworkRetryCount: number;
+  /**
+   * Required number of seconds buffered before starting playback
+   */
+  requiredPrebufferSizeInSeconds: number;
+}
+
+export interface PlaybackEventListener {
+  onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
+}
+
+export abstract class CommonAudioPlayer {
+
   public android: any;
   public ios: any;
   public playlist: Playlist;
@@ -71,7 +123,7 @@ export abstract class CommonAudioPlayer implements TNSAudioPlayer {
   protected _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
     if (this._listener) this._listener.onPlaybackEvent(evt, arg);
   }
-  
+
   protected _log(logStr: string) {
     if (this.debugOutputEnabled) {
       let platform = isIOS ? 'iOS' : 'Android';

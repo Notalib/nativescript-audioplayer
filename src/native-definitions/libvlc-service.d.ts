@@ -70,6 +70,12 @@ declare namespace dk.nota.lyt.libvlc {
     registerConnectionCallback(callback: ConnectionCallback): void;
     unregisterConnectionCallback(callback: ConnectionCallback): void;
   }
+  export class PlaybackServiceClient {
+    constructor(context: android.content.Context, callback: ConnectionCallback);
+    public connect(): void;
+    public disconnect(): void;
+    static restartService(context: android.content.Context): void;
+  }
   export class Utils {
     static LocationToUri(location: string): android.net.Uri;
   }

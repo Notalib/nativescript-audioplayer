@@ -19,14 +19,9 @@
         "noImplicitUseStrict": false,
         "noFallthroughCasesInSwitch": true
     },
-    "typeAcquisition": {
-        "include": [
-            "KDEAudioPlayer.d.ts",
-            "libvlc-service.d.ts"
-        ]
-    },
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "native-definitions"
     ],
     "compileOnSave": false
 }
