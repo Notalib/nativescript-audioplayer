@@ -79,4 +79,5 @@ application.on(application.uncaughtErrorEvent, function (args) {
 // });
 
 // application.ios.delegate = MyAppDelegate;
-application.start({ moduleName: 'main-page' });
+import "./bundle-config";
+application.start({ moduleName: "main-page" });
