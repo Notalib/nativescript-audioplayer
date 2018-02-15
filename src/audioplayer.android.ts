@@ -87,6 +87,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
   public onDisconnected() {
     this._log("PlaybackService - Disconnected");
+    // NOTE: avoid recursive onDisconnected calls
+    if (!this.service) {
+      return;
+    }
     this.service = null;
     this._serviceHelper.onStop();
     this._serviceHelper = null;
