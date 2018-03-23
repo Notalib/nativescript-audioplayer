@@ -11,6 +11,7 @@ interface TNSConnectionCallback {
 let TNSConnectionCallback: new (owner: WeakRef<TNSAudioPlayer>,
                                 resolve: (value?: any) => void,
                                 reject: (reason?: any) => void) => dk.nota.lyt.libvlc.ConnectionCallback;
+
 function ensureTNSConnectionCallback() {
   if (TNSConnectionCallback) {
     return;
@@ -249,8 +250,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
 
   destroy() {
     this._log('Destroy');
-    // Do not kill the background service if it is still playing.
-    if (this.service && !this.service.isPlaying()) {
+    if (this.service) {
       this._log('Stopping PlaybackService');
       this.service.stopService();
     }
