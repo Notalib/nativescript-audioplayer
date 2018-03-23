@@ -1,5 +1,6 @@
 import { Observable } from 'tns-core-modules/data/observable';
 import * as fs from 'tns-core-modules/file-system';
+import * as app from 'tns-core-modules/application';
 import { TNSAudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent } from '@nota/nativescript-audioplayer';
 
 export class HelloWorldModel extends Observable implements PlaybackEventListener {
@@ -13,6 +14,13 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     this.player.debugOutputEnabled = true;
     this.player.setPlaybackEventListener(this);
     this.player.setSeekIntervalSeconds(30);
+
+    app.on(app.exitEvent, (event) => {
+      console.log(`App exits`);
+      if (this.player) {
+        this.player.destroy();
+      }
+    });
     // setTimeout(() => {
     //   this.loadAndSetupPlaylist();
     // }, 500);

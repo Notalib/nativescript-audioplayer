@@ -5,12 +5,17 @@
 //	compile 'com.android.support:recyclerview-v7:+'
 //}
 
-android {  
-  defaultConfig {  
+android {
+  defaultConfig {
     generatedDensities = []
-    applicationId = "org.nativescript.demo"  
-  }  
-  aaptOptions {  
-    additionalParameters "--no-version-vectors"  
-  }  
+    applicationId = "org.nativescript.demo"
+    minSdkVersion = 19
+  }
+  aaptOptions {
+    additionalParameters "--no-version-vectors"
+  }
+  project.ext {
+    //googlePlayServicesVersion = "11.2.2"
+    supportVersion = "27.1.0"
+  }
 } 

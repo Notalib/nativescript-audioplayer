@@ -2,10 +2,10 @@
   "nativescript": {
     "id": "org.nativescript.demo",
     "tns-android": {
-      "version": "3.4.0"
+      "version": "3.4.2"
     },
     "tns-ios": {
-      "version": "3.4.0"
+      "version": "3.4.1"
     }
   },
   "dependencies": {
@@ -19,7 +19,7 @@
     "babel-traverse": "6.12.0",
     "babel-types": "6.11.1",
     "babylon": "6.8.4",
-    "copy-webpack-plugin": "~4.0.1",
+    "copy-webpack-plugin": "~4.5.1",
     "css-loader": "~0.28.7",
     "extract-text-webpack-plugin": "~3.0.0",
     "filewalker": "0.1.2",
@@ -34,7 +34,7 @@
     "nativescript-worker-loader": "~0.8.1",
     "raw-loader": "~0.5.1",
     "resolve-url-loader": "~2.1.0",
-    "tns-platform-declarations": "^3.1.0",
+    "tns-platform-declarations": "^3.4.0",
     "tslint": "~5.4.3",
     "typescript": "~2.3.0",
     "webpack": "~3.8.1",
