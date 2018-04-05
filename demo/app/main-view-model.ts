@@ -29,6 +29,11 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     //     console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
     //   }
     // }, 1000);
+    this.player.isReady.then(() => {
+      console.log(`PLAYER READY`);
+    }).catch((err) => {
+      console.error(`PLAYER FAILED TO READY: ${err}`);
+    });
   }
 
   public loadAndSetupPlaylist() {

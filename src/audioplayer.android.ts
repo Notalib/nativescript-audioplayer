@@ -70,11 +70,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
   constructor() {
     super();
     this.android = this;
-    this.isReady.then(() => {
-      this._log(`PlaybackService -> Ready!`);
-    }).catch(() => {
-      this._log(`PlaybackService -> Failed to ready!`);
-    });
   }
 
   public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
