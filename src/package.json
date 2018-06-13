@@ -1,10 +1,10 @@
 {
   "name": "@nota/nativescript-audioplayer",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Fully featured AudioPlayer for NativeScript. Supports gapless audio playlist playback with variable playback speed and native remote controls",
   "nativescript": {
     "platforms": {
-      "android": "3.0.0",
+      "android": "4.1.2",
       "ios": "3.0.0"
     }
   },
