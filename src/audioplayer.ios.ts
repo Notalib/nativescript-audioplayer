@@ -1,6 +1,3 @@
-/// <reference path="./native-definitions/KDEAudioPlayer.d.ts" />
-
-import * as app from 'tns-core-modules/application';
 import * as imageSrc from 'tns-core-modules/image-source';
 
 import { CommonAudioPlayer, MediaTrack, Playlist, PlaybackEvent } from './audioplayer.common';
@@ -152,8 +149,16 @@ export class TNSAudioPlayer extends CommonAudioPlayer
         }
         //this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
         this.player.delegate = this.delegate;
+        this.player.remoteCommandsEnabled = NSArrayFromItems<number>([
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackPosition),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackRate),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
+            NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
+        ]);
+        this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(this.seekIntervalSeconds);
         this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
-        this.player.preferredBufferDurationBeforePlayback = 10;
+        this.player.preferredBufferDurationBeforePlayback = 5;
         this.player.timePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
         this.player.sessionCategory = AVAudioSessionCategoryPlayback;
         // Set AVAudioSession mode to SpokenAudio if it's defined (iOS 9+)
@@ -163,12 +168,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer
             this.player.sessionMode = AVAudioSessionModeSpokenAudio;
         }
         this.player.allowExternalPlayback = true;
-        this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(this.seekIntervalSeconds);
-        this.player.remoteCommandsEnabled = NSArrayFromItems<number>([
-            NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
-            NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
-            NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
-        ]);
         this._log(`Player: ${this.player}`);
         this._log(`Delegate: ${this.delegate}`);
     }
@@ -419,8 +418,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer
                 break;
             }
             case AudioPlayerState.Failed: {
-                // TODO: Send error message as arg.
-                this._onPlaybackEvent(PlaybackEvent.EncounteredError);
+                this._onPlaybackEvent(PlaybackEvent.EncounteredError, this.player.failedError);
                 this.pauseSleepTimer();
                 break;
             }

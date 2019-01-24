@@ -37,8 +37,6 @@ declare class AudioItemURL extends NSObject {
 	static alloc(): AudioItemURL; // inherited from NSObject
 
 	static new(): AudioItemURL; // inherited from NSObject
-
-	readonly url: NSURL;
 }
 
 declare class AudioPlayer extends NSObject {
@@ -70,6 +68,8 @@ declare class AudioPlayer extends NSObject {
 	readonly currentItemSeekableRange: TimeRange;
 
 	delegate: AudioPlayerDelegate;
+
+	readonly failedError: NSError;
 
 	readonly hasNext: boolean;
 
