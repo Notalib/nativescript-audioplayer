@@ -13,7 +13,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     this.player = new TNSAudioPlayer();
     this.player.debugOutputEnabled = true;
     this.player.setPlaybackEventListener(this);
-    this.player.setSeekIntervalSeconds(30);
+    this.player.setSeekIntervalSeconds(15);
 
     app.on(app.exitEvent, (event) => {
       console.log(`App exits`);
@@ -145,7 +145,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
       new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3", "1984", "George Orwell", "Del 1 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
     );
-    this.player.loadPlaylist(playlist, 1, 10000);
+    this.player.loadPlaylist(playlist, 0, 10000);
   }
 
   public doTwo() {
@@ -154,16 +154,23 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
       new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3", "1986", "George Orwell", "Del 2 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
       new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
     );
-    this.player.loadPlaylist(playlist, 1, 10000);
+    this.player.loadPlaylist(playlist, 1, 20000);
   }
 
   public doThree() {
-    const playlist = new Playlist('3',
-      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
-      new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
-      new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
-    );
-    this.player.loadPlaylist(playlist, 1, 10000);
+    this.player.stop();
+    setTimeout(() => {
+      this.player = new TNSAudioPlayer();
+      this.player.debugOutputEnabled = true;
+      this.player.setPlaybackEventListener(this);
+      this.player.setSeekIntervalSeconds(15);
+      const playlist = new Playlist('3',
+        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam", "SoundSnap.com", "Short Test", null),
+        new MediaTrack("https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3", "1986", "George Orwell", "Del 3 af 4", "https://bookcover.nota.dk/714070_w140_h200.jpg"),
+        new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "CoffeeSteam3", "SoundSnap.com", "Short Test", null)
+      );
+      this.player.loadPlaylist(playlist, 1, 300000);
+    }, 10);
   }
 
   public seekFix() {
