@@ -69,7 +69,7 @@ declare class AudioPlayer extends NSObject {
 
 	delegate: AudioPlayerDelegate;
 
-	readonly failedError: NSError;
+	failedError: NSError;
 
 	readonly hasNext: boolean;
 
@@ -90,6 +90,8 @@ declare class AudioPlayer extends NSObject {
 	remoteCommandsEnabled: NSArray<number>;
 
 	remoteControlSkipIntervals: NSArray<number>;
+
+	remoteControlSupportedPlaybackRates: NSArray<number>;
 
 	resumeAfterConnectionLoss: boolean;
 
