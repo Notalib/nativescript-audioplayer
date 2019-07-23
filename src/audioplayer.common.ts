@@ -1,4 +1,3 @@
-import * as app from 'tns-core-modules/application';
 import { isIOS } from 'tns-core-modules/platform';
 
 export class MediaTrack {
@@ -57,7 +56,6 @@ export interface PlaybackEventListener {
 }
 
 export abstract class CommonAudioPlayer {
-
   public android: any;
   public ios: any;
   public playlist: Playlist;
