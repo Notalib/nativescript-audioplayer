@@ -5,3 +5,4 @@ package/
 !*.d.ts
 references.d.ts
 tsconfig.json
+*.tgz
