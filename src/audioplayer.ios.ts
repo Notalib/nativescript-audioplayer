@@ -473,7 +473,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private loadRemoteControlAlbumArtworkAsync(item: AudioItem) {
     const artworkUrl = this.playlist.tracks[this.getIndexForItem(item)].albumArtUrl;
-    if (artworkUrl === undefined || artworkUrl == null) {
+    if (artworkUrl == null) {
       return;
     }
 
