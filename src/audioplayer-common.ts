@@ -16,14 +16,13 @@ export class MediaTrack {
 }
 
 export class Playlist {
-  constructor(UID: string, ...tracks: MediaTrack[]) {
-    this.UID = UID;
-    this.tracks = tracks;
-  }
-  public UID: string;
   public tracks: MediaTrack[];
   public get length(): number {
     return this.tracks.length;
+  }
+  constructor(public UID: string, ...tracks: MediaTrack[]) {
+    this.UID = UID;
+    this.tracks = tracks;
   }
 }
 
@@ -45,6 +44,7 @@ export interface Config {
    * Max number of retry attempts before considering streaming failed
    */
   maxNetworkRetryCount: number;
+
   /**
    * Required number of seconds buffered before starting playback
    */
@@ -80,7 +80,7 @@ export abstract class CommonAudioPlayer {
   public abstract getCurrentPlaylistIndex(): number;
   public abstract seekTo(offset: number);
   public abstract setSeekIntervalSeconds(seconds: number): void;
-  public abstract setSleepTimer(millisecs: number);
+  public abstract setSleepTimer(milliseconds: number);
   public abstract getSleepTimerRemaining(): number;
   public abstract cancelSleepTimer();
   public abstract destroy();
@@ -119,7 +119,9 @@ export abstract class CommonAudioPlayer {
   }
 
   protected _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
-    if (this._listener) this._listener.onPlaybackEvent(evt, arg);
+    if (this._listener) {
+      this._listener.onPlaybackEvent(evt, arg);
+    }
   }
 
   protected _log(logStr: string) {

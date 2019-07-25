@@ -1,9 +1,7 @@
 /// <reference path="./native-definitions/libvlc-service.d.ts" />
 
 import * as app from 'tns-core-modules/application';
-import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist } from './audioplayer.common';
-
-export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer.common';
+import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
 
 interface TNSConnectionCallback {
   isConnected: boolean;
@@ -77,7 +75,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this.setupServiceCallbacks(service);
     this.service = service;
     if (service.getMediaListIdentifier()) {
-      this._log('- existing playlist ID: ' + service.getMediaListIdentifier());
+      this._log(`- existing playlist ID: ${service.getMediaListIdentifier()}`);
     }
   }
 
@@ -87,6 +85,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     if (!this.service) {
       return;
     }
+
     this.service = null;
     this._serviceHelper.onStop();
     this._serviceHelper = null;
@@ -100,8 +99,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private getNewMediaWrapper(track: MediaTrack): dk.nota.lyt.libvlc.media.MediaWrapper {
-    let uri: android.net.Uri = dk.nota.lyt.libvlc.Utils.LocationToUri(track.url);
-    let media: dk.nota.lyt.libvlc.media.MediaWrapper = new dk.nota.lyt.libvlc.media.MediaWrapper(uri);
+    const uri: android.net.Uri = dk.nota.lyt.libvlc.Utils.LocationToUri(track.url);
+    const media: dk.nota.lyt.libvlc.media.MediaWrapper = new dk.nota.lyt.libvlc.media.MediaWrapper(uri);
     media.setDisplayTitle(track.title);
     media.setArtist(track.artist);
     media.setAlbum(track.album);
@@ -115,13 +114,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       // Ensure callbacks are setup properly.
       this.setupServiceCallbacks(this.service);
       this.playlist = playlist;
-      let mediaList = new java.util.ArrayList<dk.nota.lyt.libvlc.media.MediaWrapper>();
-      for (var track of this.playlist.tracks) {
+      const mediaList = new java.util.ArrayList<dk.nota.lyt.libvlc.media.MediaWrapper>();
+      for (const track of this.playlist.tracks) {
         // this._log('Creating MediaWrapper for: '+ track.title);
         mediaList.add(this.getNewMediaWrapper(track));
       }
+
       this.service.load(mediaList);
-      this._log('Set playlist identifier = ' + playlist.UID);
+      this._log(`Set playlist identifier = ${playlist.UID}`);
       this.service.setMediaListIdentifier(playlist.UID);
     }
   }
@@ -217,13 +217,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  setSleepTimer(millisecs: number) {
+  public setSleepTimer(milliseconds: number) {
     if (this.service) {
-      this.service.setSleepTimer(millisecs);
+      this.service.setSleepTimer(milliseconds);
     }
   }
 
-  getSleepTimerRemaining(): number {
+  public getSleepTimerRemaining(): number {
     if (this.service) {
       return this.service.getSleepTimerRemaining();
     } else {
@@ -231,25 +231,27 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  cancelSleepTimer() {
+  public cancelSleepTimer() {
     if (this.service) {
       this.service.cancelSleepTimer();
     }
   }
 
-  setSeekIntervalSeconds(seconds: number) {
+  public setSeekIntervalSeconds(seconds: number) {
     if (this.service) {
       this.service.setSeekIntervalSeconds(seconds);
     }
   }
 
-  destroy() {
+  public destroy() {
     this._log('Destroy');
+
     if (this.service) {
       this._log('Stopping PlaybackService');
       this.service.stopService();
     }
     this._serviceHelper.onStop();
+
     delete this.service;
     delete this._callback;
     delete this._serviceHelper;
@@ -265,51 +267,51 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     },
     onMediaEvent: (event: dk.nota.lyt.libvlc.media.MediaEvent) => {
       // this._log('mediaEvent: '+ event.type);
-      if (event.type == dk.nota.lyt.libvlc.media.MediaEvent.MetaChanged) {
+      if (event.type === dk.nota.lyt.libvlc.media.MediaEvent.MetaChanged) {
         // this._log('^ MetaChanged ==');
-      } else if (event.type == dk.nota.lyt.libvlc.media.MediaEvent.ParsedChanged) {
+      } else if (event.type === dk.nota.lyt.libvlc.media.MediaEvent.ParsedChanged) {
         // this._log('^ ParsedChanged ==');
-      } else if (event.type == dk.nota.lyt.libvlc.media.MediaEvent.StateChanged) {
+      } else if (event.type === dk.nota.lyt.libvlc.media.MediaEvent.StateChanged) {
         // this._log('^ StateChanged ==');
       }
     },
     onMediaPlayerEvent: (event: dk.nota.lyt.libvlc.media.MediaPlayerEvent) => {
       const PlayerEvent = dk.nota.lyt.libvlc.media.MediaPlayerEvent;
-      //TODO: Simplify: VLCToClientEventMap
-      if (event.type == PlayerEvent.SeekableChanged) {
-        if (event.getSeekable() == true && this._queuedSeekTo !== null) {
-          this._log('Executing queued SeekTo: ' + this._queuedSeekTo);
+      // TODO: Simplify: VLCToClientEventMap
+      if (event.type === PlayerEvent.SeekableChanged) {
+        if (event.getSeekable() === true && this._queuedSeekTo != null) {
+          this._log(`Executing queued SeekTo: ${this._queuedSeekTo}`);
           this.seekTo(this._queuedSeekTo);
           this._queuedSeekTo = null;
         }
-      } else if (event.type == PlayerEvent.PausableChanged) {
-      } else if (event.type == PlayerEvent.TimeChanged) {
+      } else if (event.type === PlayerEvent.PausableChanged) {
+      } else if (event.type === PlayerEvent.TimeChanged) {
         this._onPlaybackEvent(PlaybackEvent.TimeChanged, event.getTimeChanged());
-      } else if (event.type == PlayerEvent.MediaChanged) {
-      } else if (event.type == PlayerEvent.Opening) {
+      } else if (event.type === PlayerEvent.MediaChanged) {
+      } else if (event.type === PlayerEvent.Opening) {
         this._onPlaybackEvent(PlaybackEvent.Buffering);
-      } else if (event.type == PlayerEvent.Playing) {
+      } else if (event.type === PlayerEvent.Playing) {
         this._onPlaybackEvent(PlaybackEvent.Playing);
-      } else if (event.type == PlayerEvent.Paused) {
+      } else if (event.type === PlayerEvent.Paused) {
         this._onPlaybackEvent(PlaybackEvent.Paused);
-      } else if (event.type == PlayerEvent.Stopped) {
+      } else if (event.type === PlayerEvent.Stopped) {
         this._onPlaybackEvent(PlaybackEvent.Stopped);
-      } else if (event.type == PlayerEvent.EndReached) {
+      } else if (event.type === PlayerEvent.EndReached) {
         this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
         if (this.getCurrentPlaylistIndex() >= this.playlist.length - 1) {
           this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
         }
-      } else if (event.type == PlayerEvent.SleepTimerChanged) {
+      } else if (event.type === PlayerEvent.SleepTimerChanged) {
         this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-      } else if (event.type == PlayerEvent.WaitingForNetwork) {
+      } else if (event.type === PlayerEvent.WaitingForNetwork) {
         this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
-      } else if (event.type == PlayerEvent.Buffering) {
+      } else if (event.type === PlayerEvent.Buffering) {
         // This only tells % of the buffer-size required to start playback
-        //this._onPlaybackEvent(PlaybackEvent.Buffering, event.getBuffering());
-      } else if (event.type == PlayerEvent.EncounteredError) {
+        // this._onPlaybackEvent(PlaybackEvent.Buffering, event.getBuffering());
+      } else if (event.type === PlayerEvent.EncounteredError) {
         this._log('PlayerEvent.EncounteredError');
         this._onPlaybackEvent(PlaybackEvent.EncounteredError);
-        //throw new Error("Android PlaybackService encountered an error");
+        // throw new Error("Android PlaybackService encountered an error");
       } else {
         // this._log('^ Unhandled PlayerEvent: '+ event.type);
       }
@@ -328,3 +330,5 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return false;
   }
 }
+
+export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';

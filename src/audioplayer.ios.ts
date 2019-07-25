@@ -1,8 +1,8 @@
 import * as imageSrc from 'tns-core-modules/image-source';
-import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist } from './audioplayer.common';
+import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
 
 // TODO: Do all exports in a main.ts instead
-export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer.common';
+export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
 
 // Available on iOS 9+
 declare var AVAudioSessionModeSpokenAudio: string;
@@ -91,6 +91,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     } else {
       this.stop();
     }
+
     const audioItems = NSMutableArray.alloc<AudioItem>().init();
 
     for (const track of playlist.tracks) {
@@ -119,8 +120,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this.player.sessionMode = AVAudioSessionModeSpokenAudio;
     }
     this.player.allowExternalPlayback = true;
-    this.player.remoteControlSkipIntervals = NSArrayFromItems<number>([this.seekIntervalSeconds]);
-    this.player.remoteCommandsEnabled = NSArrayFromItems<number>([
+    this.player.remoteControlSkipIntervals = NSArrayFromItems([this.seekIntervalSeconds]);
+    this.player.remoteCommandsEnabled = NSArrayFromItems([
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackPosition),
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackRate),
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
@@ -139,9 +140,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public play() {
     try {
-      if (this.player.state == AudioPlayerState.Paused) {
+      if (this.player.state === AudioPlayerState.Paused) {
         this.player.resume();
-      } else if (this.player.state == AudioPlayerState.Stopped) {
+      } else if (this.player.state === AudioPlayerState.Stopped) {
         this.player.playWithItemsStartAtIndex(this._iosPlaylist, 0);
       }
     } catch (err) {
@@ -164,7 +165,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public isPlaying(): boolean {
-    return this.player && this.player.state == AudioPlayerState.Playing;
+    return this.player && this.player.state === AudioPlayerState.Playing;
   }
 
   public skipToNext() {
@@ -212,7 +213,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private getIndexForItem(item: AudioItem) {
     const result = this._iosPlaylist.indexOfObject(this.player.currentItem);
-    if (result != NSNotFound) {
+    if (result !== NSNotFound) {
       return result;
     } else {
       return null;
@@ -226,27 +227,27 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return null;
   }
 
-  public seekTo(millisecs: number) {
+  public seekTo(milliseconds: number) {
     if (this.player) {
-      this._iosSeekTo(millisecs);
+      this._iosSeekTo(milliseconds);
     }
   }
 
   private _sleepTimer: number;
   private _sleepTimerPaused: boolean = false;
-  private _sleepTimerMillisecsLeft: number = 0;
+  private _sleepTimerMillisecondsLeft: number = 0;
 
-  public setSleepTimer(millisecs: number) {
+  public setSleepTimer(milliseconds: number) {
     this.cancelSleepTimer();
 
     const countdownTick = 1000;
-    this._sleepTimerMillisecsLeft = millisecs;
+    this._sleepTimerMillisecondsLeft = milliseconds;
     this._sleepTimer = setInterval(() => {
       if (!this._sleepTimerPaused && this.isPlaying()) {
-        this._sleepTimerMillisecsLeft = Math.max(this._sleepTimerMillisecsLeft - countdownTick, 0);
+        this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
         this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
       }
-      if (this._sleepTimerMillisecsLeft == 0) {
+      if (this._sleepTimerMillisecondsLeft === 0) {
         // Fade out volume and pause if not already paused.
         if (this.isPlaying()) {
           this.fadeOutVolumeAndPause();
@@ -259,35 +260,35 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public getSleepTimerRemaining(): number {
-    return this._sleepTimerMillisecsLeft;
+    return this._sleepTimerMillisecondsLeft;
   }
 
   public cancelSleepTimer() {
     this._log('cancelSleepTimer');
-    if (this._sleepTimer != undefined) {
+    if (this._sleepTimer !== undefined) {
       clearInterval(this._sleepTimer);
       this._sleepTimer = undefined;
-      this._sleepTimerMillisecsLeft = 0;
+      this._sleepTimerMillisecondsLeft = 0;
       this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
     }
   }
 
   public pauseSleepTimer() {
-    if (this._sleepTimer != undefined) {
+    if (this._sleepTimer !== undefined) {
       this._log('pauseSleepTimer');
       this._sleepTimerPaused = true;
     }
   }
 
   public resumeSleepTimer() {
-    if (this._sleepTimer != undefined) {
+    if (this._sleepTimer !== undefined) {
       this._log('resumeSleepTimer');
       this._sleepTimerPaused = false;
     }
   }
 
   public setSeekIntervalSeconds(seconds: number) {
-    this._log('setSeekIntervalSeconds: ' + seconds);
+    this._log(`setSeekIntervalSeconds: ${seconds}`);
     this.seekIntervalSeconds = seconds;
     if (this.player) {
       this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(seconds);
@@ -302,17 +303,17 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._iosPlaylist = null;
   }
 
-  //* PRIVATE HELPERS *//
+  /** PRIVATE HELPERS **/
 
   private setupDelegate() {
     this.delegate = AudioPlayerDelegateImpl.new();
     this.delegate.onTimeUpdate = (seconds) => {
       // this._log(`- timeUpdate: ${seconds}s`);
-      const timeMillis = Math.floor(seconds * 1000);
+      const timeMilliseconds = Math.floor(seconds * 1000);
       if (this._isSeeking) {
         this._log(`time-update skipped, we're seeking`);
       } else {
-        this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMillis);
+        this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMilliseconds);
       }
     };
     this.delegate.onBufferingUpdate = (item, earliest, latest) => {
@@ -324,7 +325,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this.delegate.onWillStartPlayingItem = (item) => {
       this._log(`will start playing '${item.title}'`);
       if (item.artwork == null) {
-        if (this._cachedCover && this._cachedCover.url == this.getMediaTrackForItem(item).albumArtUrl) {
+        if (this._cachedCover && this._cachedCover.url === this.getMediaTrackForItem(item).albumArtUrl) {
           this._log(`got artwork from cache for '${item.title}'`);
           item.artwork = this._cachedCover.artwork;
         } else if (!this._isRetrievingArtwork) {
@@ -343,15 +344,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this.delegate.onStateChanged = (from, to) => {
       this._iosPlayerStateChanged(from, to);
     };
-    //this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
+    // this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
   }
 
   private fadeOutVolumeAndPause(): void {
-    const fadeTickMillis = 250.0;
+    const fadeTickMilliseconds = 250.0;
     const sleepTimerFadeDuration = 5000.0;
     const previousVolume = this.player.volume;
     const fadeInterval = setInterval(() => {
-      const decreaseBy = fadeTickMillis / sleepTimerFadeDuration;
+      const decreaseBy = fadeTickMilliseconds / sleepTimerFadeDuration;
       const newVolume = Math.max(this.player.volume - decreaseBy, 0);
       this.player.volume = newVolume;
       if (newVolume === 0) {
@@ -363,22 +364,22 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         this.player.volume = previousVolume;
         clearInterval(fadeInterval);
       }
-    }, fadeTickMillis);
+    }, fadeTickMilliseconds);
   }
 
   private _iosSeekTo(
-    millisecs: number,
+    milliseconds: number,
     adaptToSeekableRanges = false,
     beforeTolerance: CMTime = kCMTimeZero,
     afterTolerance: CMTime = kCMTimeZero,
-    completionHandler?: (boolean) => void,
+    completionHandler?: (complete: boolean) => void,
   ) {
-    this._log(`seekTo: ${millisecs}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
+    this._log(`seekTo: ${milliseconds}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
 
     // avoid sending TimeUpdates while a seek is in progress
     this._isSeeking = true;
 
-    const seekToSeconds = millisecs / 1000.0;
+    const seekToSeconds = milliseconds / 1000.0;
     this.player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
       seekToSeconds,
       adaptToSeekableRanges,
@@ -445,7 +446,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private makeAudioItemForMediaTrack(track: MediaTrack): AudioItem {
     try {
       this._log(`Track: ${JSON.stringify(track)}`);
-      const url = track.url.substr(0, 7) == 'file://' ? NSURL.fileURLWithPath(track.url.substr(7)) : NSURL.URLWithString(track.url);
+      const url = track.url.substr(0, 7) === 'file://' ? NSURL.fileURLWithPath(track.url.substr(7)) : NSURL.URLWithString(track.url);
       this._log(`URL: ${url}`);
       let audioItem = new AudioItem({ highQualitySoundURL: null, mediumQualitySoundURL: url, lowQualitySoundURL: null });
       this._log(`AudioItem: ${JSON.stringify(audioItem)}`);
@@ -472,7 +473,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private loadRemoteControlAlbumArtworkAsync(item: AudioItem) {
     const artworkUrl = this.playlist.tracks[this.getIndexForItem(item)].albumArtUrl;
-    if (artworkUrl == undefined || artworkUrl == null) {
+    if (artworkUrl === undefined || artworkUrl == null) {
       return;
     }
 
@@ -502,7 +503,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 }
 
-function NSArrayFromItems<T>(items: any[]): NSArray<T> {
+function NSArrayFromItems<T>(items: T[]): NSArray<T> {
   const arr = NSMutableArray.alloc<T>().init();
   for (const item of items) {
     arr.addObject(item);

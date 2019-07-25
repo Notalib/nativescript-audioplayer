@@ -1,7 +1,6 @@
-import { Observable } from 'tns-core-modules/data/observable';
-import * as fs from 'tns-core-modules/file-system';
+import { MediaTrack, PlaybackEvent, PlaybackEventListener, Playlist, TNSAudioPlayer } from '@nota/nativescript-audioplayer';
 import * as app from 'tns-core-modules/application';
-import { TNSAudioPlayer, Playlist, MediaTrack, PlaybackEventListener, PlaybackEvent } from '@nota/nativescript-audioplayer';
+import { Observable } from 'tns-core-modules/data/observable';
 
 export class HelloWorldModel extends Observable implements PlaybackEventListener {
   public message: string = 'Demo';
@@ -40,8 +39,8 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
 
   public loadAndSetupPlaylist() {
     const playlistUID = 'UID_12345';
-    if (this.player.getCurrentPlaylistUID() == playlistUID) {
-      console.log('Player already has playlist: ' + this.player.getCurrentPlaylistUID());
+    if (this.player.getCurrentPlaylistUID() === playlistUID) {
+      console.log(`Player already has playlist: ${this.player.getCurrentPlaylistUID()}`);
     } else {
       // console.log(`Folder: currentApp`);
       // fs.knownFolders.currentApp().getEntities().then((entities) => {
@@ -60,7 +59,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
       // console.log(`local file: ${localFile}: file://${localFile.path}`);
       // console.log(`local file: ${localFile}: ${filePath}`);
 
-      console.log('Loading new playlist. Old UID: ' + this.player.getCurrentPlaylistUID());
+      console.log(`Loading new playlist. Old UID: ${this.player.getCurrentPlaylistUID()}`);
       const playlist = new Playlist(
         playlistUID,
         // new MediaTrack(`file://${filePath}`, "Title", "Artist", "Album", null),
@@ -119,7 +118,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public toggleRate() {
-    console.log('setRate to ' + this.rateToggled ? 1 : 2);
+    console.log(`setRate to ${this.rateToggled ? 1 : 2}`);
     this.player.setRate(this.rateToggled ? 1 : 2);
     this.rateToggled = !this.rateToggled;
   }
@@ -156,7 +155,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public logDuration() {
-    console.log('duration: ' + this.player.getDuration());
+    console.log(`duration: ${this.player.getDuration()}`);
   }
 
   public doOne() {
@@ -223,7 +222,10 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public onPlaybackEvent(evt: PlaybackEvent) {
-    if (evt == PlaybackEvent.SleepTimerChanged) console.log('SleepTimerChanged: ' + this.player.getSleepTimerRemaining());
-    else console.log(`Playback event received: ${PlaybackEvent[evt]} - ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()}`);
+    if (evt === PlaybackEvent.SleepTimerChanged) {
+      console.log(`SleepTimerChanged: ${this.player.getSleepTimerRemaining()}`);
+    } else {
+      console.log(`Playback event received: ${PlaybackEvent[evt]} - ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()}`);
+    }
   }
 }

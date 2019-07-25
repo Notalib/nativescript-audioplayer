@@ -1,5 +1,4 @@
-import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer.common';
-export { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener };
+import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer-common';
 
 export class TNSAudioPlayer {
   debugOutputEnabled: boolean;
@@ -24,8 +23,10 @@ export class TNSAudioPlayer {
   seekRelative(relativeOffset: number): void;
   setSeekIntervalSeconds(seconds: number): void;
   setPlaybackEventListener(listener: PlaybackEventListener): void;
-  setSleepTimer(millisecs: number): any;
+  setSleepTimer(milliseconds: number): any;
   getSleepTimerRemaining(): number;
   cancelSleepTimer(): any;
   destroy(): void;
 }
+
+export { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener };
