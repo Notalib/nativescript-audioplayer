@@ -13,10 +13,10 @@ application.on(application.launchEvent, function(args) {
 application.on(application.suspendEvent, function(args) {
   if (args.android) {
     // For Android applications, args.android is an android activity class.
-    console.log('Suspent Activity: ' + args.android);
+    console.log('Suspend Activity: ' + args.android);
   } else if (args.ios) {
     // For iOS applications, args.ios is UIApplication.
-    console.log('Suspent UIApplication: ' + args.ios);
+    console.log('Suspend UIApplication: ' + args.ios);
   }
 });
 
