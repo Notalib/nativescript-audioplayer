@@ -87,7 +87,7 @@ export abstract class CommonAudioPlayer {
 
   public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
     this.preparePlaylist(playlist);
-    if (startIndex && startOffset) {
+    if (startIndex !== undefined && startOffset) {
       this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
     } else if (startIndex) {
       this.skipToPlaylistIndex(startIndex);
@@ -102,6 +102,7 @@ export abstract class CommonAudioPlayer {
         this._log(`Set queuedSeek to ${offset}`);
         this._queuedSeekTo = offset;
       }
+
       this.skipToPlaylistIndex(playlistIndex);
     }
   }

@@ -17,9 +17,11 @@
         "Prebuffer",
         "Siri",
         "audioplayer",
+        "exoplayer",
         "libvlc",
         "nospace",
         "prettierrc",
-        "quotemark"
+        "quotemark",
+        "trackselection"
     ]
 }
