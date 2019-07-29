@@ -22,6 +22,9 @@
         "noFallthroughCasesInSwitch": true,
         "baseUrl": ".",
         "paths": {
+            "@nota/nativescript-audioplayer/*": [
+                "../src/*"
+            ],
             "*": [
                 "./node_modules/*"
             ]

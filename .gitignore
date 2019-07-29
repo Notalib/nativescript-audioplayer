@@ -9,3 +9,4 @@ demo/node_modules
 demo/lib
 node_modules
 audioplayer.*.d.ts
+*.tgz
