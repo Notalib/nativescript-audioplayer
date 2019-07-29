@@ -97,7 +97,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam2", "Short Test", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam3", "Short Test", null)
       );
-      this.player.loadPlaylist(playlist, 5, 10000);
+      this.player.loadPlaylist(playlist, 1, 1000);
     }
   }
 

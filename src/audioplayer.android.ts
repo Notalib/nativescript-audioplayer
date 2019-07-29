@@ -147,7 +147,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public setRate(rate: number) {
-    const params = new com.google.android.exoplayer2.PlaybackParameters(rate, rate, rate !== 1);
+    const params = new com.google.android.exoplayer2.PlaybackParameters(rate, rate, rate > 1);
     this.exoPlayer.setPlaybackParameters(params);
   }
 
@@ -168,29 +168,45 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this.exoPlayer.getCurrentPosition();
   }
 
+  private _sleepTimer: number;
+  private _sleepTimerPaused: boolean = false;
+  private _sleepTimerMillisecondsLeft: number = 0;
+
   public setSleepTimer(milliseconds: number) {
-    /*
-    if (this.service) {
-      this.service.setSleepTimer(milliseconds);
-    }
-    */
+    this.cancelSleepTimer();
+
+    const countdownTick = 1000;
+    this._sleepTimerMillisecondsLeft = milliseconds;
+    this._sleepTimer = setInterval(() => {
+      if (!this._sleepTimerPaused && this.isPlaying()) {
+        this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
+        this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+      }
+      if (this._sleepTimerMillisecondsLeft === 0) {
+        // Fade out volume and pause if not already paused.
+        if (this.isPlaying()) {
+          this.pause();
+        }
+
+        clearInterval(this._sleepTimer);
+        this._sleepTimer = undefined;
+      }
+    }, countdownTick);
+    this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
   }
 
   public getSleepTimerRemaining(): number {
-    /*
-    if (this.service) {
-      return this.service.getSleepTimerRemaining();
-    } else {
-      return 0;
-    } */
-    return 0;
+    return this._sleepTimerMillisecondsLeft;
   }
 
   public cancelSleepTimer() {
-    /*
-    if (this.service) {
-      this.service.cancelSleepTimer();
-    } */
+    this._log('cancelSleepTimer');
+    if (this._sleepTimer !== undefined) {
+      clearInterval(this._sleepTimer);
+      this._sleepTimer = undefined;
+      this._sleepTimerMillisecondsLeft = 0;
+      this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+    }
   }
 
   public setSeekIntervalSeconds(seconds: number) {
@@ -208,16 +224,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     delete this._readyPromise;
   }
 
-  private isServiceRunning(serviceClassName: string) {
-    const manager: android.app.ActivityManager = app.android.context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
-    const runningServices = manager.getRunningServices(100000);
-    for (let i = 0; i < runningServices.size(); i++) {
-      const service = runningServices.get(i);
-      if (serviceClassName === service.service.getClassName()) {
-        return true;
-      }
-    }
-    return false;
+  public _exoPlayerOnPlayerEvent(evt: PlaybackEvent, arg?: any) {
+    this._onPlaybackEvent(evt, arg);
   }
 }
 
@@ -262,19 +270,19 @@ function ensureNativeClasses() {
     public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, reason: number) {
       switch (reason) {
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_PREPARED: {
-          console.log(`onTimelineChanged - reason = "prepared"`);
+          console.log(`onTimelineChanged - reason = "prepared"`, manifest);
           break;
         }
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_RESET: {
-          console.log(`onTimelineChanged - reason = "reset"`);
+          console.log(`onTimelineChanged - reason = "reset"`, manifest);
           break;
         }
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_DYNAMIC: {
-          console.log(`onTimelineChanged - reason = "dynamic"`);
+          console.log(`onTimelineChanged - reason = "dynamic"`, manifest);
           break;
         }
         default: {
-          console.error(`onTimelineChanged - reason is unknown`);
+          console.error(`onTimelineChanged - reason is unknown`, reason, manifest);
           break;
         }
       }
@@ -343,9 +351,22 @@ function ensureNativeClasses() {
      * @param playbackState One of the STATE constants
      */
     public onPlayerStateChanged(playWhenReady: boolean, playbackState: number) {
+      const owner = this.owner.get();
+      if (!owner) {
+        return;
+      }
+
+      if (playWhenReady) {
+        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
+      }
+
       switch (playbackState) {
         case com.google.android.exoplayer2.Player.STATE_BUFFERING: {
           console.log(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`);
+
+          if (!playWhenReady) {
+            owner._exoPlayerOnPlayerEvent(PlaybackEvent.Buffering);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.STATE_IDLE: {
@@ -354,6 +375,9 @@ function ensureNativeClasses() {
         }
         case com.google.android.exoplayer2.Player.STATE_ENDED: {
           console.log(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`);
+          if (!playWhenReady) {
+            owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.STATE_READY: {
@@ -407,7 +431,12 @@ function ensureNativeClasses() {
      * @param error
      */
     public onPlayerError(error: com.google.android.exoplayer2.ExoPlaybackException) {
-      console.log('onPlayerError', error);
+      const owner = this.owner.get();
+      if (!owner) {
+        return;
+      }
+
+      owner._exoPlayerOnPlayerEvent(PlaybackEvent.EncounteredError, error);
     }
 
     /**
@@ -424,22 +453,27 @@ function ensureNativeClasses() {
     public onPositionDiscontinuity(reason: number) {
       switch (reason) {
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_AD_INSERTION: {
+          // Discontinuity to or from an ad within one period in the timeline.
           console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_AD_INSERTION"`);
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_INTERNAL: {
+          // Discontinuity introduced internally by the source.
           console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_INTERNAL"`);
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_PERIOD_TRANSITION: {
+          // Automatic playback transition from one period in the timeline to the next.
           console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`);
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK: {
+          // Seek within the current period or to another period.
           console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_SEEK"`);
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT: {
+          // Seek adjustment due to being unable to seek to the requested position or because the seek was permitted to be inexact.
           console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_SEEK_ADJUSTMENT"`);
           break;
         }
