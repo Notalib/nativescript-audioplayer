@@ -334,6 +334,7 @@ function ensureNativeClasses() {
 
   @Interfaces([com.google.android.exoplayer2.Player.EventListener])
   class TNSPlayerEventImpl extends java.lang.Object implements com.google.android.exoplayer2.Player.EventListener {
+    private readonly cls = 'TNSPlayerEventImpl';
     private owner: WeakRef<TNSAudioPlayer>;
 
     constructor(_owner: TNSAudioPlayer) {
@@ -358,19 +359,25 @@ function ensureNativeClasses() {
     public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, reason: number) {
       switch (reason) {
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_PREPARED: {
-          console.log(`onTimelineChanged - reason = "prepared"`, manifest);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onTimelineChanged() - reason = "prepared" manifest:${manifest}`, traceCategory);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_RESET: {
-          console.log(`onTimelineChanged - reason = "reset"`, manifest);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onTimelineChanged() - reason = "reset" manifest:${manifest}`, traceCategory);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_DYNAMIC: {
-          console.log(`onTimelineChanged - reason = "dynamic"`, manifest);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onTimelineChanged() - reason = "dynamic" manifest:${manifest}`, traceCategory);
+          }
           break;
         }
         default: {
-          console.error(`onTimelineChanged - reason is unknown`, reason, manifest);
+          trace.write(`${this.cls}.onTimelineChanged() - reason = "dynamic" reason:"${reason}" manifest:${manifest}`, traceCategory, trace.messageType.error);
           break;
         }
       }
@@ -386,6 +393,11 @@ function ensureNativeClasses() {
       trackGroups: com.google.android.exoplayer2.source.TrackGroupArray,
       trackSelections: com.google.android.exoplayer2.trackselection.TrackSelectionArray,
     ) {
+      if (trace.isEnabled()) {
+        trace.write(`onTracksChanged(${trackGroups}, ${trackSelections})`, traceCategory);
+      }
+
+      /*
       for (let i = 0; i < trackGroups.length; i += 1) {
         const trackGroup = trackGroups.get(i);
 
@@ -418,7 +430,7 @@ function ensureNativeClasses() {
           selectionData,
           selectionReason,
         });
-      }
+      } */
     }
 
     /**
@@ -426,7 +438,9 @@ function ensureNativeClasses() {
      * @param isLoading Whether the source is currently being loaded
      */
     public onLoadingChanged(isLoading: boolean) {
-      console.log('onLoadingChanged', !!isLoading);
+      if (trace.isEnabled()) {
+        trace.write(`onTracksChanged(${isLoading})`, traceCategory);
+      }
     }
 
     /**
@@ -447,7 +461,9 @@ function ensureNativeClasses() {
 
       switch (playbackState) {
         case com.google.android.exoplayer2.Player.STATE_BUFFERING: {
-          console.log(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`);
+          if (trace.isEnabled()) {
+            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, traceCategory);
+          }
 
           if (!playWhenReady) {
             owner._exoPlayerOnPlayerEvent(PlaybackEvent.Buffering);
@@ -455,22 +471,30 @@ function ensureNativeClasses() {
           break;
         }
         case com.google.android.exoplayer2.Player.STATE_IDLE: {
-          console.log(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`);
-          break;
-        }
-        case com.google.android.exoplayer2.Player.STATE_ENDED: {
-          console.log(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`);
-          if (!playWhenReady) {
-            owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
+          if (trace.isEnabled()) {
+            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, traceCategory);
           }
           break;
         }
+        case com.google.android.exoplayer2.Player.STATE_ENDED: {
+          if (trace.isEnabled()) {
+            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, traceCategory);
+          }
+
+          if (!playWhenReady) {
+            owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
+          }
+
+          break;
+        }
         case com.google.android.exoplayer2.Player.STATE_READY: {
-          console.log(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`);
+          if (trace.isEnabled()) {
+            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, traceCategory);
+          }
           break;
         }
         default: {
-          console.error(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`);
+          trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, traceCategory);
           break;
         }
       }
@@ -483,19 +507,25 @@ function ensureNativeClasses() {
     public onRepeatModeChanged(repeatMode: number) {
       switch (repeatMode) {
         case com.google.android.exoplayer2.Player.REPEAT_MODE_ALL: {
-          console.log(`onRepeatModeChanged(${repeatMode}) - mode = 'ALL'`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ALL'`, traceCategory);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.REPEAT_MODE_OFF: {
-          console.log(`onRepeatModeChanged(${repeatMode}) - mode = 'OFF'`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'OFF'`, traceCategory);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.REPEAT_MODE_ONE: {
-          console.log(`onRepeatModeChanged(${repeatMode}) - mode = 'ONE'`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ONE'`, traceCategory);
+          }
           break;
         }
         default: {
-          console.error(`onRepeatModeChanged(${repeatMode}) - mode is unknown`);
+          trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} is unknown`, traceCategory, trace.messageType.error);
           break;
         }
       }
@@ -506,7 +536,9 @@ function ensureNativeClasses() {
      * @param shuffleModeEnabled Whether shuffling of windows is enabled
      */
     public onShuffleModeEnabledChanged(shuffleModeEnabled: boolean) {
-      console.log('onShuffleModeEnabledChanged', !!shuffleModeEnabled);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onShuffleModeEnabledChanged() - ${shuffleModeEnabled}`, traceCategory);
+      }
     }
 
     /**
@@ -544,32 +576,43 @@ function ensureNativeClasses() {
       switch (reason) {
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_AD_INSERTION: {
           // Discontinuity to or from an ad within one period in the timeline.
-          console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_AD_INSERTION"`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_AD_INSERTION"`, traceCategory);
+          }
+
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_INTERNAL: {
           // Discontinuity introduced internally by the source.
-          console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_INTERNAL"`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_INTERNAL"`, traceCategory);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_PERIOD_TRANSITION: {
           // Automatic playback transition from one period in the timeline to the next.
-          console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`, traceCategory);
+          }
           owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK: {
           // Seek within the current period or to another period.
-          console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_SEEK"`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK"`, traceCategory);
+          }
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT: {
           // Seek adjustment due to being unable to seek to the requested position or because the seek was permitted to be inexact.
-          console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_SEEK_ADJUSTMENT"`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK_ADJUSTMENT"`, traceCategory);
+          }
           break;
         }
         default: {
-          console.error(`onPositionDiscontinuity - reason = "${reason}" is unknown`);
+          trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "${reason}" is unknown`, traceCategory, trace.messageType.error);
           break;
         }
       }
@@ -583,7 +626,9 @@ function ensureNativeClasses() {
      */
     public onPlaybackParametersChanged(playbackParameters: com.google.android.exoplayer2.PlaybackParameters) {
       const { pitch, speed, skipSilence } = playbackParameters;
-      console.log('onPlaybackParametersChanged', { pitch, speed, skipSilence });
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onPlaybackParametersChanged() - ${JSON.stringify({ pitch, speed, skipSilence })}`, traceCategory);
+      }
     }
 
     /**
@@ -591,36 +636,49 @@ function ensureNativeClasses() {
      * This is guaranteed to happen after any necessary changes to the player state were reported to onPlayerStateChanged(boolean, int).
      */
     public onSeekProcessed() {
-      console.log('onSeekProcessed');
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onSeekProcessed()`, traceCategory);
+      }
     }
   }
 
   @JavaProxy('dk.nota.BackgroundService')
   class BackgroundService extends android.app.Service {
-    onStartCommand(intent, flags, startId) {
-      console.log('start command', Array.from(arguments));
+    private cls = `dk.nota.BackgroundService`;
+    public onStartCommand(intent, flags, startId) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, traceCategory);
+      }
       super.onStartCommand(intent, flags, startId);
       return android.app.Service.START_STICKY;
     }
-    onCreate(...args) {
-      console.log('onCreate', ...args);
+    public onCreate() {
       // Do something
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onCreate()`, traceCategory);
+      }
     }
-    onBind(param) {
+    public onBind(param) {
       // haven't had to deal with this, so i can't recall what it does
-      console.log('on Bind Services', Array.from(arguments));
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onBind(${param})`, traceCategory);
+      }
 
       return super.onBind(param);
     }
-    onUnbind(param) {
+    public onUnbind(param) {
       // haven't had to deal with this, so i can't recall what it does
-      console.log('UnBind Service', Array.from(arguments));
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onUnbind(${param})`, traceCategory);
+      }
 
       return super.onUnbind(param);
     }
-    onDestroy() {
-      console.log('service onDestroy', Array.from(arguments));
+    public onDestroy() {
       // end service, reset any variables... etc...
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onDestroy()`, traceCategory);
+      }
     }
   }
 

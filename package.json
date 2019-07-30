@@ -2,7 +2,7 @@
   "private": true,
   "name": "@nota/nativescript-audioplayer",
   "version": "1.7.1",
-  "description": "Fully featured AudioPlayer for NativeScript. Supports gapless audio playlist playback with variable playback speed and native remote controls",
+  "description": "Fully featured AudioPlayer for NativeScript. Supports gap-less audio playlist playback with variable playback speed and native remote controls",
   "scripts": {
     "build.apk": "cd demo && tns build android --copy-to .",
     "build": "cd src && npm i && tsc",
@@ -17,7 +17,8 @@
     "prepack": "cd src && npm run tsc",
     "test.android": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build android && tns test android --justlaunch",
     "test.ios": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build ios && tns test ios --justlaunch",
-    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\""
+    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\"",
+    "lint": "npm-run-all format:check tslint"
   },
   "repository": {
     "type": "git",
@@ -43,7 +44,8 @@
     "prettier-check": "^2.0.0",
     "rimraf": "^2.6.3",
     "tns-platform-declarations": "^6.0.0",
-    "tslint": "^5.18.0"
+    "tslint": "^5.18.0",
+    "typescript": "~3.4.5"
   },
   "dependencies": {}
 }

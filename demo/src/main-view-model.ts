@@ -1,3 +1,4 @@
+// tslint:disable:no-console
 import { MediaTrack, PlaybackEvent, PlaybackEventListener, Playlist, TNSAudioPlayer } from '@nota/nativescript-audioplayer';
 import * as app from 'tns-core-modules/application';
 import { Observable } from 'tns-core-modules/data/observable';
