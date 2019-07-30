@@ -1,6 +1,6 @@
 /// <reference path="./native-definitions/exoplayer.d.ts" />
 
-import * as app from 'tns-core-modules/application';
+import * as nsApp from 'tns-core-modules/application';
 import * as trace from 'tns-core-modules/trace';
 import * as utils from 'tns-core-modules/utils/utils';
 import { CommonAudioPlayer, PlaybackEvent, Playlist, traceCategory } from './audioplayer-common';
@@ -12,6 +12,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private loadControl: com.google.android.exoplayer2.DefaultLoadControl;
   private renderersFactory: com.google.android.exoplayer2.DefaultRenderersFactory;
   private _exoPlayer: com.google.android.exoplayer2.ExoPlayer;
+
+  private _pmWakeLock: android.os.PowerManager.WakeLock;
+  private _wifiLock: android.net.wifi.WifiManager.WifiLock;
+
   private get exoPlayer() {
     if (!this._exoPlayer) {
       ensureNativeClasses();
@@ -53,14 +57,23 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._readyPromise;
   }
 
-  private _exitHandler: (args: app.ApplicationEventData) => void;
+  private _exitHandler: (args: nsApp.ApplicationEventData) => void;
 
   constructor() {
     super();
 
-    app.on(
-      app.exitEvent,
-      (this._exitHandler = (args: app.ApplicationEventData) => {
+    global['nota_app'] = nsApp;
+    global['nota_app_context'] = this.context;
+
+    const powerManager = this.context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager;
+    this._pmWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, 'NotaAudio');
+
+    const wifiManager = this.context.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager;
+    this._wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL, 'NotaAudio');
+
+    nsApp.on(
+      nsApp.exitEvent,
+      (this._exitHandler = (args: nsApp.ApplicationEventData) => {
         if (args.android && args.android.isFinishing()) {
           // Handle temporary destruction.
           this.destroy();
@@ -118,11 +131,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   public play() {
     this.exoPlayer.setPlayWhenReady(true);
     this.launchBackgroundService();
+
+    this.acquireLock();
   }
 
   public pause() {
     this.exoPlayer.setPlayWhenReady(false);
     this.stopBackgroundService();
+
+    this.releaseLock();
   }
 
   public stop() {
@@ -237,7 +254,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     delete this._readyPromise;
     this.stopBackgroundService();
 
-    app.off(app.exitEvent, this._exitHandler);
+    nsApp.off(nsApp.exitEvent, this._exitHandler);
+    global['nota_app'] = null;
+    global['nota_app_context'] = null;
   }
 
   public _exoPlayerOnPlayerEvent(evt: PlaybackEvent, arg?: any) {
@@ -267,6 +286,28 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     context.stopService(intent);
 
     this._backgroundServiceRunning = false;
+
+    this.releaseLock();
+  }
+
+  private acquireLock() {
+    if (!this._pmWakeLock.isHeld()) {
+      this._pmWakeLock.acquire();
+    }
+
+    if (!this._wifiLock.isHeld()) {
+      this._wifiLock.acquire();
+    }
+  }
+
+  private releaseLock() {
+    if (this._pmWakeLock.isHeld()) {
+      this._pmWakeLock.release();
+    }
+
+    if (this._wifiLock.isHeld()) {
+      this._wifiLock.release();
+    }
   }
 }
 
@@ -310,7 +351,7 @@ function ensureNativeClasses() {
      * For example, the current period index may have changed as a result of periods being added or removed from the timeline.
      * This will not be reported via a separate call to onPositionDiscontinuity(int).
      *
-     * @param Timeline The latest timeline. Never null, but may be empty
+     * @param timeline The latest timeline. Never null, but may be empty
      * @param manifest The latest manifest. May be null
      * @param reason The Player.TimelineChangeReason responsible for this timeline change
      */
@@ -345,9 +386,6 @@ function ensureNativeClasses() {
       trackGroups: com.google.android.exoplayer2.source.TrackGroupArray,
       trackSelections: com.google.android.exoplayer2.trackselection.TrackSelectionArray,
     ) {
-      console.log('onTracksChanged');
-      // console.log(this.owner.get().exoPlayer.getCurrentTag());
-
       for (let i = 0; i < trackGroups.length; i += 1) {
         const trackGroup = trackGroups.get(i);
 
