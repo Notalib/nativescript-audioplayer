@@ -1,6 +1,7 @@
 /// <reference path="./native-definitions/exoplayer.d.ts" />
 
 import * as nsApp from 'tns-core-modules/application';
+import * as imageSource from 'tns-core-modules/image-source';
 import * as trace from 'tns-core-modules/trace';
 import * as utils from 'tns-core-modules/utils/utils';
 import { CommonAudioPlayer, PlaybackEvent, Playlist, traceCategory } from './audioplayer-common';
@@ -12,6 +13,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private loadControl: com.google.android.exoplayer2.DefaultLoadControl;
   private renderersFactory: com.google.android.exoplayer2.DefaultRenderersFactory;
   private _exoPlayer: com.google.android.exoplayer2.ExoPlayer;
+
+  private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
 
   private _pmWakeLock: android.os.PowerManager.WakeLock;
   private _wifiLock: android.net.wifi.WifiManager.WifiLock;
@@ -25,9 +28,60 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this.renderersFactory = new DefaultRenderersFactory(this.context);
 
       this.playerListener = new TNSPlayerEvent(this);
+      this._playerNotificationManager = new com.google.android.exoplayer2.ui.PlayerNotificationManager(
+        this.context,
+        'NotaAudio',
+        Math.round(Math.random() * 1000),
+        new com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter({
+          createCurrentContentIntent: (player: com.google.android.exoplayer2.Player) => {
+            const intent = new android.content.Intent(this.context, dk.nota.BackgroundService.class);
+
+            return android.app.PendingIntent.getActivity(this.context, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+          },
+          getCurrentContentText: (player) => {
+            const window = player.getCurrentWindowIndex();
+            const track = this.getTrackInfo(window);
+            if (!track) {
+              return null;
+            }
+
+            return track.album;
+          },
+          getCurrentContentTitle: (player) => {
+            const window = player.getCurrentWindowIndex();
+            const track = this.getTrackInfo(window);
+            if (!track) {
+              return null;
+            }
+
+            return track.title;
+          },
+          getCurrentLargeIcon: (player, callback) => {
+            const window = player.getCurrentWindowIndex();
+            const track = this.getTrackInfo(window);
+            if (!track || !track.albumArtUrl) {
+              return null;
+            }
+
+            imageSource.fromUrl(track.albumArtUrl).then((image) => callback.onBitmap(image.android));
+
+            return null;
+          },
+          getCurrentSubText: (player) => {
+            const window = player.getCurrentWindowIndex();
+            const track = this.getTrackInfo(window);
+            if (!track) {
+              return null;
+            }
+
+            return track.artist;
+          },
+        }),
+      );
 
       this._exoPlayer = ExoPlayerFactory.newSimpleInstance(this.context, this.renderersFactory, this.trackSelector, this.loadControl);
       this._exoPlayer.addListener(this.playerListener);
+      this._playerNotificationManager.setPlayer(this._exoPlayer);
     }
 
     return this._exoPlayer;
@@ -83,23 +137,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     );
   }
 
-  /*
-  private setupServiceCallbacks(service: dk.nota.lyt.libvlc.PlaybackService) {
-    service.setNotificationActivity(app.android.startActivity, 'LAUNCHED_FROM_NOTIFICATION');
-    service.removeAllCallbacks();
-    service.addCallback(this.lytPlaybackEventHandler);
-  }
-
-  private getNewMediaWrapper(track: MediaTrack): dk.nota.lyt.libvlc.media.MediaWrapper {
-    const uri: android.net.Uri = dk.nota.lyt.libvlc.Utils.LocationToUri(track.url);
-    const media: dk.nota.lyt.libvlc.media.MediaWrapper = new dk.nota.lyt.libvlc.media.MediaWrapper(uri);
-    media.setDisplayTitle(track.title);
-    media.setArtist(track.artist);
-    media.setAlbum(track.album);
-    media.setArtworkURL(track.albumArtUrl);
-    return media;
-  } */
-
   public preparePlaylist(playlist: Playlist): void {
     const concatenatedSource = new com.google.android.exoplayer2.source.ConcatenatingMediaSource(
       Array.create(com.google.android.exoplayer2.source.ExtractorMediaSource, 0),
@@ -121,6 +158,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     this.exoPlayer.stop();
     this.exoPlayer.prepare(concatenatedSource);
+
+    this.playlist = playlist;
   }
 
   public getCurrentPlaylistIndex(): number {
@@ -261,6 +300,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public _exoPlayerOnPlayerEvent(evt: PlaybackEvent, arg?: any) {
     this._onPlaybackEvent(evt, arg);
+  }
+
+  private getTrackInfo(index: number) {
+    if (!this.playlist || !this.playlist.tracks) {
+      return null;
+    }
+
+    return this.playlist.tracks[index] || null;
   }
 
   private _backgroundServiceRunning = false;
