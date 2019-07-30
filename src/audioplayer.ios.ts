@@ -1,7 +1,8 @@
 /// <reference path="./native-definitions/KDEAudioPlayer.d.ts" />
 
 import * as imageSrc from 'tns-core-modules/image-source';
-import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
+import * as trace from 'tns-core-modules/trace';
+import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist, traceCategory } from './audioplayer-common';
 
 // TODO: Do all exports in a main.ts instead
 export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
@@ -86,7 +87,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   public isReady = Promise.resolve(true);
 
   public preparePlaylist(playlist: Playlist) {
-    this._log('preparePlaylist');
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.preparePlaylist($)`, traceCategory);
+    }
+
     this.playlist = playlist;
     if (!this.player) {
       this.setupAudioPlayer();
@@ -106,7 +110,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private setupAudioPlayer() {
-    this._log(`setupAudioPlayer`);
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setupAudioPlayer()`, traceCategory);
+    }
+
     this.setupDelegate();
     this.player = AudioPlayer.new();
     this.player.delegate = this.delegate;
@@ -118,7 +125,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     // Set AVAudioSession mode to SpokenAudio if it's defined (iOS 9+)
     // this ensures better audio mix with Navigation, Siri etc.
     if (AVAudioSessionModeSpokenAudio) {
-      this._log(`AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`);
+      trace.write(`${this.cls}.setupAudioPlayer() - AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`, traceCategory);
       this.player.sessionMode = AVAudioSessionModeSpokenAudio;
     }
     this.player.allowExternalPlayback = true;
@@ -131,36 +138,48 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
     ]);
     this.ios = this.player;
-    this._log(`Player: ${this.player}`);
-    this._log(`Delegate: ${this.delegate}`);
-    this._log(`TimePitch Algorithm: ${this.player.timePitchAlgorithm}`);
-  }
-
-  public addToPlaylist(track: MediaTrack) {
-    this._log('ERROR: addToPlaylist not implemented');
+    trace.write(`${this.cls}.setupAudioPlayer() - Player: ${this.player}`, traceCategory);
+    trace.write(`${this.cls}.setupAudioPlayer() - Delegate: ${this.delegate}`, traceCategory);
+    trace.write(`${this.cls}.setupAudioPlayer() - TimePitch Algorithm: ${this.player.timePitchAlgorithm}`, traceCategory);
   }
 
   public play() {
     try {
       if (this.player.state === AudioPlayerState.Paused) {
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.play() - resume`, traceCategory);
+        }
+
         this.player.resume();
       } else if (this.player.state === AudioPlayerState.Stopped) {
         this.player.playWithItemsStartAtIndex(this._iosPlaylist, 0);
+
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.play() - from start`, traceCategory);
+        }
+      } else {
+        trace.write(`${this.cls}.play() - unknown start state?`, traceCategory, trace.messageType.error);
       }
     } catch (err) {
-      this._log(`Err: ${err}`);
+      trace.write(`${this.cls}.play() - error: ${err}`, traceCategory, trace.messageType.error);
     }
   }
 
   public pause() {
-    this._log('pause');
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.pause()`, traceCategory);
+    }
+
     if (this.player) {
       this.player.pause();
     }
   }
 
   public stop() {
-    this._log('stop');
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.stop()`, traceCategory);
+    }
+
     if (this.player) {
       this.player.stop();
     }
@@ -195,7 +214,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public getRate(): number {
-    this._log(`[getRate] TimePitchAlgorithm = ${this.player.timePitchAlgorithm}`);
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.getRate(...) => ${this.player.timePitchAlgorithm}`, traceCategory);
+    }
+
     return this.player ? this.player.rate : 0;
   }
 
@@ -235,11 +257,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  private _sleepTimer: number;
-  private _sleepTimerPaused: boolean = false;
-  private _sleepTimerMillisecondsLeft: number = 0;
-
   public setSleepTimer(milliseconds: number) {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, traceCategory);
+    }
+
     this.cancelSleepTimer();
 
     const countdownTick = 1000;
@@ -261,36 +283,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
   }
 
-  public getSleepTimerRemaining(): number {
-    return this._sleepTimerMillisecondsLeft;
-  }
-
-  public cancelSleepTimer() {
-    this._log('cancelSleepTimer');
-    if (this._sleepTimer !== undefined) {
-      clearInterval(this._sleepTimer);
-      this._sleepTimer = undefined;
-      this._sleepTimerMillisecondsLeft = 0;
-      this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-    }
-  }
-
-  public pauseSleepTimer() {
-    if (this._sleepTimer !== undefined) {
-      this._log('pauseSleepTimer');
-      this._sleepTimerPaused = true;
-    }
-  }
-
-  public resumeSleepTimer() {
-    if (this._sleepTimer !== undefined) {
-      this._log('resumeSleepTimer');
-      this._sleepTimerPaused = false;
-    }
-  }
-
   public setSeekIntervalSeconds(seconds: number) {
-    this._log(`setSeekIntervalSeconds: ${seconds}`);
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, traceCategory);
+    }
+
     this.seekIntervalSeconds = seconds;
     if (this.player) {
       this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(seconds);
@@ -298,7 +295,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public destroy() {
-    this._log('destroy');
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.destroy()`, traceCategory);
+    }
+
     this.stop();
     this.player = null;
     this.delegate = null;
@@ -313,22 +313,34 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       // this._log(`- timeUpdate: ${seconds}s`);
       const timeMilliseconds = Math.floor(seconds * 1000);
       if (this._isSeeking) {
-        this._log(`time-update skipped, we're seeking`);
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls} - time-update skipped, we're seeking`, traceCategory);
+        }
       } else {
         this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMilliseconds);
       }
     };
     this.delegate.onBufferingUpdate = (item, earliest, latest) => {
-      this._log(`bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls} bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`, traceCategory);
+      }
     };
     this.delegate.onFoundDuration = (item, duration) => {
-      this._log(`found duration for '${item.title}': ${duration}s`);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls} found duration for '${item.title}': ${duration}s`, traceCategory);
+      }
     };
     this.delegate.onWillStartPlayingItem = (item) => {
-      this._log(`will start playing '${item.title}'`);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls} will start playing '${item.title}'`, traceCategory);
+      }
+
       if (item.artwork == null) {
         if (this._cachedCover && this._cachedCover.url === this.getMediaTrackForItem(item).albumArtUrl) {
-          this._log(`got artwork from cache for '${item.title}'`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls} got artwork from cache for '${item.title}'`, traceCategory);
+          }
+
           item.artwork = this._cachedCover.artwork;
         } else if (!this._isRetrievingArtwork) {
           this.loadRemoteControlAlbumArtworkAsync(item);
@@ -336,7 +348,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
     };
     this.delegate.onFinishedPlayingItem = (item) => {
-      this._log(`finished playing '${item.title}'`);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls} finished playing '${item.title}'`, traceCategory);
+      }
+
       const finishedIndex = this._iosPlaylist.indexOfObject(item);
       this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached, finishedIndex);
       if (finishedIndex >= this._iosPlaylist.count - 1) {
@@ -358,9 +373,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       const newVolume = Math.max(this.player.volume - decreaseBy, 0);
       this.player.volume = newVolume;
       if (newVolume === 0) {
-        this._log(`Volume faded out!`);
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls} - Volume faded out!`, traceCategory);
+        }
+
         if (this.player && this.player.state !== AudioPlayerState.Paused) {
-          this._log(`Volume faded out, now pausing!`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls} - Volume faded out! - pausing`, traceCategory);
+          }
           this.player.pause();
         }
         this.player.volume = previousVolume;
@@ -376,7 +396,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     afterTolerance: CMTime = kCMTimeZero,
     completionHandler?: (complete: boolean) => void,
   ) {
-    this._log(`seekTo: ${milliseconds}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`);
+    if (trace.isEnabled()) {
+      trace.write(
+        `${this.cls}._iosSeekTo(...) - seekTo: ${milliseconds}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler})`,
+        traceCategory,
+      );
+    }
 
     // avoid sending TimeUpdates while a seek is in progress
     this._isSeeking = true;
@@ -388,7 +413,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       beforeTolerance,
       afterTolerance,
       (completed) => {
-        this._log(`seek completed = ${completed}`);
+        if (trace.isEnabled()) {
+          trace.write(
+            `${
+              this.cls
+            }._iosSeekTo(...) - seekTo: ${milliseconds}ms (adaptsToSeekableRanges=${adaptToSeekableRanges},hasCompletionHandler=${!!completionHandler}) seek completed = ${completed}`,
+            traceCategory,
+          );
+        }
         this._isSeeking = false;
         if (completionHandler) {
           completionHandler(completed);
@@ -403,7 +435,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private _iosPlayerStateChanged(from: AudioPlayerState, to: AudioPlayerState) {
-    this._log(`stateChanged: ${from} -> ${to}`);
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}._iosPlayerStateChanged(...) - stateChanged: ${from} -> ${to}`, traceCategory);
+    }
 
     switch (to) {
       case AudioPlayerState.Buffering: {
@@ -440,24 +474,38 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         break;
       }
       default: {
-        this._log(`unknown stateChange: ${from} -> ${to}`);
+        trace.write(`${this.cls}._iosPlayerStateChanged(track) - unknown stateChanged: ${from} -> ${to}`, traceCategory, trace.messageType.error);
       }
     }
   }
 
   private makeAudioItemForMediaTrack(track: MediaTrack): AudioItem {
     try {
-      this._log(`Track: ${JSON.stringify(track)}`);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.makeAudioItemForMediaTrack(${JSON.stringify(track)})`, traceCategory);
+      }
+
       const url = track.url.substr(0, 7) === 'file://' ? NSURL.fileURLWithPath(track.url.substr(7)) : NSURL.URLWithString(track.url);
-      this._log(`URL: ${url}`);
+
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.makeAudioItemForMediaTrack(track) - URL: ${url}`, traceCategory);
+      }
+
       let audioItem = new AudioItem({ highQualitySoundURL: null, mediumQualitySoundURL: url, lowQualitySoundURL: null });
-      this._log(`AudioItem: ${JSON.stringify(audioItem)}`);
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.makeAudioItemForMediaTrack(track) - AudioItem: ${JSON.stringify(audioItem)}`, traceCategory);
+      }
+
       audioItem.title = track.title;
       audioItem.artist = track.artist;
       audioItem.album = track.album;
       return audioItem;
     } catch (err) {
-      this._log(`Error: Failed to create AudioItem for MediaTrack: ${err}`);
+      trace.write(
+        `${this.cls}.makeAudioItemForMediaTrack(track) - Error: Failed to create AudioItem for MediaTrack: ${err}`,
+        traceCategory,
+        trace.messageType.error,
+      );
       return null;
     }
   }
@@ -494,12 +542,19 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           this._cachedCover = { url: artworkUrl, artwork: artwork };
           item.artwork = artwork;
         } else {
-          this._log(`loadRemoteControlArtwork loaded, but current track was changed`);
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.loadRemoteControlAlbumArtworkAsync() - loadRemoteControlArtwork loaded, but current track was changed`, traceCategory);
+          }
         }
         this._isRetrievingArtwork = false;
       })
       .catch((err) => {
-        this._log(`loadRemoteControlArtwork error for url '${artworkUrl}': ${err}`);
+        trace.write(
+          `${this.cls}.loadRemoteControlAlbumArtworkAsync() - loadRemoteControlArtwork error for url '${artworkUrl}': ${err}`,
+          traceCategory,
+          trace.messageType.error,
+        );
+
         this._isRetrievingArtwork = false;
       });
   }

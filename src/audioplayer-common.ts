@@ -1,4 +1,7 @@
 import { isIOS } from 'tns-core-modules/platform';
+import * as trace from 'tns-core-modules/trace';
+
+export const traceCategory = 'NotaAudioPlayer';
 
 export class MediaTrack {
   constructor(url: string, title: string, artist: string, album: string, albumArtUrl: string) {
@@ -55,11 +58,15 @@ export interface PlaybackEventListener {
   onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
 }
 
+let instanceNo = 0;
 export abstract class CommonAudioPlayer {
+  protected instance = instanceNo++;
+
+  protected readonly cls = `$TNSAudioPlayer.${isIOS ? 'ios' : 'android'}<${this.instance}>`;
+
   public android: any;
   public ios: any;
   public playlist: Playlist;
-  public debugOutputEnabled: boolean = false;
 
   protected _queuedSeekTo: number = null;
   protected _listener: PlaybackEventListener;
@@ -81,8 +88,47 @@ export abstract class CommonAudioPlayer {
   public abstract seekTo(offset: number);
   public abstract setSeekIntervalSeconds(seconds: number): void;
   public abstract setSleepTimer(milliseconds: number);
-  public abstract getSleepTimerRemaining(): number;
-  public abstract cancelSleepTimer();
+
+  public getSleepTimerRemaining(): number {
+    return this._sleepTimerMillisecondsLeft;
+  }
+
+  public cancelSleepTimer() {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.cancelSleepTimer()`, traceCategory);
+    }
+
+    if (this._sleepTimer !== undefined) {
+      clearInterval(this._sleepTimer);
+      this._sleepTimer = undefined;
+      this._sleepTimerMillisecondsLeft = 0;
+      this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+    }
+  }
+
+  protected _sleepTimer: number;
+  protected _sleepTimerPaused: boolean = false;
+  protected _sleepTimerMillisecondsLeft: number = 0;
+
+  public pauseSleepTimer() {
+    if (this._sleepTimer !== undefined) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.pauseSleepTimer()`, traceCategory);
+      }
+      this._sleepTimerPaused = true;
+    }
+  }
+
+  public resumeSleepTimer() {
+    if (this._sleepTimer !== undefined) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.resumeSleepTimer()`, traceCategory);
+      }
+
+      this._sleepTimerPaused = false;
+    }
+  }
+
   public abstract destroy();
 
   public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
@@ -99,7 +145,9 @@ export abstract class CommonAudioPlayer {
       this.seekTo(offset);
     } else {
       if (offset > 0) {
-        this._log(`Set queuedSeek to ${offset}`);
+        if (trace.isEnabled()) {
+          trace.write(`Set queuedSeek to ${offset}`, traceCategory);
+        }
         this._queuedSeekTo = offset;
       }
 
@@ -122,13 +170,6 @@ export abstract class CommonAudioPlayer {
   protected _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
     if (this._listener) {
       this._listener.onPlaybackEvent(evt, arg);
-    }
-  }
-
-  protected _log(logStr: string) {
-    if (this.debugOutputEnabled) {
-      let platform = isIOS ? 'iOS' : 'Android';
-      console.log(`tns-audioplayer(${platform}): ${logStr}`);
     }
   }
 }

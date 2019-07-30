@@ -1,8 +1,9 @@
 /// <reference path="./native-definitions/exoplayer.d.ts" />
 
 import * as app from 'tns-core-modules/application';
+import * as trace from 'tns-core-modules/trace';
 import * as utils from 'tns-core-modules/utils/utils';
-import { CommonAudioPlayer, PlaybackEvent, Playlist } from './audioplayer-common';
+import { CommonAudioPlayer, PlaybackEvent, Playlist, traceCategory } from './audioplayer-common';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
   private _readyPromise: Promise<any>;
@@ -184,11 +185,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this.exoPlayer.getCurrentPosition();
   }
 
-  private _sleepTimer: number;
-  private _sleepTimerPaused: boolean = false;
-  private _sleepTimerMillisecondsLeft: number = 0;
-
   public setSleepTimer(milliseconds: number) {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, traceCategory);
+    }
+
     this.cancelSleepTimer();
 
     const countdownTick = 1000;
@@ -215,17 +216,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._sleepTimerMillisecondsLeft;
   }
 
-  public cancelSleepTimer() {
-    this._log('cancelSleepTimer');
-    if (this._sleepTimer !== undefined) {
-      clearInterval(this._sleepTimer);
-      this._sleepTimer = undefined;
-      this._sleepTimerMillisecondsLeft = 0;
-      this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-    }
-  }
-
   public setSeekIntervalSeconds(seconds: number) {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, traceCategory);
+    }
+
     /*
     if (this.service) {
       this.service.setSeekIntervalSeconds(seconds);
@@ -233,7 +228,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public destroy() {
-    this._log('Destroy');
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.destroy()`, traceCategory);
+    }
 
     this.exoPlayer.stop();
     this._exoPlayer = null;
