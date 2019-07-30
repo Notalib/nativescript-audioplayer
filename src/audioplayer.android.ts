@@ -52,8 +52,21 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._readyPromise;
   }
 
+  private _exitHandler: (args: app.ApplicationEventData) => void;
+
   constructor() {
     super();
+
+    app.on(
+      app.exitEvent,
+      (this._exitHandler = (args: app.ApplicationEventData) => {
+        if (args.android && args.android.isFinishing()) {
+          // Handle temporary destruction.
+          this.destroy();
+          return;
+        }
+      }),
+    );
   }
 
   /*
@@ -103,10 +116,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public play() {
     this.exoPlayer.setPlayWhenReady(true);
+    this.launchBackgroundService();
   }
 
   public pause() {
     this.exoPlayer.setPlayWhenReady(false);
+    this.stopBackgroundService();
   }
 
   public stop() {
@@ -116,6 +131,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     // so we have to manually send the Stopped event to our listener.
     this._listener.onPlaybackEvent(PlaybackEvent.Stopped);
     this.playlist = null;
+    this.stopBackgroundService();
   }
 
   public isPlaying(): boolean {
@@ -222,10 +238,38 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this.exoPlayer.stop();
     this._exoPlayer = null;
     delete this._readyPromise;
+    this.stopBackgroundService();
+
+    app.off(app.exitEvent, this._exitHandler);
   }
 
   public _exoPlayerOnPlayerEvent(evt: PlaybackEvent, arg?: any) {
     this._onPlaybackEvent(evt, arg);
+  }
+
+  private _backgroundServiceRunning = false;
+  private launchBackgroundService() {
+    if (this._backgroundServiceRunning) {
+      return;
+    }
+
+    const context = this.context;
+    const intent = new android.content.Intent(context, dk.nota.BackgroundService.class);
+    context.startService(intent);
+
+    this._backgroundServiceRunning = true;
+  }
+
+  private stopBackgroundService() {
+    if (!this._backgroundServiceRunning) {
+      return;
+    }
+
+    const context = this.context;
+    const intent = new android.content.Intent(context, dk.nota.BackgroundService.class);
+    context.stopService(intent);
+
+    this._backgroundServiceRunning = false;
   }
 }
 
@@ -238,6 +282,12 @@ let DefaultLoadControl: typeof com.google.android.exoplayer2.DefaultLoadControl;
 let DefaultRenderersFactory: typeof com.google.android.exoplayer2.DefaultRenderersFactory;
 type DefaultRenderersFactory = com.google.android.exoplayer2.DefaultRenderersFactory;
 let ExoPlayerFactory: typeof com.google.android.exoplayer2.ExoPlayerFactory;
+
+declare namespace dk {
+  namespace nota {
+    class BackgroundService extends android.app.Service {}
+  }
+}
 
 function ensureNativeClasses() {
   if (TNSPlayerEvent) {
@@ -451,6 +501,11 @@ function ensureNativeClasses() {
      * @param reason
      */
     public onPositionDiscontinuity(reason: number) {
+      const owner = this.owner.get();
+      if (!owner) {
+        return;
+      }
+
       switch (reason) {
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_AD_INSERTION: {
           // Discontinuity to or from an ad within one period in the timeline.
@@ -465,6 +520,7 @@ function ensureNativeClasses() {
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_PERIOD_TRANSITION: {
           // Automatic playback transition from one period in the timeline to the next.
           console.log(`onPositionDiscontinuity - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`);
+          owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK: {
@@ -501,6 +557,35 @@ function ensureNativeClasses() {
      */
     public onSeekProcessed() {
       console.log('onSeekProcessed');
+    }
+  }
+
+  @JavaProxy('dk.nota.BackgroundService')
+  class BackgroundService extends android.app.Service {
+    onStartCommand(intent, flags, startId) {
+      console.log('start command', Array.from(arguments));
+      super.onStartCommand(intent, flags, startId);
+      return android.app.Service.START_STICKY;
+    }
+    onCreate(...args) {
+      console.log('onCreate', ...args);
+      // Do something
+    }
+    onBind(param) {
+      // haven't had to deal with this, so i can't recall what it does
+      console.log('on Bind Services', Array.from(arguments));
+
+      return super.onBind(param);
+    }
+    onUnbind(param) {
+      // haven't had to deal with this, so i can't recall what it does
+      console.log('UnBind Service', Array.from(arguments));
+
+      return super.onUnbind(param);
+    }
+    onDestroy() {
+      console.log('service onDestroy', Array.from(arguments));
+      // end service, reset any variables... etc...
     }
   }
 

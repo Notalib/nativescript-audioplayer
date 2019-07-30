@@ -17,6 +17,7 @@
         "Prebuffer",
         "Siri",
         "audioplayer",
+        "downlevel",
         "exoplayer",
         "libvlc",
         "nospace",

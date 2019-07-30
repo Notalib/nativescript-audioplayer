@@ -10,3 +10,4 @@ demo/lib
 node_modules
 audioplayer.*.d.ts
 *.tgz
+src/platforms/android/nativescript_audioplayer.aar
