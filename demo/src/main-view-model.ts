@@ -75,22 +75,22 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
         new MediaTrack(
           'https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3',
           'George Orwell',
-          '1986',
+          '1984',
           'Album 1/4',
           'http://bookcover.nota.dk/714070_w140_h200.jpg',
         ),
         new MediaTrack(
           'https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3',
           'George Orwell',
-          '1986',
+          '1984',
           'Album 2/4',
           'http://bookcover.nota.dk/714070_w140_h200.jpg',
         ),
-        new MediaTrack('https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3', 'George Orwell', '1986', 'Album 3/4', null),
+        new MediaTrack('https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3', 'George Orwell', '1984', 'Album 3/4', null),
         new MediaTrack(
           'https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3',
           'George Orwell',
-          '1986',
+          '1984',
           'Album 4/4',
           'http://bookcover.nota.dk/714070_w140_h200.jpg',
         ),
@@ -98,7 +98,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam2", "Short Test", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam3", "Short Test", null)
       );
-      this.player.loadPlaylist(playlist, 1, 1000);
+      this.player.loadPlaylist(playlist, 0, 1000);
     }
   }
 
@@ -181,7 +181,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
       new MediaTrack('http://www.moviesoundclips.net/download.php?id=3706&ft=mp3', 'CoffeeSteam', 'SoundSnap.com', 'Short Test', null),
       new MediaTrack(
         'https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3',
-        '1986',
+        '1984',
         'George Orwell',
         'Del 2 af 4',
         'https://bookcover.nota.dk/714070_w140_h200.jpg',
@@ -203,7 +203,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
         new MediaTrack('http://www.moviesoundclips.net/download.php?id=3706&ft=mp3', 'CoffeeSteam', 'SoundSnap.com', 'Short Test', null),
         new MediaTrack(
           'https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3',
-          '1986',
+          '1984',
           'George Orwell',
           'Del 3 af 4',
           'https://bookcover.nota.dk/714070_w140_h200.jpg',

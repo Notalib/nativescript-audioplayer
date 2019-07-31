@@ -9,34 +9,41 @@ import { CommonAudioPlayer, PlaybackEvent, Playlist, traceCategory } from './aud
 export class TNSAudioPlayer extends CommonAudioPlayer {
   private _readyPromise: Promise<any>;
 
-  private trackSelector: com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-  private loadControl: com.google.android.exoplayer2.DefaultLoadControl;
-  private renderersFactory: com.google.android.exoplayer2.DefaultRenderersFactory;
-  private _exoPlayer: com.google.android.exoplayer2.ExoPlayer;
-
-  private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
-
+  public _exoPlayer: com.google.android.exoplayer2.ExoPlayer;
+  public _mediaSession: android.support.v4.media.session.MediaSessionCompat;
   private _pmWakeLock: android.os.PowerManager.WakeLock;
   private _wifiLock: android.net.wifi.WifiManager.WifiLock;
+  private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
+
+  private timeChangeInterval: any;
 
   private get exoPlayer() {
     if (!this._exoPlayer) {
       ensureNativeClasses();
 
-      this.trackSelector = new DefaultTrackSelector();
-      this.loadControl = new DefaultLoadControl();
-      this.renderersFactory = new DefaultRenderersFactory(this.context);
+      const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector();
+      const loadControl = new com.google.android.exoplayer2.DefaultLoadControl();
+      const renderersFactory = new com.google.android.exoplayer2.DefaultRenderersFactory(this.context);
+      const playerListener = new TNSPlayerEvent(this);
 
-      this.playerListener = new TNSPlayerEvent(this);
+      this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this.context, 'NotaAudio');
+
+      // Do not let MediaButtons restart the player when the app is not visible.
+      this._mediaSession.setMediaButtonReceiver(null);
+      this._mediaSession.setActive(true);
+
       this._playerNotificationManager = new com.google.android.exoplayer2.ui.PlayerNotificationManager(
         this.context,
         'NotaAudio',
         Math.round(Math.random() * 1000),
         new com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter({
           createCurrentContentIntent: (player: com.google.android.exoplayer2.Player) => {
-            const intent = new android.content.Intent(this.context, dk.nota.BackgroundService.class);
-
-            return android.app.PendingIntent.getActivity(this.context, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+            return android.app.PendingIntent.getActivity(
+              this.context,
+              0,
+              new android.content.Intent(this.context, nsApp.android.foregroundActivity.constructor.class),
+              android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+            );
           },
           getCurrentContentText: (player) => {
             const window = player.getCurrentWindowIndex();
@@ -79,9 +86,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         }),
       );
 
-      this._exoPlayer = ExoPlayerFactory.newSimpleInstance(this.context, this.renderersFactory, this.trackSelector, this.loadControl);
-      this._exoPlayer.addListener(this.playerListener);
+      this._exoPlayer = com.google.android.exoplayer2.ExoPlayerFactory.newSimpleInstance(this.context, renderersFactory, trackSelector, loadControl);
+      this._exoPlayer.addListener(playerListener);
       this._playerNotificationManager.setPlayer(this._exoPlayer);
+      this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
     }
 
     return this._exoPlayer;
@@ -90,8 +98,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   public get android() {
     return this._exoPlayer;
   }
-
-  private playerListener: TNSPlayerEvent;
 
   private get context() {
     return utils.ad.getApplicationContext();
@@ -115,9 +121,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   constructor() {
     super();
-
-    global['nota_app'] = nsApp;
-    global['nota_app_context'] = this.context;
 
     const powerManager = this.context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager;
     this._pmWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, 'NotaAudio');
@@ -163,8 +166,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public getCurrentPlaylistIndex(): number {
-    const tag = this.exoPlayer.getCurrentTag();
-    return Number(tag);
+    return this.exoPlayer.getCurrentWindowIndex();
   }
 
   public play() {
@@ -186,7 +188,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     // On Android the playback service is stopped on stopPlayback,
     // so we have to manually send the Stopped event to our listener.
-    this._listener.onPlaybackEvent(PlaybackEvent.Stopped);
+    this._exoPlayerOnPlayerEvent(PlaybackEvent.Stopped);
     this.playlist = null;
     this.stopBackgroundService();
   }
@@ -289,20 +291,40 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.exoPlayer.stop();
+    this.exoPlayer.release();
     this._exoPlayer = null;
+    this._mediaSession.release();
     delete this._readyPromise;
     this.stopBackgroundService();
 
     nsApp.off(nsApp.exitEvent, this._exitHandler);
-    global['nota_app'] = null;
-    global['nota_app_context'] = null;
+    clearInterval(this.timeChangeInterval);
   }
 
   public _exoPlayerOnPlayerEvent(evt: PlaybackEvent, arg?: any) {
     this._onPlaybackEvent(evt, arg);
+
+    if (evt === PlaybackEvent.Playing) {
+      clearInterval(this.timeChangeInterval);
+
+      let lastCurrentTime: number;
+      let lastPlaylistIndex: number;
+      this.timeChangeInterval = setInterval(() => {
+        const currentPlaylistIndex = this.getCurrentPlaylistIndex();
+        const currentTime = this.getCurrentTime();
+
+        if (lastCurrentTime !== currentTime || lastPlaylistIndex !== currentPlaylistIndex) {
+          this._onPlaybackEvent(PlaybackEvent.TimeChanged);
+          lastCurrentTime = currentTime;
+          lastPlaylistIndex = currentPlaylistIndex;
+        }
+      }, 100);
+    } else if (evt === PlaybackEvent.Paused || evt === PlaybackEvent.Stopped) {
+      clearInterval(this.timeChangeInterval);
+    }
   }
 
-  private getTrackInfo(index: number) {
+  public getTrackInfo(index: number) {
     if (!this.playlist || !this.playlist.tracks) {
       return null;
     }
@@ -362,15 +384,18 @@ export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
 
 let TNSPlayerEvent: new (owner: TNSAudioPlayer) => com.google.android.exoplayer2.Player.EventListener;
 type TNSPlayerEvent = com.google.android.exoplayer2.Player.EventListener;
-let DefaultTrackSelector: typeof com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-let DefaultLoadControl: typeof com.google.android.exoplayer2.DefaultLoadControl;
-let DefaultRenderersFactory: typeof com.google.android.exoplayer2.DefaultRenderersFactory;
-type DefaultRenderersFactory = com.google.android.exoplayer2.DefaultRenderersFactory;
-let ExoPlayerFactory: typeof com.google.android.exoplayer2.ExoPlayerFactory;
 
 declare namespace dk {
   namespace nota {
     class BackgroundService extends android.app.Service {}
+  }
+}
+
+export class ExoPlaybackError extends Error {
+  constructor(public errorType: string, public errorMessage: string, public nativeException: com.google.android.exoplayer2.ExoPlaybackException) {
+    super(`ExoPlaybackError<${errorType}>: ${errorMessage}`);
+
+    Object.setPrototypeOf(this, ExoPlaybackError.prototype);
   }
 }
 
@@ -443,41 +468,6 @@ function ensureNativeClasses() {
       if (trace.isEnabled()) {
         trace.write(`onTracksChanged(${trackGroups}, ${trackSelections})`, traceCategory);
       }
-
-      /*
-      for (let i = 0; i < trackGroups.length; i += 1) {
-        const trackGroup = trackGroups.get(i);
-
-        for (let j = 0; j < trackGroup.length; j += 1) {
-          const format = trackGroup.getFormat(j);
-          console.log('onTracksChanged - group', i, 'format', j, format);
-        }
-      }
-
-      for (let i = 0; i < trackSelections.length; i += 1) {
-        const trackSelection = trackSelections.get(i);
-        if (!trackSelection) {
-          continue;
-        }
-
-        const format = trackSelection.getFormat(0);
-        const indexInTrackGroup = trackSelection.getIndexInTrackGroup(0);
-        const selectedFormat = trackSelection.getSelectedFormat();
-        const selectedIndex = trackSelection.getSelectedIndex();
-        const selectedIndexInTrackGroup = trackSelection.getSelectedIndexInTrackGroup();
-        const selectionData = trackSelection.getSelectionData();
-        const selectionReason = trackSelection.getSelectionReason();
-
-        console.log('onTracksChanged - selection', i, {
-          format,
-          indexInTrackGroup,
-          selectedFormat,
-          selectedIndex,
-          selectedIndexInTrackGroup,
-          selectionData,
-          selectionReason,
-        });
-      } */
     }
 
     /**
@@ -502,48 +492,58 @@ function ensureNativeClasses() {
         return;
       }
 
-      if (playWhenReady) {
-        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
-      }
-
+      let playbackEvent: PlaybackEvent;
       switch (playbackState) {
+        // The player is not able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_BUFFERING: {
           if (trace.isEnabled()) {
             trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, traceCategory);
           }
 
-          if (!playWhenReady) {
-            owner._exoPlayerOnPlayerEvent(PlaybackEvent.Buffering);
-          }
+          playbackEvent = PlaybackEvent.Buffering;
           break;
         }
+        // The player does not have any media to play.
         case com.google.android.exoplayer2.Player.STATE_IDLE: {
           if (trace.isEnabled()) {
             trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, traceCategory);
           }
+          playbackEvent = PlaybackEvent.Paused;
           break;
         }
+        // The player has finished playing the media.
         case com.google.android.exoplayer2.Player.STATE_ENDED: {
           if (trace.isEnabled()) {
             trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, traceCategory);
           }
 
-          if (!playWhenReady) {
-            owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
+          if (owner._exoPlayer.hasNext()) {
+            playbackEvent = PlaybackEvent.EndOfTrackReached;
+          } else {
+            playbackEvent = PlaybackEvent.EndOfPlaylistReached;
           }
 
-          break;
+          owner._exoPlayerOnPlayerEvent(playbackEvent);
+          return;
         }
+        // The player is able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_READY: {
           if (trace.isEnabled()) {
             trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, traceCategory);
           }
+          playbackEvent = playWhenReady ? PlaybackEvent.Playing : PlaybackEvent.Paused;
           break;
         }
         default: {
           trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, traceCategory);
           break;
         }
+      }
+
+      if (playWhenReady) {
+        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
+      } else if (playbackEvent !== undefined) {
+        owner._exoPlayerOnPlayerEvent(playbackEvent);
       }
     }
 
@@ -592,13 +592,46 @@ function ensureNativeClasses() {
      * Called when an error occurs. The playback state will transition to Player.STATE_IDLE immediately after this method is called.
      * The player instance can still be used, and Player.release() must still be called on the player should it no longer be required.
      *
-     * @param error
+     * @param exoPlaybackException
      */
-    public onPlayerError(error: com.google.android.exoplayer2.ExoPlaybackException) {
+    public onPlayerError(exoPlaybackException: com.google.android.exoplayer2.ExoPlaybackException) {
       const owner = this.owner.get();
       if (!owner) {
         return;
       }
+
+      let errorType: string;
+      let errorMessage = '';
+      switch (exoPlaybackException.type) {
+        case com.google.android.exoplayer2.ExoPlaybackException.TYPE_UNEXPECTED: {
+          errorType = 'UNEXPECTED';
+          errorMessage = exoPlaybackException.getUnexpectedException().getMessage();
+          break;
+        }
+        case com.google.android.exoplayer2.ExoPlaybackException.TYPE_SOURCE: {
+          errorType = 'SOURCE';
+          errorMessage = exoPlaybackException.getSourceException().getMessage();
+          break;
+        }
+        case com.google.android.exoplayer2.ExoPlaybackException.TYPE_RENDERER: {
+          errorType = 'RENDERER';
+          errorMessage = exoPlaybackException.getRendererException().getMessage();
+          break;
+        }
+        case com.google.android.exoplayer2.ExoPlaybackException.TYPE_REMOTE: {
+          errorType = 'REMOTE';
+          break;
+        }
+        case com.google.android.exoplayer2.ExoPlaybackException.TYPE_OUT_OF_MEMORY: {
+          errorType = 'TYPE_OUT_OF_MEMORY';
+          errorMessage = exoPlaybackException.getOutOfMemoryError().getMessage();
+          break;
+        }
+      }
+
+      const error = new ExoPlaybackError(errorType, errorMessage, exoPlaybackException);
+
+      trace.write(`${this}.onPlayerError() - ${error.message}`, traceCategory, trace.messageType.error);
 
       owner._exoPlayerOnPlayerEvent(PlaybackEvent.EncounteredError, error);
     }
@@ -730,8 +763,4 @@ function ensureNativeClasses() {
   }
 
   TNSPlayerEvent = TNSPlayerEventImpl;
-  DefaultTrackSelector = com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-  DefaultLoadControl = com.google.android.exoplayer2.DefaultLoadControl;
-  DefaultRenderersFactory = com.google.android.exoplayer2.DefaultRenderersFactory;
-  ExoPlayerFactory = com.google.android.exoplayer2.ExoPlayerFactory;
 }

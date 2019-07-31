@@ -17,6 +17,7 @@
         "NSURL",
         "Prebuffer",
         "Siri",
+        "androidx",
         "audioplayer",
         "downlevel",
         "exoplayer",
