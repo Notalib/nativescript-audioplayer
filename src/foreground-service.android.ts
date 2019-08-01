@@ -8,7 +8,9 @@ export namespace dk {
       private readonly cls = `ForegroundService`;
 
       public onCreate(): void {
-        console.log(this.cls, 'onCreate()');
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
+        }
         super.onCreate();
       }
 
@@ -21,14 +23,16 @@ export namespace dk {
         this.stopForeground(true);
       }
 
-      public onBind(param0: android.content.Intent): android.os.IBinder {
+      public onBind(param: android.content.Intent): android.os.IBinder {
         // tslint:disable-next-line:no-console
-        console.log(this.cls, 'onBind', param0);
-        return null;
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.onBind(${param})`, notaAudioCategory);
+        }
+
+        return super.onBind(param);
       }
 
       public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
-        console.log(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
         }
@@ -77,6 +81,10 @@ export namespace dk {
       }
 
       public onStart(intent: android.content.Intent, startId: number) {
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.onStart(${intent}, ${startId})`, notaAudioCategory);
+        }
+
         super.onStart(intent, startId);
       }
     }
