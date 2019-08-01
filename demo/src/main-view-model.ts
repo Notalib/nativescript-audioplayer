@@ -11,7 +11,6 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   constructor() {
     super();
     this.player = new TNSAudioPlayer();
-    this.player.debugOutputEnabled = true;
     this.player.setPlaybackEventListener(this);
     this.player.setSeekIntervalSeconds(15);
 
@@ -195,7 +194,6 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     this.player.stop();
     setTimeout(() => {
       this.player = new TNSAudioPlayer();
-      this.player.debugOutputEnabled = true;
       this.player.setPlaybackEventListener(this);
       this.player.setSeekIntervalSeconds(15);
       const playlist = new Playlist(

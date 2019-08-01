@@ -60,9 +60,9 @@ export interface PlaybackEventListener {
 
 let instanceNo = 0;
 export abstract class CommonAudioPlayer {
-  protected instance = instanceNo++;
+  protected instance = ++instanceNo;
 
-  protected readonly cls = `$TNSAudioPlayer.${isIOS ? 'ios' : 'android'}<${this.instance}>`;
+  protected readonly cls = `TNSAudioPlayer.${isIOS ? 'ios' : 'android'}<${this.instance}>`;
 
   public android: any;
   public ios: any;

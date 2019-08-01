@@ -1,7 +1,6 @@
 import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer-common';
 
 export class TNSAudioPlayer {
-  debugOutputEnabled: boolean;
   playlist: Playlist;
   isReady: Promise<any>;
   loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): any;

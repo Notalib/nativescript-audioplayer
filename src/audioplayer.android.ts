@@ -5,6 +5,7 @@ import * as imageSource from 'tns-core-modules/image-source';
 import * as trace from 'tns-core-modules/trace';
 import * as utils from 'tns-core-modules/utils/utils';
 import { CommonAudioPlayer, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer-common';
+import './foreground-service';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
   private get context() {
@@ -21,7 +22,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private timeChangeInterval: any;
 
-  private coverArt = new Map<string, android.graphics.Bitmap>();
   private _rate = 1;
 
   private get exoPlayer() {
@@ -39,6 +39,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this._mediaSession.setMediaButtonReceiver(null);
       this._mediaSession.setActive(true);
 
+      let lastCoverArtUrl: string;
+      let lastCoverArtBitMap: any;
+
       this._playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
         this.context,
         'NotaAudio',
@@ -49,7 +52,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
             return android.app.PendingIntent.getActivity(
               this.context,
               0,
-              new android.content.Intent(this.context, nsApp.android.foregroundActivity.constructor.class),
+              new android.content.Intent(this.context, dk.nota.ForegroundService.class),
               android.app.PendingIntent.FLAG_UPDATE_CURRENT,
             );
           },
@@ -78,8 +81,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
               return null;
             }
 
-            if (this.coverArt.has(track.albumArtUrl)) {
-              callback.onBitmap(this.coverArt.get(track.albumArtUrl));
+            if (lastCoverArtBitMap && lastCoverArtUrl === track.albumArtUrl) {
+              callback.onBitmap(lastCoverArtBitMap);
               return null;
             }
 
@@ -88,7 +91,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
               try {
                 const image = await imageSource.fromUrl(track.albumArtUrl);
                 if (image.android) {
-                  this.coverArt.set(track.albumArtUrl, image.android);
+                  lastCoverArtBitMap = image.android;
+                  lastCoverArtUrl = track.albumArtUrl;
                   callback.onBitmap(image.android);
                   if (trace.isEnabled()) {
                     trace.write(`${track.albumArtUrl} loaded in ${start - Date.now()}`, notaAudioCategory);
@@ -149,6 +153,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   constructor() {
     super();
 
+    ForegroundUtilService.startForeground();
+
     const powerManager = this.context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager;
     this._pmWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, 'NotaAudio');
 
@@ -168,6 +174,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public preparePlaylist(playlist: Playlist): void {
+    this.stop();
+
     const concatenatedSource = new com.google.android.exoplayer2.source.ConcatenatingMediaSource(
       Array.create(com.google.android.exoplayer2.source.ExtractorMediaSource, 0),
     );
@@ -184,7 +192,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       concatenatedSource.addMediaSource(mediaSource);
     }
 
-    this.exoPlayer.stop();
     this.exoPlayer.prepare(concatenatedSource);
     this._playerNotificationManager.setPlayer(this._exoPlayer);
     this._playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
@@ -213,8 +220,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.exoPlayer.setPlayWhenReady(true);
-    this.launchBackgroundService();
-
     this.acquireLock();
   }
 
@@ -224,8 +229,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.exoPlayer.setPlayWhenReady(false);
-    this.stopBackgroundService();
-
     this.releaseLock();
   }
 
@@ -240,7 +243,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     // so we have to manually send the Stopped event to our listener.
     this._exoPlayerOnPlayerEvent(PlaybackEvent.Stopped);
     this.playlist = null;
-    this.stopBackgroundService();
+    this.releaseLock();
   }
 
   public isPlaying(): boolean {
@@ -385,8 +388,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._mediaSession.release();
     delete this._readyPromise;
     this.stopBackgroundService();
-    this.coverArt.clear();
-    this.coverArt = null;
 
     nsApp.off(nsApp.exitEvent, this._exitHandler);
     clearInterval(this.timeChangeInterval);
@@ -429,10 +430,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       return;
     }
 
-    const context = this.context as android.content.Context;
-    const intent = new android.content.Intent(context, dk.nota.ForegroundService.class);
-    context.startForegroundService(intent);
-
     this._playerNotificationManager.setNotificationListener(
       new com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener({
         onNotificationStarted(notificationId, notification) {
@@ -451,17 +448,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private stopBackgroundService() {
-    if (!this._backgroundServiceRunning) {
-      return;
-    }
-
-    const context = this.context;
-    const intent = new android.content.Intent(context, dk.nota.ForegroundService.class);
-    context.stopService(intent);
-    this._playerNotificationManager.setNotificationListener(null);
-
-    this._backgroundServiceRunning = false;
-
+    ForegroundUtilService.stopForeground();
     this.releaseLock();
   }
 
@@ -491,12 +478,6 @@ export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
 let TNSPlayerEvent: new (owner: TNSAudioPlayer) => com.google.android.exoplayer2.Player.EventListener;
 type TNSPlayerEvent = com.google.android.exoplayer2.Player.EventListener;
 let foregroundService: android.app.Service;
-
-declare namespace dk {
-  namespace nota {
-    class ForegroundService extends android.app.Service {}
-  }
-}
 
 export class ExoPlaybackError extends Error {
   constructor(public errorType: string, public errorMessage: string, public nativeException: com.google.android.exoplayer2.ExoPlaybackException) {
@@ -833,50 +814,23 @@ function ensureNativeClasses() {
     }
   }
 
-  @JavaProxy('dk.nota.ForegroundService')
-  class ForegroundService extends android.app.Service {
-    private cls = `dk.nota.ForegroundService`;
+  TNSPlayerEvent = TNSPlayerEventImpl;
+}
 
-    public onStartCommand(intent, flags, startId) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
-      }
-      super.onStartCommand(intent, flags, startId);
-      return android.app.Service.START_STICKY;
+export class ForegroundUtilService {
+  public static startForeground() {
+    if (!nsApp.android || !nsApp.android.context) {
+      return;
     }
-    public onCreate() {
-      // Do something
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
-      }
 
-      foregroundService = this;
-    }
-    public onBind(param) {
-      // haven't had to deal with this, so i can't recall what it does
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onBind(${param})`, notaAudioCategory);
-      }
-
-      return super.onBind(param);
-    }
-    public onUnbind(param) {
-      // haven't had to deal with this, so i can't recall what it does
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onUnbind(${param})`, notaAudioCategory);
-      }
-
-      return super.onUnbind(param);
-    }
-    public onDestroy() {
-      // end service, reset any variables... etc...
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
-      }
-
-      foregroundService = null;
-    }
+    const foregroundNotificationIntent = new android.content.Intent();
+    foregroundNotificationIntent.setClassName(nsApp.android.context, 'dk.nota.ForegroundService');
+    nsApp.android.context.startService(foregroundNotificationIntent);
   }
 
-  TNSPlayerEvent = TNSPlayerEventImpl;
+  public static stopForeground() {
+    const foregroundNotificationIntent = new android.content.Intent();
+    foregroundNotificationIntent.setClassName(nsApp.android.context, 'dk.nota.ForegroundService');
+    nsApp.android.context.stopService(foregroundNotificationIntent);
+  }
 }
