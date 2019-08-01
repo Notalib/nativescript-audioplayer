@@ -1,5 +1,10 @@
 ﻿// tslint:disable:no-console
+import { notaAudioCategory } from '@nota/nativescript-audioplayer/audioplayer-common';
 import * as application from 'tns-core-modules/application';
+import * as trace from 'tns-core-modules/trace';
+
+trace.setCategories(notaAudioCategory);
+trace.enable();
 
 application.on(application.launchEvent, function(args) {
   if (args.android) {

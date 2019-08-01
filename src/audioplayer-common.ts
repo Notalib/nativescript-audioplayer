@@ -1,7 +1,7 @@
 import { isIOS } from 'tns-core-modules/platform';
 import * as trace from 'tns-core-modules/trace';
 
-export const traceCategory = 'NotaAudioPlayer';
+export const notaAudioCategory = 'NotaAudioPlayer';
 
 export class MediaTrack {
   constructor(url: string, title: string, artist: string, album: string, albumArtUrl: string) {
@@ -101,7 +101,7 @@ export abstract class CommonAudioPlayer {
 
   public cancelSleepTimer() {
     if (trace.isEnabled()) {
-      trace.write(`${this.cls}.cancelSleepTimer()`, traceCategory);
+      trace.write(`${this.cls}.cancelSleepTimer()`, notaAudioCategory);
     }
 
     if (this._sleepTimer !== undefined) {
@@ -119,7 +119,7 @@ export abstract class CommonAudioPlayer {
   public pauseSleepTimer() {
     if (this._sleepTimer !== undefined) {
       if (trace.isEnabled()) {
-        trace.write(`${this.cls}.pauseSleepTimer()`, traceCategory);
+        trace.write(`${this.cls}.pauseSleepTimer()`, notaAudioCategory);
       }
 
       this._sleepTimerPaused = true;
@@ -129,7 +129,7 @@ export abstract class CommonAudioPlayer {
   public resumeSleepTimer() {
     if (this._sleepTimer !== undefined) {
       if (trace.isEnabled()) {
-        trace.write(`${this.cls}.resumeSleepTimer()`, traceCategory);
+        trace.write(`${this.cls}.resumeSleepTimer()`, notaAudioCategory);
       }
 
       this._sleepTimerPaused = false;
@@ -153,7 +153,7 @@ export abstract class CommonAudioPlayer {
     } else {
       if (offset > 0) {
         if (trace.isEnabled()) {
-          trace.write(`Set queuedSeek to ${offset}`, traceCategory);
+          trace.write(`Set queuedSeek to ${offset}`, notaAudioCategory);
         }
         this._queuedSeekTo = offset;
       }
