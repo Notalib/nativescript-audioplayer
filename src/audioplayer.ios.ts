@@ -76,7 +76,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private player: AudioPlayer;
   private delegate: AudioPlayerDelegateImpl;
 
-  private seekIntervalSeconds = 15;
   private _isSeeking = false;
   private _iosPlaylist: NSArray<AudioItem>;
 

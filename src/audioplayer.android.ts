@@ -7,6 +7,10 @@ import * as utils from 'tns-core-modules/utils/utils';
 import { CommonAudioPlayer, PlaybackEvent, Playlist, traceCategory } from './audioplayer-common';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
+  private get context() {
+    return utils.ad.getApplicationContext() as android.content.Context;
+  }
+
   private _readyPromise: Promise<any>;
 
   public _exoPlayer: com.google.android.exoplayer2.ExoPlayer;
@@ -16,6 +20,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
 
   private timeChangeInterval: any;
+
+  private coverArt = new Map<string, android.graphics.Bitmap>();
+  private _rate = 1;
 
   private get exoPlayer() {
     if (!this._exoPlayer) {
@@ -32,10 +39,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this._mediaSession.setMediaButtonReceiver(null);
       this._mediaSession.setActive(true);
 
-      this._playerNotificationManager = new com.google.android.exoplayer2.ui.PlayerNotificationManager(
+      this._playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
         this.context,
         'NotaAudio',
-        Math.round(Math.random() * 1000),
+        (android.R as any).string.unknownName, // TODO: Find a better way to get the channel name reference... The notification won't show with this.
+        1337, // TODO: How should this be defined?
         new com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter({
           createCurrentContentIntent: (player: com.google.android.exoplayer2.Player) => {
             return android.app.PendingIntent.getActivity(
@@ -70,7 +78,31 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
               return null;
             }
 
-            imageSource.fromUrl(track.albumArtUrl).then((image) => callback.onBitmap(image.android));
+            if (this.coverArt.has(track.albumArtUrl)) {
+              callback.onBitmap(this.coverArt.get(track.albumArtUrl));
+              return null;
+            }
+
+            const loadImage = async () => {
+              const start = Date.now();
+              try {
+                const image = await imageSource.fromUrl(track.albumArtUrl);
+                if (image.android) {
+                  this.coverArt.set(track.albumArtUrl, image.android);
+                  callback.onBitmap(image.android);
+                  if (trace.isEnabled()) {
+                    trace.write(`${track.albumArtUrl} loaded in ${start - Date.now()}`, traceCategory);
+                  }
+                } else {
+                  if (trace.isEnabled()) {
+                    trace.write(`${track.albumArtUrl} not loaded`, traceCategory);
+                  }
+                }
+              } catch (err) {
+                trace.write(`${track.albumArtUrl} couldn't be loaded. ${err} ${err.message}`, traceCategory, trace.messageType.error);
+              }
+            };
+            loadImage();
 
             return null;
           },
@@ -88,7 +120,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       this._exoPlayer = com.google.android.exoplayer2.ExoPlayerFactory.newSimpleInstance(this.context, renderersFactory, trackSelector, loadControl);
       this._exoPlayer.addListener(playerListener);
-      this._playerNotificationManager.setPlayer(this._exoPlayer);
       this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
     }
 
@@ -97,10 +128,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public get android() {
     return this._exoPlayer;
-  }
-
-  private get context() {
-    return utils.ad.getApplicationContext();
   }
 
   public get isReady(): Promise<any> {
@@ -152,24 +179,39 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       const track = playlist.tracks[i];
       const mediaSource = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
         new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(context, userAgent),
-      )
-        .setTag(`${i}`)
-        .createMediaSource(android.net.Uri.parse(track.url));
+      ).createMediaSource(android.net.Uri.parse(track.url));
 
       concatenatedSource.addMediaSource(mediaSource);
     }
 
     this.exoPlayer.stop();
     this.exoPlayer.prepare(concatenatedSource);
+    this._playerNotificationManager.setPlayer(this._exoPlayer);
+    this._playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
+    this._playerNotificationManager.setUseNavigationActionsInCompactView(true);
+    this._playerNotificationManager.setUsePlayPauseActions(true);
+    this._playerNotificationManager.setUseNavigationActions(false);
+    this._playerNotificationManager.setUseStopAction(false);
 
     this.playlist = playlist;
+
+    this.setRate(this._rate);
+    this.setSeekIntervalSeconds(this.seekIntervalSeconds);
   }
 
   public getCurrentPlaylistIndex(): number {
+    if (!this._exoPlayer) {
+      return -1;
+    }
+
     return this.exoPlayer.getCurrentWindowIndex();
   }
 
   public play() {
+    if (!this._exoPlayer) {
+      return;
+    }
+
     this.exoPlayer.setPlayWhenReady(true);
     this.launchBackgroundService();
 
@@ -177,6 +219,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public pause() {
+    if (!this._exoPlayer) {
+      return;
+    }
+
     this.exoPlayer.setPlayWhenReady(false);
     this.stopBackgroundService();
 
@@ -184,6 +230,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public stop() {
+    if (!this._exoPlayer) {
+      return;
+    }
+
     this.exoPlayer.stop();
 
     // On Android the playback service is stopped on stopPlayback,
@@ -194,39 +244,64 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public isPlaying(): boolean {
+    if (!this._exoPlayer) {
+      return false;
+    }
+
     return this.exoPlayer.getPlayWhenReady();
   }
 
   public seekTo(offset: number) {
+    if (!this._exoPlayer) {
+      return;
+    }
+
     this.exoPlayer.seekTo(offset);
   }
 
   public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
+    if (!this._exoPlayer) {
+      return;
+    }
+
     this.exoPlayer.seekTo(playlistIndex, offset);
   }
 
   public skipToNext() {
-    if (this.exoPlayer.hasNext()) {
+    if (this._exoPlayer && this.exoPlayer.hasNext()) {
       this.exoPlayer.next();
     }
   }
 
   public skipToPrevious() {
-    if (this.exoPlayer.hasPrevious()) {
+    if (this._exoPlayer && this.exoPlayer.hasPrevious()) {
       this.exoPlayer.previous();
     }
   }
 
   public skipToPlaylistIndex(playlistIndex: number) {
+    if (!this._exoPlayer) {
+      return;
+    }
+
     this.exoPlayer.seekTo(playlistIndex, 0);
   }
 
   public setRate(rate: number) {
+    this._rate = rate;
+    if (!this._exoPlayer) {
+      return;
+    }
+
     const params = new com.google.android.exoplayer2.PlaybackParameters(rate, rate, rate > 1);
     this.exoPlayer.setPlaybackParameters(params);
   }
 
   public getRate() {
+    if (!this._exoPlayer) {
+      return this._rate;
+    }
+
     const params = this.exoPlayer.getPlaybackParameters();
     if (!params) {
       return 1;
@@ -236,10 +311,18 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public getDuration() {
+    if (!this._exoPlayer) {
+      return 0;
+    }
+
     return this.exoPlayer.getDuration();
   }
 
   public getCurrentTime(): number {
+    if (!this._exoPlayer) {
+      return -1;
+    }
+
     return this.exoPlayer.getCurrentPosition();
   }
 
@@ -257,6 +340,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
         this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
       }
+
       if (this._sleepTimerMillisecondsLeft === 0) {
         // Fade out volume and pause if not already paused.
         if (this.isPlaying()) {
@@ -275,14 +359,18 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public setSeekIntervalSeconds(seconds: number) {
+    this.seekIntervalSeconds = seconds;
+
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, traceCategory);
     }
 
-    /*
-    if (this.service) {
-      this.service.setSeekIntervalSeconds(seconds);
-    } */
+    if (!this._exoPlayer) {
+      return;
+    }
+
+    this._playerNotificationManager.setFastForwardIncrementMs(seconds * 1000);
+    this._playerNotificationManager.setRewindIncrementMs(seconds * 1000);
   }
 
   public destroy() {
@@ -290,12 +378,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.destroy()`, traceCategory);
     }
 
+    this._playerNotificationManager.setPlayer(null);
     this.exoPlayer.stop();
     this.exoPlayer.release();
     this._exoPlayer = null;
     this._mediaSession.release();
     delete this._readyPromise;
     this.stopBackgroundService();
+    this.coverArt.clear();
+    this.coverArt = null;
 
     nsApp.off(nsApp.exitEvent, this._exitHandler);
     clearInterval(this.timeChangeInterval);
@@ -338,9 +429,23 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       return;
     }
 
-    const context = this.context;
-    const intent = new android.content.Intent(context, dk.nota.BackgroundService.class);
-    context.startService(intent);
+    const context = this.context as android.content.Context;
+    const intent = new android.content.Intent(context, dk.nota.ForegroundService.class);
+    context.startForegroundService(intent);
+
+    this._playerNotificationManager.setNotificationListener(
+      new com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener({
+        onNotificationStarted(notificationId, notification) {
+          foregroundService.startForeground(notificationId, notification);
+        },
+        onNotificationCancelled() {
+          foregroundService.stopSelf();
+        },
+        onNotificationPosted(notificationId, notification) {
+          //
+        },
+      }),
+    );
 
     this._backgroundServiceRunning = true;
   }
@@ -351,8 +456,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     const context = this.context;
-    const intent = new android.content.Intent(context, dk.nota.BackgroundService.class);
+    const intent = new android.content.Intent(context, dk.nota.ForegroundService.class);
     context.stopService(intent);
+    this._playerNotificationManager.setNotificationListener(null);
 
     this._backgroundServiceRunning = false;
 
@@ -384,10 +490,11 @@ export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
 
 let TNSPlayerEvent: new (owner: TNSAudioPlayer) => com.google.android.exoplayer2.Player.EventListener;
 type TNSPlayerEvent = com.google.android.exoplayer2.Player.EventListener;
+let foregroundService: android.app.Service;
 
 declare namespace dk {
   namespace nota {
-    class BackgroundService extends android.app.Service {}
+    class ForegroundService extends android.app.Service {}
   }
 }
 
@@ -722,9 +829,10 @@ function ensureNativeClasses() {
     }
   }
 
-  @JavaProxy('dk.nota.BackgroundService')
-  class BackgroundService extends android.app.Service {
-    private cls = `dk.nota.BackgroundService`;
+  @JavaProxy('dk.nota.ForegroundService')
+  class ForegroundService extends android.app.Service {
+    private cls = `dk.nota.ForegroundService`;
+
     public onStartCommand(intent, flags, startId) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, traceCategory);
@@ -737,6 +845,8 @@ function ensureNativeClasses() {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onCreate()`, traceCategory);
       }
+
+      foregroundService = this;
     }
     public onBind(param) {
       // haven't had to deal with this, so i can't recall what it does
@@ -759,6 +869,8 @@ function ensureNativeClasses() {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onDestroy()`, traceCategory);
       }
+
+      foregroundService = null;
     }
   }
 

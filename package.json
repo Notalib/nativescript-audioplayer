@@ -8,17 +8,16 @@
     "build": "cd src && npm i && tsc",
     "ci.tslint": "npm i && tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config './tslint.json' --exclude '**/node_modules/**'",
     "clean": "cd demo && rimraf hooks node_modules platforms && cd ../src && rimraf node_modules",
-    "demo.android": "cd demo && tns run android --no-hmr",
-    "demo.ios": "cd demo && tns run ios --no-hmr",
-    "demo.reset": "cd demo && rimraf platforms",
+    "demo.android": "npm run demo.reset && cd demo && tns run android --no-hmr",
+    "demo.ios": "npm run demo.reset && cd demo && tns run ios --no-hmr",
+    "demo.reset": "rimraf demo/platforms src/platforms/android/nativescript_audioplayer.aar",
     "format:check": "prettier-check --config ./.prettierrc.json 'src/*.ts' 'demo/src/**/*.{ts,html,css,scss}'",
     "format": "prettier --write --config ./.prettierrc.json 'src/*.ts' 'demo/src/**/*.{ts,html,css,scss}'",
     "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios",
-    "prepack": "cd src && npm run tsc",
+    "lint": "npm-run-all format:check tslint",
     "test.android": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build android && tns test android --justlaunch",
     "test.ios": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build ios && tns test ios --justlaunch",
-    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\"",
-    "lint": "npm-run-all format:check tslint"
+    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\""
   },
   "repository": {
     "type": "git",

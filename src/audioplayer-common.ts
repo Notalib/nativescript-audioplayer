@@ -70,6 +70,8 @@ export abstract class CommonAudioPlayer {
 
   protected _queuedSeekTo: number = null;
   protected _listener: PlaybackEventListener;
+  protected seekIntervalSeconds = 15;
+
   public abstract isReady: Promise<any>;
 
   public abstract preparePlaylist(playlist: Playlist);
@@ -87,6 +89,10 @@ export abstract class CommonAudioPlayer {
   public abstract getCurrentPlaylistIndex(): number;
   public abstract seekTo(offset: number);
   public abstract setSeekIntervalSeconds(seconds: number): void;
+  public getSeekIntervalSeconds() {
+    return this.seekIntervalSeconds;
+  }
+
   public abstract setSleepTimer(milliseconds: number);
 
   public getSleepTimerRemaining(): number {
@@ -107,14 +113,15 @@ export abstract class CommonAudioPlayer {
   }
 
   protected _sleepTimer: number;
-  protected _sleepTimerPaused: boolean = false;
-  protected _sleepTimerMillisecondsLeft: number = 0;
+  protected _sleepTimerPaused = false;
+  protected _sleepTimerMillisecondsLeft = 0;
 
   public pauseSleepTimer() {
     if (this._sleepTimer !== undefined) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.pauseSleepTimer()`, traceCategory);
       }
+
       this._sleepTimerPaused = true;
     }
   }
