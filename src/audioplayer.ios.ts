@@ -1,11 +1,10 @@
 /// <reference path="./native-definitions/KDEAudioPlayer.d.ts" />
 
 import * as imageSrc from 'tns-core-modules/image-source';
+import { ImageSource } from 'tns-core-modules/image-source';
 import * as trace from 'tns-core-modules/trace';
-import { CommonAudioPlayer, MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer-common';
-
-// TODO: Do all exports in a main.ts instead
-export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
+import { CommonAudioPlayer } from './audioplayer-common';
+import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 
 // Available on iOS 9+
 declare var AVAudioSessionModeSpokenAudio: string;
@@ -527,7 +526,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this._isRetrievingArtwork = true;
-    let imagePromise: Promise<imageSrc.ImageSource>;
+    let imagePromise: Promise<ImageSource>;
     if (imageSrc.isFileOrResourcePath(artworkUrl)) {
       imagePromise = Promise.resolve(imageSrc.fromFileOrResource(artworkUrl));
     } else {

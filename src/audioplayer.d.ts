@@ -1,4 +1,4 @@
-import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer-common';
+import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer.types';
 
 export class TNSAudioPlayer {
   playlist: Playlist;
@@ -26,6 +26,7 @@ export class TNSAudioPlayer {
   getSleepTimerRemaining(): number;
   cancelSleepTimer(): any;
   destroy(): void;
+  _onPlaybackEvent(evt: PlaybackEvent, args?: any);
 }
 
-export { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener };
+export * from './audioplayer.types'

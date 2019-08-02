@@ -1,5 +1,5 @@
 ﻿// tslint:disable:no-console
-import { notaAudioCategory } from '@nota/nativescript-audioplayer/audioplayer-common';
+import { notaAudioCategory } from '@nota/nativescript-audioplayer';
 import * as application from 'tns-core-modules/application';
 import * as trace from 'tns-core-modules/trace';
 
