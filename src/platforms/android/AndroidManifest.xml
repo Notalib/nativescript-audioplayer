@@ -4,7 +4,7 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <application>
-    <service android:name="dk.nota.BackgroundService"
+    <service android:name="dk.nota.ForegroundService"
                         android:enabled="true"
                         android:exported="false" />
   </application>

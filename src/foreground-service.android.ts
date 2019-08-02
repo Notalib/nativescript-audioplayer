@@ -5,12 +5,15 @@ export namespace dk {
   export namespace nota {
     @JavaProxy('dk.nota.ForegroundService')
     export class ForegroundService extends android.app.Service {
-      private readonly cls = `ForegroundService`;
+      private get cls() {
+        return `ForegroundService`;
+      }
 
       public onCreate(): void {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
         }
+
         super.onCreate();
       }
 
@@ -43,16 +46,23 @@ export namespace dk {
       }
 
       private createNotification(intent: android.content.Intent): android.app.Notification {
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.createNotification(${intent})`, notaAudioCategory);
+        }
+
         this.createNotificationChannel();
+
         return this.getNotificationBuilder()
           .setSmallIcon(android.R.drawable.btn_plus)
-          .setContentTitle(this.getTitle(intent))
           .build();
       }
 
       private getNotificationBuilder() {
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.getNotificationBuilder() - isAtLeastO? ${!androidx.core.os.BuildCompat.isAtLeastO()}`, notaAudioCategory);
+        }
+
         if (!androidx.core.os.BuildCompat.isAtLeastO()) {
-          // Not Oreo, not creating notification channel as compatibility issues may exist
           return new androidx.core.app.NotificationCompat.Builder(this);
         }
 
@@ -60,6 +70,10 @@ export namespace dk {
       }
 
       private createNotificationChannel() {
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.createNotificationChannel() - skipped? ${!androidx.core.os.BuildCompat.isAtLeastO()}`, notaAudioCategory);
+        }
+
         if (!androidx.core.os.BuildCompat.isAtLeastO()) {
           // Not Oreo, not creating notification channel as compatibility issues may exist
           return;
@@ -69,15 +83,6 @@ export namespace dk {
         const mChannel = new android.app.NotificationChannel('TNS-ForegroundService-1', 'TNS-ForegroundService-1', importance);
         let nm = this.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
         nm.createNotificationChannel(mChannel);
-      }
-
-      private getTitle(intent: android.content.Intent): string {
-        let title = intent.getStringExtra('title');
-        if (title) {
-          return title;
-        } else {
-          return 'Running in background';
-        }
       }
 
       public onStart(intent: android.content.Intent, startId: number) {

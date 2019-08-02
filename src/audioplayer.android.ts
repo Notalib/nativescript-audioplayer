@@ -825,7 +825,11 @@ export class ForegroundUtilService {
 
     const foregroundNotificationIntent = new android.content.Intent();
     foregroundNotificationIntent.setClassName(nsApp.android.context, 'dk.nota.ForegroundService');
-    nsApp.android.context.startService(foregroundNotificationIntent);
+    if (android.os.Build.VERSION.SDK_INT >= 26) {
+      nsApp.android.context.startForegroundService(foregroundNotificationIntent);
+    } else {
+      nsApp.android.context.startService(foregroundNotificationIntent);
+    }
   }
 
   public static stopForeground() {
