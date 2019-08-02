@@ -1,16 +1,15 @@
 declare namespace dk {
   namespace nota {
     class MediaService extends android.app.Service {
-      public exoPlayer: com.google.android._binder.ExoPlayer;
+      public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
 
-      public acquireLock(): void;
-      public releaseLock(): void;
       public preparePlaylist(playlist: any): void;
       public setSeekIntervalSeconds(seconds: number): void;
       public setRate(rate: number): void;
       public getRate(): number;
       public setOwner(owner: any): void;
 
+      public isPlaying(): boolean;
       public play(): void;
       public pause(): void;
       public stop(): void;

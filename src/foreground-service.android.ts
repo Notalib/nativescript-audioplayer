@@ -22,8 +22,8 @@ export namespace dk {
       private _binder: MediaService.LocalBinder;
       public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
       private _mediaSession: android.support.v4.media.session.MediaSessionCompat;
-      private _pmWakeLock: android.os.PowerManager.WakeLock;
-      private _wifiLock: android.net.wifi.WifiManager.WifiLock;
+      private _pmWakeLock: android.os.PowerManager.WakeLock | void;
+      private _wifiLock: android.net.wifi.WifiManager.WifiLock | void;
       private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
       private playlist: Playlist | null;
 
@@ -46,11 +46,6 @@ export namespace dk {
         this._seekIntervalSeconds = 15;
 
         this._binder = new MediaService.LocalBinder(this);
-        const powerManager = this.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager;
-        this._pmWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, 'NotaAudio');
-
-        const wifiManager = this.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager;
-        this._wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL, 'NotaAudio');
 
         const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector();
         const loadControl = new com.google.android.exoplayer2.DefaultLoadControl();
@@ -193,10 +188,15 @@ export namespace dk {
 
         this._binder = null;
 
-        super.onDestroy();
         this.stopForeground(true);
-        this._pmWakeLock.release();
-        this._wifiLock.release();
+        if (this._pmWakeLock && this._pmWakeLock.isHeld()) {
+          this._pmWakeLock.release();
+        }
+
+        if (this._wifiLock && this._wifiLock.isHeld()) {
+          this._wifiLock.release();
+        }
+
         this._pmWakeLock = null;
         this._wifiLock = null;
         this._playerNotificationManager.setPlayer(null);
@@ -204,6 +204,7 @@ export namespace dk {
         this.exoPlayer.release();
         this._mediaSession.release();
         clearInterval(this.timeChangeInterval);
+        super.onDestroy();
       }
 
       public onBind(param: android.content.Intent): android.os.IBinder {
@@ -225,9 +226,19 @@ export namespace dk {
         return android.app.Service.START_STICKY;
       }
 
-      public acquireLock() {
+      private acquireWakeLock() {
+        if (!this._pmWakeLock) {
+          const powerManager = this.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager;
+          this._pmWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, 'NotaAudio');
+        }
+
         if (!this._pmWakeLock.isHeld()) {
           this._pmWakeLock.acquire();
+        }
+
+        if (!this._wifiLock) {
+          const wifiManager = this.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager;
+          this._wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL, 'NotaAudio');
         }
 
         if (!this._wifiLock.isHeld()) {
@@ -235,12 +246,12 @@ export namespace dk {
         }
       }
 
-      public releaseLock() {
-        if (this._pmWakeLock.isHeld()) {
+      private releaseWakeLock() {
+        if (this._pmWakeLock && this._pmWakeLock.isHeld()) {
           this._pmWakeLock.release();
         }
 
-        if (this._wifiLock.isHeld()) {
+        if (this._wifiLock && this._wifiLock.isHeld()) {
           this._wifiLock.release();
         }
       }
@@ -355,19 +366,23 @@ export namespace dk {
         return params.speed;
       }
 
+      public isPlaying() {
+        return this.exoPlayer.getPlayWhenReady();
+      }
+
       public play() {
         this.exoPlayer.setPlayWhenReady(true);
-        this.acquireLock();
+        this.acquireWakeLock();
       }
       public pause() {
         this.exoPlayer.setPlayWhenReady(false);
-        this.releaseLock();
+        this.releaseWakeLock();
       }
       public stop() {
         this.exoPlayer.stop();
 
         this.playlist = null;
-        this.releaseLock();
+        this.releaseWakeLock();
       }
     }
 

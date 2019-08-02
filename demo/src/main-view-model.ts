@@ -14,12 +14,6 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     this.player.setPlaybackEventListener(this);
     this.player.setSeekIntervalSeconds(15);
 
-    app.on(app.exitEvent, (event) => {
-      console.log(`App exits`);
-      if (this.player) {
-        this.player.destroy();
-      }
-    });
     // setTimeout(() => {
     //   this.loadAndSetupPlaylist();
     // }, 500);

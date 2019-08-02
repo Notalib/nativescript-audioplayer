@@ -112,7 +112,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       return false;
     }
 
-    return this._mediaService.exoPlayer.getPlayWhenReady();
+    return this._mediaService.isPlaying();
   }
 
   public seekTo(offset: number) {
@@ -252,6 +252,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private stopForeground() {
     if (!this.context) {
+      return;
+    }
+
+    if (!this._mediaService) {
       return;
     }
 
