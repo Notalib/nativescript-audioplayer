@@ -1,3 +1,4 @@
+/// <reference path="./native-definitions/android-gms-cast.d.ts" />
 /// <reference path="./native-definitions/exoplayer.d.ts" />
 
 import * as imageSource from 'tns-core-modules/image-source';
@@ -208,7 +209,6 @@ export namespace dk {
       }
 
       public onBind(param: android.content.Intent): android.os.IBinder {
-        // tslint:disable-next-line:no-console
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onBind(${param})`, notaAudioCategory);
         }

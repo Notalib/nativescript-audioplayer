@@ -16,9 +16,9 @@ declare namespace dk {
     }
 
     namespace MediaService {
-    class LocalBinder extends android.os.Binder {
-      public getService(): MediaService;
+      class LocalBinder extends android.os.Binder {
+        public getService(): MediaService;
+      }
     }
-  }
   }
 }

@@ -132,13 +132,21 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public skipToNext() {
-    if (this._mediaService && this._mediaService.exoPlayer.hasNext()) {
+    if (!this._mediaService) {
+      return;
+    }
+
+    if (this._mediaService.exoPlayer.hasNext()) {
       this._mediaService.exoPlayer.next();
     }
   }
 
   public skipToPrevious() {
-    if (this._mediaService && this._mediaService.exoPlayer.hasPrevious()) {
+    if (!this._mediaService) {
+      return;
+    }
+
+    if (this._mediaService.exoPlayer.hasPrevious()) {
       this._mediaService.exoPlayer.previous();
     }
   }
@@ -183,38 +191,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._mediaService.exoPlayer.getCurrentPosition();
   }
 
-  public setSleepTimer(milliseconds: number) {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, notaAudioCategory);
-    }
-
-    this.cancelSleepTimer();
-
-    const countdownTick = 1000;
-    this._sleepTimerMillisecondsLeft = milliseconds;
-    this._sleepTimer = setInterval(() => {
-      if (!this._sleepTimerPaused && this.isPlaying()) {
-        this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
-        this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-      }
-
-      if (this._sleepTimerMillisecondsLeft === 0) {
-        // Fade out volume and pause if not already paused.
-        if (this.isPlaying()) {
-          this.pause();
-        }
-
-        clearInterval(this._sleepTimer);
-        this._sleepTimer = undefined;
-      }
-    }, countdownTick);
-    this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-  }
-
-  public getSleepTimerRemaining(): number {
-    return this._sleepTimerMillisecondsLeft;
-  }
-
   public setSeekIntervalSeconds(seconds: number) {
     this.seekIntervalSeconds = seconds;
 
@@ -241,7 +217,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     const context = this.context;
     const foregroundNotificationIntent = new android.content.Intent();
     foregroundNotificationIntent.setClassName(context, 'dk.nota.MediaService');
-    if (android.os.Build.VERSION.SDK_INT >= 26) {
+    if (androidx.core.os.BuildCompat.isAtLeastO()) {
       context.startForegroundService(foregroundNotificationIntent);
     } else {
       context.startService(foregroundNotificationIntent);

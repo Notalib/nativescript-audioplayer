@@ -255,32 +255,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  public setSleepTimer(milliseconds: number) {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, notaAudioCategory);
-    }
-
-    this.cancelSleepTimer();
-
-    const countdownTick = 1000;
-    this._sleepTimerMillisecondsLeft = milliseconds;
-    this._sleepTimer = setInterval(() => {
-      if (!this._sleepTimerPaused && this.isPlaying()) {
-        this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
-        this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-      }
-      if (this._sleepTimerMillisecondsLeft === 0) {
-        // Fade out volume and pause if not already paused.
-        if (this.isPlaying()) {
-          this.fadeOutVolumeAndPause();
-        }
-        clearInterval(this._sleepTimer);
-        this._sleepTimer = undefined;
-      }
-    }, countdownTick);
-    this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-  }
-
   public setSeekIntervalSeconds(seconds: number) {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
@@ -362,7 +336,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     // this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
   }
 
-  private fadeOutVolumeAndPause(): void {
+  protected onSleepTimerExpired() {
     const fadeTickMilliseconds = 250.0;
     const sleepTimerFadeDuration = 5000.0;
     const previousVolume = this.player.volume;
@@ -429,7 +403,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private _iosSetPlayingState() {
     this._onPlaybackEvent(PlaybackEvent.Playing);
-    this.resumeSleepTimer();
   }
 
   private _iosPlayerStateChanged(from: AudioPlayerState, to: AudioPlayerState) {
@@ -453,22 +426,18 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
       case AudioPlayerState.Paused: {
         this._onPlaybackEvent(PlaybackEvent.Paused);
-        this.pauseSleepTimer();
         break;
       }
       case AudioPlayerState.Stopped: {
         this._onPlaybackEvent(PlaybackEvent.Stopped);
-        this.cancelSleepTimer();
         break;
       }
       case AudioPlayerState.WaitingForConnection: {
         this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
-        this.pauseSleepTimer();
         break;
       }
       case AudioPlayerState.Failed: {
         this._onPlaybackEvent(PlaybackEvent.EncounteredError, this.player.failedError);
-        this.pauseSleepTimer();
         break;
       }
       default: {
@@ -519,42 +488,34 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _isRetrievingArtwork = false;
   private _cachedCover: { url: string; artwork: MPMediaItemArtwork } = null;
 
-  private loadRemoteControlAlbumArtworkAsync(item: AudioItem) {
+  private async loadRemoteControlAlbumArtworkAsync(item: AudioItem) {
     const artworkUrl = this.playlist.tracks[this.getIndexForItem(item)].albumArtUrl;
     if (artworkUrl == null) {
       return;
     }
 
     this._isRetrievingArtwork = true;
-    let imagePromise: Promise<ImageSource>;
-    if (imageSrc.isFileOrResourcePath(artworkUrl)) {
-      imagePromise = Promise.resolve(imageSrc.fromFileOrResource(artworkUrl));
-    } else {
-      imagePromise = imageSrc.fromUrl(artworkUrl);
-    }
 
-    imagePromise
-      .then((image) => {
-        if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
-          const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
-          this._cachedCover = { url: artworkUrl, artwork: artwork };
-          item.artwork = artwork;
-        } else {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.loadRemoteControlAlbumArtworkAsync() - loadRemoteControlArtwork loaded, but current track was changed`, notaAudioCategory);
-          }
+    try {
+      const image = imageSrc.isFileOrResourcePath(artworkUrl) ? imageSrc.fromFileOrResource(artworkUrl) : await imageSrc.fromUrl(artworkUrl);
+      if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
+        const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
+        this._cachedCover = { url: artworkUrl, artwork };
+        item.artwork = artwork;
+      } else {
+        if (trace.isEnabled()) {
+          trace.write(`${this.cls}.loadRemoteControlAlbumArtworkAsync() - loadRemoteControlArtwork loaded, but current track was changed`, notaAudioCategory);
         }
-        this._isRetrievingArtwork = false;
-      })
-      .catch((err) => {
-        trace.write(
-          `${this.cls}.loadRemoteControlAlbumArtworkAsync() - loadRemoteControlArtwork error for url '${artworkUrl}': ${err}`,
-          notaAudioCategory,
-          trace.messageType.error,
-        );
-
-        this._isRetrievingArtwork = false;
-      });
+      }
+    } catch (err) {
+      trace.write(
+        `${this.cls}.loadRemoteControlAlbumArtworkAsync() - loadRemoteControlArtwork error for url '${artworkUrl}': ${err}`,
+        notaAudioCategory,
+        trace.messageType.error,
+      );
+    } finally {
+      this._isRetrievingArtwork = false;
+    }
   }
 }
 
