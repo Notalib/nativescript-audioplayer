@@ -1,6 +1,6 @@
 // Typings for: https://github.com/mrmaffen/vlc-android-sdk/tree/master/src/main/java/org/videolan/libvlc
 declare namespace dk.nota.lyt.libvlc {
-    
+
   export interface PlaybackEventHandler {
     update(): void;
     updateProgress(): void;
@@ -10,16 +10,16 @@ declare namespace dk.nota.lyt.libvlc {
   export var PlaybackEventHandler: {
     new(impl: PlaybackEventHandler): PlaybackEventHandler;
   }
-  
+
   export interface ConnectionCallback {
     onConnected(service: PlaybackService): void;
     onDisconnected(): void;
   }
-  
+
   export class ConnectionCallback {
     constructor(impl: any);
   }
-  
+
   export class PlaybackService {
     load(media: media.MediaWrapper): void;
     load(mediaPlaylist: java.util.List<media.MediaWrapper>): void;
@@ -29,12 +29,12 @@ declare namespace dk.nota.lyt.libvlc {
     pause(): void;
     next(): void;
     previous(): void;
-    playIndex(index: number, flags: number): void; 
+    playIndex(index: number, flags: number): void;
     stopPlayback(): void;
     stopService(): void;
     hasMedia(): boolean;
     hasPlaylist(): boolean;
-    setTime(millisecs: number): void;
+    setTime(milliseconds: number): void;
     getTime(): number;
     getLength(): number;
     setRate(rate: number): void;
@@ -55,12 +55,12 @@ declare namespace dk.nota.lyt.libvlc {
     setMediaListIdentifier(identifier: string): void;
     getMediaListIdentifier(): string;
     getSleepTimerRemaining(): number;
-    setSleepTimer(millisecs: number): void;
+    setSleepTimer(milliseconds: number): void;
     cancelSleepTimer(): void;
     pauseSleepTimer(): void;
     resumeSleepTimer(): void;
     setSeekIntervalSeconds(seconds: number);
-    setSleepTimerVolumeFadeDuration(millisecs: number);
+    setSleepTimerVolumeFadeDuration(milliseconds: number);
   }
   export class PlaybackServiceHelper {
     constructor(context: android.content.Context);
