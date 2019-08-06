@@ -66,23 +66,16 @@ application.on(application.uncaughtErrorEvent, function(args) {
   }
 });
 
-// var MyAppDelegate = UIResponder.extend({
-//     // Implement a method from UIApplicationDelegate.
-//     // We will obtain the method signature from the protocol.
-//     canBecomeFirstResponder: function() {
-//       return true;
-//     },
-//     applicationDidFinishLaunchingWithOptions: function (application, launchOptions) {
-//       console.log('========== APP LAUNCHED ==========');
-//       this.becomeFirstResponder();
-//     }
-// }, {
-//     // The name for the registered Objective-C class.
-//     name: "MyAppDelegate",
-//     // Declare that the native Objective-C class will implement the UIApplicationDelegate Objective-C protocol.
-//     protocols: [UIApplicationDelegate]
-// });
+application.on(application.launchEvent, () => {
+  global['nsApp'] = application;
+});
 
-// application.ios.delegate = MyAppDelegate;
-import './bundle-config';
-application.run({ moduleName: 'main-page' });
+application.on(application.displayedEvent, () => {
+  global['nsApp'] = application;
+});
+
+application.on(application.exitEvent, () => {
+  global['nsApp'] = null;
+});
+
+application.run({ moduleName: "app-root" });
