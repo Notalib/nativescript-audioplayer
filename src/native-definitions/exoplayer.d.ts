@@ -14,6 +14,7 @@ declare module com {
           public seekTo(param0: number): void;
           public getContentPosition(): number;
           public constructor();
+          public getPlaybackSuppressionReason(): number;
           public getCurrentAdGroupIndex(): number;
           public getCurrentPeriodIndex(): number;
           public next(): void;
@@ -41,6 +42,7 @@ declare module com {
           public getApplicationLooper(): globalAndroid.os.Looper;
           public getTextComponent(): com.google.android.exoplayer2.Player.TextComponent;
           public getDuration(): number;
+          public isPlaying(): boolean;
           public hasPrevious(): boolean;
           public seekTo(param0: number, param1: number): void;
           public removeListener(param0: com.google.android.exoplayer2.Player.EventListener): void;
@@ -141,16 +143,7 @@ declare module com {
             param5: number,
           ): void;
         }
-        export class BuildConfig {
-          public static class: java.lang.Class<com.google.android.exoplayer2.BuildConfig>;
-          public static DEBUG: boolean;
-          public static APPLICATION_ID: string;
-          public static BUILD_TYPE: string;
-          public static FLAVOR: string;
-          public static VERSION_CODE: number;
-          public static VERSION_NAME: string;
-          public constructor();
-        }
+
         export class C {
           public static class: java.lang.Class<com.google.android.exoplayer2.C>;
           public static TIME_END_OF_SOURCE: number;
@@ -159,6 +152,7 @@ declare module com {
           public static POSITION_UNSET: number;
           public static LENGTH_UNSET: number;
           public static PERCENTAGE_UNSET: number;
+          public static MILLIS_PER_SECOND: number;
           public static MICROS_PER_SECOND: number;
           public static NANOS_PER_SECOND: number;
           public static BITS_PER_BYTE: number;
@@ -270,12 +264,6 @@ declare module com {
           public static SELECTION_REASON_TRICK_PLAY: number;
           public static SELECTION_REASON_CUSTOM_BASE: number;
           public static DEFAULT_BUFFER_SEGMENT_SIZE: number;
-          public static DEFAULT_VIDEO_BUFFER_SIZE: number;
-          public static DEFAULT_AUDIO_BUFFER_SIZE: number;
-          public static DEFAULT_TEXT_BUFFER_SIZE: number;
-          public static DEFAULT_METADATA_BUFFER_SIZE: number;
-          public static DEFAULT_CAMERA_MOTION_BUFFER_SIZE: number;
-          public static DEFAULT_MUXED_BUFFER_SIZE: number;
           public static CENC_TYPE_cenc: string;
           public static CENC_TYPE_cbc1: string;
           public static CENC_TYPE_cens: string;
@@ -530,6 +518,12 @@ declare module com {
           public static DEFAULT_PRIORITIZE_TIME_OVER_SIZE_THRESHOLDS: boolean;
           public static DEFAULT_BACK_BUFFER_DURATION_MS: number;
           public static DEFAULT_RETAIN_BACK_BUFFER_FROM_KEYFRAME: boolean;
+          public static DEFAULT_VIDEO_BUFFER_SIZE: number;
+          public static DEFAULT_AUDIO_BUFFER_SIZE: number;
+          public static DEFAULT_TEXT_BUFFER_SIZE: number;
+          public static DEFAULT_METADATA_BUFFER_SIZE: number;
+          public static DEFAULT_CAMERA_MOTION_BUFFER_SIZE: number;
+          public static DEFAULT_MUXED_BUFFER_SIZE: number;
           /** @deprecated */
           public constructor(param0: com.google.android.exoplayer2.upstream.DefaultAllocator);
           public onStopped(): void;
@@ -776,6 +770,8 @@ declare module com {
             addListener(param0: com.google.android.exoplayer2.Player.EventListener): void;
             removeListener(param0: com.google.android.exoplayer2.Player.EventListener): void;
             getPlaybackState(): number;
+            getPlaybackSuppressionReason(): number;
+            isPlaying(): boolean;
             getPlaybackError(): com.google.android.exoplayer2.ExoPlaybackException;
             setPlayWhenReady(param0: boolean): void;
             getPlayWhenReady(): boolean;
@@ -824,7 +820,9 @@ declare module com {
           });
           public constructor();
           public static DISCONTINUITY_REASON_AD_INSERTION: number;
+          public static PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS: number;
           public static DISCONTINUITY_REASON_SEEK_ADJUSTMENT: number;
+          public static PLAYBACK_SUPPRESSION_REASON_NONE: number;
           public static REPEAT_MODE_OFF: number;
           public static STATE_READY: number;
           public static DISCONTINUITY_REASON_SEEK: number;
@@ -850,6 +848,7 @@ declare module com {
           public createMessage(param0: com.google.android.exoplayer2.PlayerMessage.Target): com.google.android.exoplayer2.PlayerMessage;
           /** @deprecated */
           public sendMessages(param0: native.Array<com.google.android.exoplayer2.ExoPlayer.ExoPlayerMessage>): void;
+          public getPlaybackSuppressionReason(): number;
           public getCurrentAdGroupIndex(): number;
           public getCurrentPeriodIndex(): number;
           public getMetadataComponent(): com.google.android.exoplayer2.Player.MetadataComponent;
@@ -881,6 +880,7 @@ declare module com {
           public getApplicationLooper(): globalAndroid.os.Looper;
           public getTextComponent(): com.google.android.exoplayer2.Player.TextComponent;
           public getDuration(): number;
+          public isPlaying(): boolean;
           public seekTo(param0: number, param1: number): void;
           public hasPrevious(): boolean;
           /** @deprecated */
@@ -1065,6 +1065,7 @@ declare module com {
           public prepare(param0: com.google.android.exoplayer2.source.MediaSource, param1: boolean, param2: boolean): void;
           public constructor();
           public createMessage(param0: com.google.android.exoplayer2.PlayerMessage.Target): com.google.android.exoplayer2.PlayerMessage;
+          public getPlaybackSuppressionReason(): number;
           /** @deprecated */
           public sendMessages(param0: native.Array<com.google.android.exoplayer2.ExoPlayer.ExoPlayerMessage>): void;
           public getCurrentAdGroupIndex(): number;
@@ -1081,6 +1082,7 @@ declare module com {
           public getAudioComponent(): com.google.android.exoplayer2.Player.AudioComponent;
           public getPreviousWindowIndex(): number;
           public isCurrentWindowSeekable(): boolean;
+          public setPlayWhenReady(param0: boolean, param1: number): void;
           public seekToDefaultPosition(param0: number): void;
           public getContentBufferedPosition(): number;
           public getSeekParameters(): com.google.android.exoplayer2.SeekParameters;
@@ -1099,6 +1101,7 @@ declare module com {
           public getTextComponent(): com.google.android.exoplayer2.Player.TextComponent;
           public getDuration(): number;
           public seekTo(param0: number, param1: number): void;
+          public isPlaying(): boolean;
           public hasPrevious(): boolean;
           /** @deprecated */
           public blockingSendMessages(param0: native.Array<com.google.android.exoplayer2.ExoPlayer.ExoPlayerMessage>): void;
@@ -1114,7 +1117,6 @@ declare module com {
           );
           public retry(): void;
           public getCurrentTrackSelections(): com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-          public setPlayWhenReady(param0: boolean, param1: boolean): void;
           public getNextWindowIndex(): number;
           public getVideoComponent(): com.google.android.exoplayer2.Player.VideoComponent;
           public getTotalBufferedDuration(): number;
@@ -1133,7 +1135,6 @@ declare module com {
         export module ExoPlayerImpl {
           export class PlaybackInfoUpdate {
             public static class: java.lang.Class<com.google.android.exoplayer2.ExoPlayerImpl.PlaybackInfoUpdate>;
-            public run(): void;
             public constructor(
               param0: com.google.android.exoplayer2.PlaybackInfo,
               param1: com.google.android.exoplayer2.PlaybackInfo,
@@ -1144,7 +1145,9 @@ declare module com {
               param6: number,
               param7: boolean,
               param8: boolean,
+              param9: boolean,
             );
+            public run(): void;
           }
         }
         export class ExoPlayerImplInternal extends com.google.android.exoplayer2.source.MediaPeriod.Callback
@@ -1302,6 +1305,7 @@ declare module com {
             param8: string,
             param9: number,
           ): com.google.android.exoplayer2.Format;
+          public copyWithLabel(param0: string): com.google.android.exoplayer2.Format;
           public copyWithSubsampleOffsetUs(param0: number): com.google.android.exoplayer2.Format;
           public static createVideoSampleFormat(
             param0: string,
@@ -1314,20 +1318,6 @@ declare module com {
             param7: number,
             param8: java.util.List<native.Array<number>>,
             param9: com.google.android.exoplayer2.drm.DrmInitData,
-          ): com.google.android.exoplayer2.Format;
-          public static createVideoContainerFormat(
-            param0: string,
-            param1: string,
-            param2: string,
-            param3: string,
-            param4: string,
-            param5: number,
-            param6: number,
-            param7: number,
-            param8: number,
-            param9: java.util.List<native.Array<number>>,
-            param10: number,
-            param11: number,
           ): com.google.android.exoplayer2.Format;
           public static createTextSampleFormat(
             param0: string,
@@ -1394,6 +1384,21 @@ declare module com {
           public static createTextSampleFormat(param0: string, param1: string, param2: number, param3: string): com.google.android.exoplayer2.Format;
           public copyWithFrameRate(param0: number): com.google.android.exoplayer2.Format;
           public hashCode(): number;
+          public static createVideoContainerFormat(
+            param0: string,
+            param1: string,
+            param2: string,
+            param3: string,
+            param4: string,
+            param5: com.google.android.exoplayer2.metadata.Metadata,
+            param6: number,
+            param7: number,
+            param8: number,
+            param9: number,
+            param10: java.util.List<native.Array<number>>,
+            param11: number,
+            param12: number,
+          ): com.google.android.exoplayer2.Format;
           /** @deprecated */
           public static createContainerFormat(
             param0: string,
@@ -1455,13 +1460,14 @@ declare module com {
             param2: string,
             param3: string,
             param4: string,
-            param5: number,
+            param5: com.google.android.exoplayer2.metadata.Metadata,
             param6: number,
             param7: number,
-            param8: java.util.List<native.Array<number>>,
-            param9: number,
+            param8: number,
+            param9: java.util.List<native.Array<number>>,
             param10: number,
-            param11: string,
+            param11: number,
+            param12: string,
           ): com.google.android.exoplayer2.Format;
           public describeContents(): number;
           public copyWithGaplessInfo(param0: number, param1: number): com.google.android.exoplayer2.Format;
@@ -1831,6 +1837,8 @@ declare module com {
             addListener(param0: com.google.android.exoplayer2.Player.EventListener): void;
             removeListener(param0: com.google.android.exoplayer2.Player.EventListener): void;
             getPlaybackState(): number;
+            getPlaybackSuppressionReason(): number;
+            isPlaying(): boolean;
             getPlaybackError(): com.google.android.exoplayer2.ExoPlaybackException;
             setPlayWhenReady(param0: boolean): void;
             getPlayWhenReady(): boolean;
@@ -1879,7 +1887,9 @@ declare module com {
           });
           public constructor();
           public static DISCONTINUITY_REASON_AD_INSERTION: number;
+          public static PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS: number;
           public static DISCONTINUITY_REASON_SEEK_ADJUSTMENT: number;
+          public static PLAYBACK_SUPPRESSION_REASON_NONE: number;
           public static REPEAT_MODE_OFF: number;
           public static STATE_READY: number;
           public static DISCONTINUITY_REASON_SEEK: number;
@@ -1901,6 +1911,7 @@ declare module com {
           public hasNext(): boolean;
           public seekTo(param0: number): void;
           public getContentPosition(): number;
+          public getPlaybackSuppressionReason(): number;
           public getCurrentAdGroupIndex(): number;
           public getCurrentPeriodIndex(): number;
           public getMetadataComponent(): com.google.android.exoplayer2.Player.MetadataComponent;
@@ -1928,6 +1939,7 @@ declare module com {
           public getApplicationLooper(): globalAndroid.os.Looper;
           public getTextComponent(): com.google.android.exoplayer2.Player.TextComponent;
           public getDuration(): number;
+          public isPlaying(): boolean;
           public seekTo(param0: number, param1: number): void;
           public hasPrevious(): boolean;
           public removeListener(param0: com.google.android.exoplayer2.Player.EventListener): void;
@@ -1980,7 +1992,6 @@ declare module com {
           }
           export abstract class DefaultEventListener extends com.google.android.exoplayer2.Player.EventListener {
             public static class: java.lang.Class<com.google.android.exoplayer2.Player.DefaultEventListener>;
-            public onTimelineChanged(param0: com.google.android.exoplayer2.Timeline, param1: any, param2: number): void;
             public onTracksChanged(
               param0: com.google.android.exoplayer2.source.TrackGroupArray,
               param1: com.google.android.exoplayer2.trackselection.TrackSelectionArray,
@@ -1992,7 +2003,10 @@ declare module com {
             public onTimelineChanged(param0: com.google.android.exoplayer2.Timeline, param1: any): void;
             public onPlayerStateChanged(param0: boolean, param1: number): void;
             public onShuffleModeEnabledChanged(param0: boolean): void;
+            public onPlaybackSuppressionReasonChanged(param0: number): void;
             public onPlaybackParametersChanged(param0: com.google.android.exoplayer2.PlaybackParameters): void;
+            public onTimelineChanged(param0: com.google.android.exoplayer2.Timeline, param1: any, param2: number): void;
+            public onIsPlayingChanged(param0: boolean): void;
             public onRepeatModeChanged(param0: number): void;
             public onPositionDiscontinuity(param0: number): void;
             public onLoadingChanged(param0: boolean): void;
@@ -2018,6 +2032,8 @@ declare module com {
               ): void;
               onLoadingChanged(param0: boolean): void;
               onPlayerStateChanged(param0: boolean, param1: number): void;
+              onPlaybackSuppressionReasonChanged(param0: number): void;
+              onIsPlayingChanged(param0: boolean): void;
               onRepeatModeChanged(param0: number): void;
               onShuffleModeEnabledChanged(param0: boolean): void;
               onPlayerError(param0: com.google.android.exoplayer2.ExoPlaybackException): void;
@@ -2035,7 +2051,9 @@ declare module com {
             public onSeekProcessed(): void;
             public onPlayerStateChanged(param0: boolean, param1: number): void;
             public onShuffleModeEnabledChanged(param0: boolean): void;
+            public onPlaybackSuppressionReasonChanged(param0: number): void;
             public onPlaybackParametersChanged(param0: com.google.android.exoplayer2.PlaybackParameters): void;
+            public onIsPlayingChanged(param0: boolean): void;
             public onRepeatModeChanged(param0: number): void;
             public onPositionDiscontinuity(param0: number): void;
             public onLoadingChanged(param0: boolean): void;
@@ -2052,6 +2070,14 @@ declare module com {
             public constructor();
             public removeMetadataOutput(param0: com.google.android.exoplayer2.metadata.MetadataOutput): void;
             public addMetadataOutput(param0: com.google.android.exoplayer2.metadata.MetadataOutput): void;
+          }
+          export class PlaybackSuppressionReason {
+            public static class: java.lang.Class<com.google.android.exoplayer2.Player.PlaybackSuppressionReason>;
+            /**
+             * Constructs a new instance of the com.google.android.exoplayer2.Player$PlaybackSuppressionReason interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
+             */
+            public constructor(implementation: {});
+            public constructor();
           }
           export class RepeatMode {
             public static class: java.lang.Class<com.google.android.exoplayer2.Player.RepeatMode>;
@@ -2364,6 +2390,7 @@ declare module com {
           public clearVideoListener(param0: com.google.android.exoplayer2.SimpleExoPlayer.VideoListener): void;
           public createMessage(param0: com.google.android.exoplayer2.PlayerMessage.Target): com.google.android.exoplayer2.PlayerMessage;
           public clearCameraMotionListener(param0: com.google.android.exoplayer2.video.spherical.CameraMotionListener): void;
+          public getPlaybackSuppressionReason(): number;
           public getCurrentPeriodIndex(): number;
           public getAudioDecoderCounters(): com.google.android.exoplayer2.decoder.DecoderCounters;
           /** @deprecated */
@@ -2488,6 +2515,7 @@ declare module com {
           public getApplicationLooper(): globalAndroid.os.Looper;
           public getTextComponent(): com.google.android.exoplayer2.Player.TextComponent;
           public seekTo(param0: number, param1: number): void;
+          public isPlaying(): boolean;
           public hasPrevious(): boolean;
           /** @deprecated */
           public getAudioStreamType(): number;
@@ -2530,6 +2558,7 @@ declare module com {
             public onPlayerError(param0: com.google.android.exoplayer2.ExoPlaybackException): void;
             public onSeekProcessed(): void;
             public onVideoEnabled(param0: com.google.android.exoplayer2.decoder.DecoderCounters): void;
+            public onPlaybackSuppressionReasonChanged(param0: number): void;
             public onPlaybackParametersChanged(param0: com.google.android.exoplayer2.PlaybackParameters): void;
             public onAudioInputFormatChanged(param0: com.google.android.exoplayer2.Format): void;
             public onVideoDecoderInitialized(param0: string, param1: number, param2: number): void;
@@ -2541,6 +2570,7 @@ declare module com {
             public surfaceDestroyed(param0: globalAndroid.view.SurfaceHolder): void;
             public setVolumeMultiplier(param0: number): void;
             public onSurfaceTextureUpdated(param0: globalAndroid.graphics.SurfaceTexture): void;
+            public onIsPlayingChanged(param0: boolean): void;
             public onVideoDisabled(param0: com.google.android.exoplayer2.decoder.DecoderCounters): void;
             public surfaceChanged(param0: globalAndroid.view.SurfaceHolder, param1: number, param2: number, param3: number): void;
             public onTracksChanged(
@@ -2728,10 +2758,12 @@ declare module com {
               param2: com.google.android.exoplayer2.source.MediaSourceEventListener.LoadEventInfo,
               param3: com.google.android.exoplayer2.source.MediaSourceEventListener.MediaLoadData,
             ): void;
+            public onPlaybackSuppressionReasonChanged(param0: number): void;
             public onAudioInputFormatChanged(param0: com.google.android.exoplayer2.Format): void;
             public onVideoDecoderInitialized(param0: string, param1: number, param2: number): void;
             public getListeners(): java.util.Set<com.google.android.exoplayer2.analytics.AnalyticsListener>;
             public onReadingStarted(param0: number, param1: com.google.android.exoplayer2.source.MediaSource.MediaPeriodId): void;
+            public onIsPlayingChanged(param0: boolean): void;
             public onVideoDisabled(param0: com.google.android.exoplayer2.decoder.DecoderCounters): void;
             public onDrmKeysRestored(): void;
             public onDroppedFrames(param0: number, param1: number): void;
@@ -2857,6 +2889,8 @@ declare module com {
              */
             public constructor(implementation: {
               onPlayerStateChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean, param2: number): void;
+              onPlaybackSuppressionReasonChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
+              onIsPlayingChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean): void;
               onTimelineChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
               onPositionDiscontinuity(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
               onSeekStarted(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
@@ -2978,6 +3012,7 @@ declare module com {
             ): void;
             public onDrmKeysRemoved(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
             public onPlayerStateChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean, param2: number): void;
+            public onPlaybackSuppressionReasonChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
             public onBandwidthEstimate(
               param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime,
               param1: number,
@@ -3005,6 +3040,7 @@ declare module com {
               param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime,
               param1: com.google.android.exoplayer2.ExoPlaybackException,
             ): void;
+            public onIsPlayingChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean): void;
             public onDecoderDisabled(
               param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime,
               param1: number,
@@ -3115,6 +3151,7 @@ declare module com {
             ): void;
             public onDrmKeysRemoved(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
             public onPlayerStateChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean, param2: number): void;
+            public onPlaybackSuppressionReasonChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
             public onBandwidthEstimate(
               param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime,
               param1: number,
@@ -3142,6 +3179,7 @@ declare module com {
               param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime,
               param1: com.google.android.exoplayer2.ExoPlaybackException,
             ): void;
+            public onIsPlayingChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean): void;
             public onDecoderDisabled(
               param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime,
               param1: number,
@@ -4157,8 +4195,8 @@ declare module com {
             public static class: java.lang.Class<com.google.android.exoplayer2.audio.Sonic>;
             public queueEndOfStream(): void;
             public queueInput(param0: java.nio.ShortBuffer): void;
-            public getFramesAvailable(): number;
             public flush(): void;
+            public getOutputSize(): number;
             public constructor(param0: number, param1: number, param2: number, param3: number, param4: number);
             public getOutput(param0: java.nio.ShortBuffer): void;
           }
@@ -4258,6 +4296,7 @@ declare module com {
           export class BuildConfig {
             public static class: java.lang.Class<com.google.android.exoplayer2.core.BuildConfig>;
             public static DEBUG: boolean;
+            public static LIBRARY_PACKAGE_NAME: string;
             public static APPLICATION_ID: string;
             public static BUILD_TYPE: string;
             public static FLAVOR: string;
@@ -5029,6 +5068,7 @@ declare module com {
             export class BuildConfig {
               public static class: java.lang.Class<com.google.android.exoplayer2.ext.cast.BuildConfig>;
               public static DEBUG: boolean;
+              public static LIBRARY_PACKAGE_NAME: string;
               public static APPLICATION_ID: string;
               public static BUILD_TYPE: string;
               public static FLAVOR: string;
@@ -5069,6 +5109,7 @@ declare module com {
               public release(): void;
               public isCastSessionAvailable(): boolean;
               public getContentPosition(): number;
+              public isPlaying(): boolean;
               public constructor(param0: com.google.android.gms.cast.framework.CastContext);
               public getBufferedPosition(): number;
               public getContentDuration(): number;
@@ -5087,6 +5128,7 @@ declare module com {
                 param2: number,
                 param3: number,
               ): com.google.android.gms.common.api.PendingResult<com.google.android.gms.cast.framework.media.RemoteMediaClient.MediaChannelResult>;
+              public getPlaybackSuppressionReason(): number;
               public getContentBufferedPosition(): number;
               public getCurrentTag(): any;
               public setShuffleModeEnabled(param0: boolean): void;
@@ -5108,7 +5150,6 @@ declare module com {
               ): com.google.android.gms.common.api.PendingResult<com.google.android.gms.cast.framework.media.RemoteMediaClient.MediaChannelResult>;
               public getAudioComponent(): com.google.android.exoplayer2.Player.AudioComponent;
               public hasNext(): boolean;
-              public updateInternalState(): void;
               public getRepeatMode(): number;
               public getCurrentAdIndexInAdGroup(): number;
               public setPlayWhenReady(param0: boolean): void;
@@ -6004,7 +6045,7 @@ declare module com {
           }
           export module mp3 {
             export class ConstantBitrateSeeker extends com.google.android.exoplayer2.extractor.ConstantBitrateSeekMap
-              implements com.google.android.exoplayer2.extractor.mp3.Mp3Extractor.Seeker {
+              implements com.google.android.exoplayer2.extractor.mp3.Seeker {
               public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.ConstantBitrateSeeker>;
               public getTimeUs(param0: number): number;
               public constructor(param0: number, param1: number, param2: com.google.android.exoplayer2.extractor.MpegAudioHeader);
@@ -6014,7 +6055,7 @@ declare module com {
               public constructor(param0: number, param1: number, param2: number, param3: number);
               public isSeekable(): boolean;
             }
-            export class MlltSeeker extends com.google.android.exoplayer2.extractor.mp3.Mp3Extractor.Seeker {
+            export class MlltSeeker extends com.google.android.exoplayer2.extractor.mp3.Seeker {
               public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.MlltSeeker>;
               public static create(
                 param0: number,
@@ -6042,6 +6083,7 @@ declare module com {
                 param1: com.google.android.exoplayer2.extractor.PositionHolder,
               ): number;
               public constructor(param0: number);
+              public disableSeeking(): void;
             }
             export module Mp3Extractor {
               export class Flags {
@@ -6052,27 +6094,41 @@ declare module com {
                 public constructor(implementation: {});
                 public constructor();
               }
-              export class Seeker extends com.google.android.exoplayer2.extractor.SeekMap {
-                public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.Mp3Extractor.Seeker>;
-                /**
-                 * Constructs a new instance of the com.google.android.exoplayer2.extractor.mp3.Mp3Extractor$Seeker interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
-                 */
-                public constructor(implementation: {
-                  getTimeUs(param0: number): number;
-                  getDataEndPosition(): number;
-                  isSeekable(): boolean;
-                  getDurationUs(): number;
-                  getSeekPoints(param0: number): com.google.android.exoplayer2.extractor.SeekMap.SeekPoints;
-                });
-                public constructor();
+            }
+            export class Seeker extends com.google.android.exoplayer2.extractor.SeekMap {
+              public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.Seeker>;
+              /**
+               * Constructs a new instance of the com.google.android.exoplayer2.extractor.mp3.Seeker interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
+               */
+              public constructor(implementation: {
+                getTimeUs(param0: number): number;
+                getDataEndPosition(): number;
+                isSeekable(): boolean;
+                getDurationUs(): number;
+                getSeekPoints(param0: number): com.google.android.exoplayer2.extractor.SeekMap.SeekPoints;
+              });
+              public constructor();
+              public getTimeUs(param0: number): number;
+              public getDataEndPosition(): number;
+              public getDurationUs(): number;
+              public getSeekPoints(param0: number): com.google.android.exoplayer2.extractor.SeekMap.SeekPoints;
+              public isSeekable(): boolean;
+            }
+            export module Seeker {
+              export class UnseekableSeeker extends com.google.android.exoplayer2.extractor.SeekMap.Unseekable
+                implements com.google.android.exoplayer2.extractor.mp3.Seeker {
+                public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.Seeker.UnseekableSeeker>;
                 public getDurationUs(): number;
                 public getSeekPoints(param0: number): com.google.android.exoplayer2.extractor.SeekMap.SeekPoints;
+                public constructor(param0: number);
                 public getTimeUs(param0: number): number;
+                public constructor(param0: number, param1: number);
+                public constructor();
                 public getDataEndPosition(): number;
                 public isSeekable(): boolean;
               }
             }
-            export class VbriSeeker extends com.google.android.exoplayer2.extractor.mp3.Mp3Extractor.Seeker {
+            export class VbriSeeker extends com.google.android.exoplayer2.extractor.mp3.Seeker {
               public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.VbriSeeker>;
               public getTimeUs(param0: number): number;
               public getDurationUs(): number;
@@ -6086,7 +6142,7 @@ declare module com {
               public getSeekPoints(param0: number): com.google.android.exoplayer2.extractor.SeekMap.SeekPoints;
               public isSeekable(): boolean;
             }
-            export class XingSeeker extends com.google.android.exoplayer2.extractor.mp3.Mp3Extractor.Seeker {
+            export class XingSeeker extends com.google.android.exoplayer2.extractor.mp3.Seeker {
               public static class: java.lang.Class<com.google.android.exoplayer2.extractor.mp3.XingSeeker>;
               public getTimeUs(param0: number): number;
               public getDurationUs(): number;
@@ -6437,9 +6493,11 @@ declare module com {
               public localeIndicator: number;
               public typeIndicator: number;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.extractor.mp4.MdtaMetadataEntry>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
               public equals(param0: any): boolean;
               public constructor(param0: string, param1: native.Array<number>, param2: number, param3: number);
@@ -6633,22 +6691,18 @@ declare module com {
           export module ogg {
             export class DefaultOggSeeker extends com.google.android.exoplayer2.extractor.ogg.OggSeeker {
               public static class: java.lang.Class<com.google.android.exoplayer2.extractor.ogg.DefaultOggSeeker>;
-              public static MATCH_RANGE: number;
-              public static MATCH_BYTE_RANGE: number;
+              public createSeekMap(): com.google.android.exoplayer2.extractor.ogg.DefaultOggSeeker.OggSeekMap;
+              public createSeekMap(): com.google.android.exoplayer2.extractor.SeekMap;
               public constructor(
-                param0: number,
+                param0: com.google.android.exoplayer2.extractor.ogg.StreamReader,
                 param1: number,
-                param2: com.google.android.exoplayer2.extractor.ogg.StreamReader,
+                param2: number,
                 param3: number,
                 param4: number,
                 param5: boolean,
               );
-              public createSeekMap(): com.google.android.exoplayer2.extractor.ogg.DefaultOggSeeker.OggSeekMap;
-              public createSeekMap(): com.google.android.exoplayer2.extractor.SeekMap;
-              public startSeek(param0: number): number;
+              public startSeek(param0: number): void;
               public read(param0: com.google.android.exoplayer2.extractor.ExtractorInput): number;
-              public resetSeeking(): void;
-              public getNextSeekPosition(param0: number, param1: com.google.android.exoplayer2.extractor.ExtractorInput): number;
             }
             export module DefaultOggSeeker {
               export class OggSeekMap extends com.google.android.exoplayer2.extractor.SeekMap {
@@ -6730,12 +6784,12 @@ declare module com {
                */
               public constructor(implementation: {
                 createSeekMap(): com.google.android.exoplayer2.extractor.SeekMap;
-                startSeek(param0: number): number;
+                startSeek(param0: number): void;
                 read(param0: com.google.android.exoplayer2.extractor.ExtractorInput): number;
               });
               public constructor();
               public createSeekMap(): com.google.android.exoplayer2.extractor.SeekMap;
-              public startSeek(param0: number): number;
+              public startSeek(param0: number): void;
               public read(param0: com.google.android.exoplayer2.extractor.ExtractorInput): number;
             }
             export class OpusReader extends com.google.android.exoplayer2.extractor.ogg.StreamReader {
@@ -7569,10 +7623,11 @@ declare module com {
             export class WavHeader extends com.google.android.exoplayer2.extractor.SeekMap {
               public static class: java.lang.Class<com.google.android.exoplayer2.extractor.wav.WavHeader>;
               public getBytesPerFrame(): number;
+              public getDataStartPosition(): number;
               public getEncoding(): number;
+              public getDataEndPosition(): number;
               public hasDataBounds(): boolean;
               public getBitrate(): number;
-              public getDataLimit(): number;
               public getSeekPoints(param0: number): com.google.android.exoplayer2.extractor.SeekMap.SeekPoints;
               public setDataBounds(param0: number, param1: number): void;
               public isSeekable(): boolean;
@@ -7611,27 +7666,24 @@ declare module com {
             public static MAX_SUPPORTED_INSTANCES_UNKNOWN: number;
             public name: string;
             public mimeType: string;
+            public codecMimeType: string;
             public capabilities: globalAndroid.media.MediaCodecInfo.CodecCapabilities;
             public adaptive: boolean;
             public tunneling: boolean;
             public secure: boolean;
             public passthrough: boolean;
             public isCodecSupported(param0: string): boolean;
-            public static newInstance(
-              param0: string,
-              param1: string,
-              param2: globalAndroid.media.MediaCodecInfo.CodecCapabilities,
-              param3: boolean,
-              param4: boolean,
-            ): com.google.android.exoplayer2.mediacodec.MediaCodecInfo;
             public isVideoSizeAndRateSupportedV21(param0: number, param1: number, param2: number): boolean;
             public isSeamlessAdaptationSupported(param0: com.google.android.exoplayer2.Format): boolean;
-            public alignVideoSizeV21(param0: number, param1: number): globalAndroid.graphics.Point;
             public static newInstance(
               param0: string,
               param1: string,
-              param2: globalAndroid.media.MediaCodecInfo.CodecCapabilities,
+              param2: string,
+              param3: globalAndroid.media.MediaCodecInfo.CodecCapabilities,
+              param4: boolean,
+              param5: boolean,
             ): com.google.android.exoplayer2.mediacodec.MediaCodecInfo;
+            public alignVideoSizeV21(param0: number, param1: number): globalAndroid.graphics.Point;
             public toString(): string;
             public isFormatSupported(param0: com.google.android.exoplayer2.Format): boolean;
             public isAudioChannelCountSupportedV21(param0: number): boolean;
@@ -7888,6 +7940,7 @@ declare module com {
             public hashCode(): number;
             public get(param0: number): com.google.android.exoplayer2.metadata.Metadata.Entry;
             public constructor(param0: native.Array<com.google.android.exoplayer2.metadata.Metadata.Entry>);
+            public toString(): string;
             public copyWithAppendedEntries(
               param0: native.Array<com.google.android.exoplayer2.metadata.Metadata.Entry>,
             ): com.google.android.exoplayer2.metadata.Metadata;
@@ -7898,8 +7951,13 @@ declare module com {
               /**
                * Constructs a new instance of the com.google.android.exoplayer2.metadata.Metadata$Entry interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
                */
-              public constructor(implementation: {});
+              public constructor(implementation: {
+                getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
+                getWrappedMetadataBytes(): native.Array<number>;
+              });
               public constructor();
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
+              public getWrappedMetadataBytes(): native.Array<number>;
             }
           }
           export class MetadataDecoder {
@@ -8007,16 +8065,20 @@ declare module com {
           export module emsg {
             export class EventMessage extends com.google.android.exoplayer2.metadata.Metadata.Entry {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.emsg.EventMessage>;
+              public static ID3_SCHEME_ID_AOM: string;
+              public static SCTE35_SCHEME_ID: string;
               public schemeIdUri: string;
               public value: string;
               public durationMs: number;
               public id: number;
               public messageData: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.emsg.EventMessage>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public describeContents(): number;
               public constructor(param0: string, param1: string, param2: number, param3: number, param4: native.Array<number>);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
               public equals(param0: any): boolean;
             }
@@ -8024,11 +8086,59 @@ declare module com {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.emsg.EventMessageDecoder>;
               public constructor();
               public decode(param0: com.google.android.exoplayer2.metadata.MetadataInputBuffer): com.google.android.exoplayer2.metadata.Metadata;
+              public decode(param0: com.google.android.exoplayer2.util.ParsableByteArray): com.google.android.exoplayer2.metadata.emsg.EventMessage;
             }
             export class EventMessageEncoder {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.emsg.EventMessageEncoder>;
               public constructor();
               public encode(param0: com.google.android.exoplayer2.metadata.emsg.EventMessage): native.Array<number>;
+            }
+          }
+          export module flac {
+            export class PictureFrame extends com.google.android.exoplayer2.metadata.Metadata.Entry {
+              public static class: java.lang.Class<com.google.android.exoplayer2.metadata.flac.PictureFrame>;
+              public pictureType: number;
+              public mimeType: string;
+              public description: string;
+              public width: number;
+              public height: number;
+              public depth: number;
+              public colors: number;
+              public pictureData: native.Array<number>;
+              public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.flac.PictureFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
+              public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public hashCode(): number;
+              public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
+              public constructor(
+                param0: number,
+                param1: string,
+                param2: string,
+                param3: number,
+                param4: number,
+                param5: number,
+                param6: number,
+                param7: native.Array<number>,
+              );
+              public toString(): string;
+              public equals(param0: any): boolean;
+            }
+          }
+          export module flac {
+            export class VorbisComment extends com.google.android.exoplayer2.metadata.Metadata.Entry {
+              public static class: java.lang.Class<com.google.android.exoplayer2.metadata.flac.VorbisComment>;
+              public key: string;
+              public value: string;
+              public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.flac.VorbisComment>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
+              public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public hashCode(): number;
+              public constructor(param0: string, param1: string);
+              public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
+              public toString(): string;
+              public equals(param0: any): boolean;
             }
           }
           export module icy {
@@ -8048,9 +8158,11 @@ declare module com {
               public isPublic: boolean;
               public metadataInterval: number;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.icy.IcyHeaders>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public static parse(param0: java.util.Map<string, java.util.List<string>>): com.google.android.exoplayer2.metadata.icy.IcyHeaders;
               public toString(): string;
               public equals(param0: any): boolean;
@@ -8058,13 +8170,16 @@ declare module com {
             }
             export class IcyInfo extends com.google.android.exoplayer2.metadata.Metadata.Entry {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.icy.IcyInfo>;
+              public rawMetadata: string;
               public title: string;
               public url: string;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.icy.IcyInfo>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
-              public constructor(param0: string, param1: string);
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
+              public constructor(param0: string, param1: string, param2: string);
               public toString(): string;
               public equals(param0: any): boolean;
             }
@@ -8079,9 +8194,11 @@ declare module com {
               public pictureData: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.ApicFrame>;
               public constructor(param0: string, param1: string, param2: number, param3: native.Array<number>);
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
               public equals(param0: any): boolean;
             }
@@ -8090,9 +8207,11 @@ declare module com {
               public data: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.BinaryFrame>;
               public constructor(param0: string, param1: native.Array<number>);
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public equals(param0: any): boolean;
             }
             export class ChapterFrame extends com.google.android.exoplayer2.metadata.id3.Id3Frame {
@@ -8112,11 +8231,13 @@ declare module com {
                 param4: number,
                 param5: native.Array<com.google.android.exoplayer2.metadata.id3.Id3Frame>,
               );
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
               public getSubFrameCount(): number;
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public getSubFrame(param0: number): com.google.android.exoplayer2.metadata.id3.Id3Frame;
               public equals(param0: any): boolean;
             }
@@ -8128,10 +8249,12 @@ declare module com {
               public isOrdered: boolean;
               public children: native.Array<string>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.ChapterTocFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
               public getSubFrameCount(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public constructor(
                 param0: string,
                 param1: boolean,
@@ -8149,9 +8272,11 @@ declare module com {
               public description: string;
               public text: string;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.CommentFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public constructor(param0: string, param1: string, param2: string);
               public toString(): string;
               public equals(param0: any): boolean;
@@ -8165,9 +8290,11 @@ declare module com {
               public data: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.GeobFrame>;
               public constructor(param0: string, param1: string, param2: string, param3: native.Array<number>);
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
               public equals(param0: any): boolean;
             }
@@ -8199,8 +8326,10 @@ declare module com {
             export abstract class Id3Frame extends com.google.android.exoplayer2.metadata.Metadata.Entry {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.id3.Id3Frame>;
               public id: string;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public constructor(param0: string);
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
             }
             export class InternalFrame extends com.google.android.exoplayer2.metadata.id3.Id3Frame {
@@ -8210,9 +8339,11 @@ declare module com {
               public description: string;
               public text: string;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.InternalFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public constructor(param0: string, param1: string, param2: string);
               public toString(): string;
               public equals(param0: any): boolean;
@@ -8226,10 +8357,12 @@ declare module com {
               public bytesDeviations: native.Array<number>;
               public millisecondsDeviations: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.MlltFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public equals(param0: any): boolean;
               public constructor(param0: number, param1: number, param2: number, param3: native.Array<number>, param4: native.Array<number>);
             }
@@ -8240,9 +8373,11 @@ declare module com {
               public privateData: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.PrivFrame>;
               public constructor(param0: string, param1: native.Array<number>);
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
               public equals(param0: any): boolean;
             }
@@ -8251,9 +8386,11 @@ declare module com {
               public description: string;
               public value: string;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.TextInformationFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public constructor(param0: string, param1: string, param2: string);
               public toString(): string;
               public equals(param0: any): boolean;
@@ -8263,9 +8400,11 @@ declare module com {
               public description: string;
               public url: string;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.id3.UrlLinkFrame>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
               public hashCode(): number;
               public constructor(param0: string);
+              public getWrappedMetadataBytes(): native.Array<number>;
               public constructor(param0: string, param1: string, param2: string);
               public toString(): string;
               public equals(param0: any): boolean;
@@ -8278,12 +8417,16 @@ declare module com {
               public identifier: number;
               public commandBytes: native.Array<number>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.scte35.PrivateCommand>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public getWrappedMetadataBytes(): native.Array<number>;
             }
             export abstract class SpliceCommand extends com.google.android.exoplayer2.metadata.Metadata.Entry {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.scte35.SpliceCommand>;
               public constructor();
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public describeContents(): number;
+              public getWrappedMetadataBytes(): native.Array<number>;
               public toString(): string;
             }
             export class SpliceInfoDecoder extends com.google.android.exoplayer2.metadata.MetadataDecoder {
@@ -8307,7 +8450,9 @@ declare module com {
               public availNum: number;
               public availsExpected: number;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.scte35.SpliceInsertCommand>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public getWrappedMetadataBytes(): native.Array<number>;
             }
             export module SpliceInsertCommand {
               export class ComponentSplice {
@@ -8325,13 +8470,17 @@ declare module com {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.scte35.SpliceNullCommand>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.scte35.SpliceNullCommand>;
               public constructor();
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public getWrappedMetadataBytes(): native.Array<number>;
             }
             export class SpliceScheduleCommand extends com.google.android.exoplayer2.metadata.scte35.SpliceCommand {
               public static class: java.lang.Class<com.google.android.exoplayer2.metadata.scte35.SpliceScheduleCommand>;
               public events: java.util.List<com.google.android.exoplayer2.metadata.scte35.SpliceScheduleCommand.Event>;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.scte35.SpliceScheduleCommand>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public getWrappedMetadataBytes(): native.Array<number>;
             }
             export module SpliceScheduleCommand {
               export class ComponentSplice {
@@ -8359,7 +8508,9 @@ declare module com {
               public ptsTime: number;
               public playbackPositionUs: number;
               public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.metadata.scte35.TimeSignalCommand>;
+              public getWrappedMetadataFormat(): com.google.android.exoplayer2.Format;
               public writeToParcel(param0: globalAndroid.os.Parcel, param1: number): void;
+              public getWrappedMetadataBytes(): native.Array<number>;
             }
           }
         }
@@ -8874,7 +9025,6 @@ declare module com {
             public getDownloadManager(): com.google.android.exoplayer2.offline.DownloadManager;
             public static sendResumeDownloads(param0: globalAndroid.content.Context, param1: java.lang.Class<any>, param2: boolean): void;
             public getScheduler(): com.google.android.exoplayer2.scheduler.Scheduler;
-            public constructor(param0: number, param1: number, param2: string, param3: number);
             public static buildAddDownloadIntent(
               param0: globalAndroid.content.Context,
               param1: java.lang.Class<any>,
@@ -8962,6 +9112,9 @@ declare module com {
             ): globalAndroid.content.Intent;
             public onCreate(): void;
             public static startForeground(param0: globalAndroid.content.Context, param1: java.lang.Class<any>): void;
+            /** @deprecated */
+            public constructor(param0: number, param1: number, param2: string, param3: number);
+            public constructor(param0: number, param1: number, param2: string, param3: number, param4: number);
             public onStartCommand(param0: globalAndroid.content.Intent, param1: number, param2: number): number;
             public onDownloadChanged(param0: com.google.android.exoplayer2.offline.Download): void;
           }
@@ -11648,7 +11801,10 @@ declare module com {
                 /**
                  * Constructs a new instance of the com.google.android.exoplayer2.source.ads.AdsLoader$AdViewProvider interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
                  */
-                public constructor(implementation: { getAdViewGroup(): globalAndroid.view.ViewGroup; getAdOverlayViews(): native.Array<globalAndroid.view.View> });
+                public constructor(implementation: {
+                  getAdViewGroup(): globalAndroid.view.ViewGroup;
+                  getAdOverlayViews(): native.Array<globalAndroid.view.View>;
+                });
                 public constructor();
                 public getAdViewGroup(): globalAndroid.view.ViewGroup;
                 public getAdOverlayViews(): native.Array<globalAndroid.view.View>;
@@ -15167,6 +15323,7 @@ declare module com {
           }
           export class Cue extends java.lang.Object {
             public static class: java.lang.Class<com.google.android.exoplayer2.text.Cue>;
+            public static EMPTY: com.google.android.exoplayer2.text.Cue;
             public static DIMEN_UNSET: number;
             public static TYPE_UNSET: number;
             public static ANCHOR_TYPE_START: number;
@@ -16674,11 +16831,18 @@ declare module com {
             public constructor(param0: com.google.android.exoplayer2.trackselection.TrackSelection.Factory);
             /** @deprecated */
             public constructor(param0: com.google.android.exoplayer2.upstream.BandwidthMeter);
-            public static stringDefinesNoLanguage(param0: string): boolean;
+            public selectTextTrack(
+              param0: com.google.android.exoplayer2.source.TrackGroupArray,
+              param1: native.Array<native.Array<number>>,
+              param2: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Parameters,
+              param3: string,
+            ): globalAndroid.util.Pair<
+              com.google.android.exoplayer2.trackselection.TrackSelection.Definition,
+              com.google.android.exoplayer2.trackselection.DefaultTrackSelector.TextTrackScore
+            >;
             public setParameters(param0: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Parameters): void;
             /** @deprecated */
             public clearSelectionOverrides(param0: number): void;
-            public static formatHasNoLanguage(param0: com.google.android.exoplayer2.Format): boolean;
             public static isSupported(param0: number, param1: boolean): boolean;
             /** @deprecated */
             public setSelectionOverride(
@@ -16686,12 +16850,6 @@ declare module com {
               param1: com.google.android.exoplayer2.source.TrackGroupArray,
               param2: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.SelectionOverride,
             ): void;
-            public selectTextTrack(
-              param0: com.google.android.exoplayer2.source.TrackGroupArray,
-              param1: native.Array<native.Array<number>>,
-              param2: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Parameters,
-              param3: string,
-            ): globalAndroid.util.Pair<com.google.android.exoplayer2.trackselection.TrackSelection.Definition, java.lang.Integer>;
             public selectTracks(
               param0: native.Array<com.google.android.exoplayer2.RendererCapabilities>,
               param1: com.google.android.exoplayer2.source.TrackGroupArray,
@@ -16724,8 +16882,10 @@ declare module com {
             public constructor();
             /** @deprecated */
             public clearSelectionOverride(param0: number, param1: com.google.android.exoplayer2.source.TrackGroupArray): void;
+            public static normalizeUndeterminedLanguageToNull(param0: string): string;
             /** @deprecated */
             public clearSelectionOverrides(): void;
+            public static getFormatLanguageScore(param0: com.google.android.exoplayer2.Format, param1: string, param2: boolean): number;
             /** @deprecated */
             public getSelectionOverride(
               param0: number,
@@ -16738,7 +16898,6 @@ declare module com {
               param2: native.Array<native.Array<number>>,
               param3: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Parameters,
             ): com.google.android.exoplayer2.trackselection.TrackSelection.Definition;
-            public static getFormatLanguageScore(param0: com.google.android.exoplayer2.Format, param1: string): number;
           }
           export module DefaultTrackSelector {
             export class AudioConfigurationTuple {
@@ -16778,6 +16937,7 @@ declare module com {
               public exceedAudioConstraintsIfNecessary: boolean;
               public allowAudioMixedMimeTypeAdaptiveness: boolean;
               public allowAudioMixedSampleRateAdaptiveness: boolean;
+              public allowAudioMixedChannelCountAdaptiveness: boolean;
               public forceLowestBitrate: boolean;
               public forceHighestSupportedBitrate: boolean;
               public allowMixedMimeAdaptiveness: boolean;
@@ -16832,9 +16992,13 @@ declare module com {
               public build(): com.google.android.exoplayer2.trackselection.TrackSelectionParameters;
               /** @deprecated */
               public setAllowMixedMimeAdaptiveness(param0: boolean): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
+              public setPreferredTextRoleFlags(param0: number): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
               public setSelectUndeterminedTextLanguage(param0: boolean): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
               public clearSelectionOverrides(param0: number): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
               public clearVideoSizeConstraints(): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
+              public setAllowAudioMixedChannelCountAdaptiveness(
+                param0: boolean,
+              ): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
               public constructor();
               public setAllowVideoMixedMimeTypeAdaptiveness(
                 param0: boolean,
@@ -16851,6 +17015,7 @@ declare module com {
               public clearSelectionOverrides(): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
               public build(): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Parameters;
               public setSelectUndeterminedTextLanguage(param0: boolean): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
+              public setPreferredTextRoleFlags(param0: number): com.google.android.exoplayer2.trackselection.DefaultTrackSelector.ParametersBuilder;
               public setViewportSizeToPhysicalDisplaySize(
                 param0: globalAndroid.content.Context,
                 param1: boolean,
@@ -16878,6 +17043,17 @@ declare module com {
               public describeContents(): number;
               public equals(param0: any): boolean;
               public containsTrack(param0: number): boolean;
+            }
+            export class TextTrackScore extends java.lang.Comparable<com.google.android.exoplayer2.trackselection.DefaultTrackSelector.TextTrackScore> {
+              public static class: java.lang.Class<com.google.android.exoplayer2.trackselection.DefaultTrackSelector.TextTrackScore>;
+              public isWithinConstraints: boolean;
+              public compareTo(param0: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.TextTrackScore): number;
+              public constructor(
+                param0: com.google.android.exoplayer2.Format,
+                param1: com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Parameters,
+                param2: number,
+                param3: string,
+              );
             }
           }
           export class FixedTrackSelection extends com.google.android.exoplayer2.trackselection.BaseTrackSelection {
@@ -17169,6 +17345,7 @@ declare module com {
             public static DEFAULT: com.google.android.exoplayer2.trackselection.TrackSelectionParameters;
             public preferredAudioLanguage: string;
             public preferredTextLanguage: string;
+            public preferredTextRoleFlags: number;
             public selectUndeterminedTextLanguage: boolean;
             public disabledTextTrackSelectionFlags: number;
             public static CREATOR: globalAndroid.os.Parcelable.Creator<com.google.android.exoplayer2.trackselection.TrackSelectionParameters>;
@@ -17186,6 +17363,7 @@ declare module com {
               public setSelectUndeterminedTextLanguage(param0: boolean): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
               public setDisabledTextTrackSelectionFlags(param0: number): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
               public setPreferredTextLanguage(param0: string): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
+              public setPreferredTextRoleFlags(param0: number): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
               public setPreferredAudioLanguage(param0: string): com.google.android.exoplayer2.trackselection.TrackSelectionParameters.Builder;
             }
           }
@@ -17328,6 +17506,7 @@ declare module com {
           export class BuildConfig {
             public static class: java.lang.Class<com.google.android.exoplayer2.ui.BuildConfig>;
             public static DEBUG: boolean;
+            public static LIBRARY_PACKAGE_NAME: string;
             public static APPLICATION_ID: string;
             public static BUILD_TYPE: string;
             public static FLAVOR: string;
@@ -17348,6 +17527,7 @@ declare module com {
             public onPlayerStateChanged(param0: boolean, param1: number): void;
             public onShuffleModeEnabledChanged(param0: boolean): void;
             public updateAndPost(): void;
+            public onPlaybackSuppressionReasonChanged(param0: number): void;
             public onPlaybackParametersChanged(param0: com.google.android.exoplayer2.PlaybackParameters): void;
             public stop(): void;
             public onTimelineChanged(param0: com.google.android.exoplayer2.Timeline, param1: any, param2: number): void;
@@ -17357,6 +17537,7 @@ declare module com {
             public getVideoString(): string;
             public getPlayerStateString(): string;
             public onPositionDiscontinuity(param0: number): void;
+            public onIsPlayingChanged(param0: boolean): void;
             public onRepeatModeChanged(param0: number): void;
             public onLoadingChanged(param0: boolean): void;
           }
@@ -17369,9 +17550,12 @@ declare module com {
             public static DEFAULT_SCRUBBER_DISABLED_SIZE_DP: number;
             public static DEFAULT_SCRUBBER_DRAGGED_SIZE_DP: number;
             public static DEFAULT_PLAYED_COLOR: number;
+            public static DEFAULT_UNPLAYED_COLOR: number;
+            public static DEFAULT_BUFFERED_COLOR: number;
+            public static DEFAULT_SCRUBBER_COLOR: number;
             public static DEFAULT_AD_MARKER_COLOR: number;
+            public static DEFAULT_PLAYED_AD_MARKER_COLOR: number;
             public constructor(param0: globalAndroid.content.Context);
-            public static getDefaultUnplayedColor(param0: number): number;
             public setKeyCountIncrement(param0: number): void;
             public onInitializeAccessibilityNodeInfo(param0: globalAndroid.view.accessibility.AccessibilityNodeInfo): void;
             public setKeyTimeIncrement(param0: number): void;
@@ -17392,8 +17576,6 @@ declare module com {
             public onFocusChanged(param0: boolean, param1: number, param2: globalAndroid.graphics.Rect): void;
             public setAdGroupTimesMs(param0: native.Array<number>, param1: native.Array<boolean>, param2: number): void;
             public performAccessibilityAction(param0: number, param1: globalAndroid.os.Bundle): boolean;
-            public static getDefaultPlayedAdMarkerColor(param0: number): number;
-            public static getDefaultScrubberColor(param0: number): number;
             public constructor(
               param0: globalAndroid.content.Context,
               param1: globalAndroid.util.AttributeSet,
@@ -17401,7 +17583,6 @@ declare module com {
               param3: globalAndroid.util.AttributeSet,
             );
             public setEnabled(param0: boolean): void;
-            public static getDefaultBufferedColor(param0: number): number;
             public jumpDrawablesToCurrentState(): void;
             public getPreferredUpdateDelay(): number;
             public onDraw(param0: globalAndroid.graphics.Canvas): void;
@@ -17561,6 +17742,8 @@ declare module com {
               public onRepeatModeChanged(param0: number): void;
               public onShuffleModeEnabledChanged(param0: boolean): void;
               public onScrubMove(param0: com.google.android.exoplayer2.ui.TimeBar, param1: number): void;
+              public onIsPlayingChanged(param0: boolean): void;
+              public onPlaybackSuppressionReasonChanged(param0: number): void;
               public onPlayerError(param0: com.google.android.exoplayer2.ExoPlaybackException): void;
               public onSeekProcessed(): void;
               public onScrubStart(param0: com.google.android.exoplayer2.ui.TimeBar, param1: number): void;
@@ -17596,6 +17779,14 @@ declare module com {
             public static EXTRA_INSTANCE_ID: string;
             public static DEFAULT_FAST_FORWARD_MS: number;
             public static DEFAULT_REWIND_MS: number;
+            /** @deprecated */
+            public static createWithNotificationChannel(
+              param0: globalAndroid.content.Context,
+              param1: string,
+              param2: number,
+              param3: number,
+              param4: com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter,
+            ): com.google.android.exoplayer2.ui.PlayerNotificationManager;
             public setPlaybackPreparer(param0: com.google.android.exoplayer2.PlaybackPreparer): void;
             public constructor(
               param0: globalAndroid.content.Context,
@@ -17641,7 +17832,8 @@ declare module com {
               param1: string,
               param2: number,
               param3: number,
-              param4: com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter,
+              param4: number,
+              param5: com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter,
             ): com.google.android.exoplayer2.ui.PlayerNotificationManager;
             public constructor(
               param0: globalAndroid.content.Context,
@@ -17651,6 +17843,15 @@ declare module com {
             );
             public setPlayer(param0: com.google.android.exoplayer2.Player): void;
             public invalidate(): void;
+            public static createWithNotificationChannel(
+              param0: globalAndroid.content.Context,
+              param1: string,
+              param2: number,
+              param3: number,
+              param4: number,
+              param5: com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter,
+              param6: com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener,
+            ): com.google.android.exoplayer2.ui.PlayerNotificationManager;
             public setUseStopAction(param0: boolean): void;
             public setUseNavigationActionsInCompactView(param0: boolean): void;
             public createNotification(
@@ -17659,7 +17860,7 @@ declare module com {
               param2: boolean,
               param3: globalAndroid.graphics.Bitmap,
             ): androidx.core.app.NotificationCompat.Builder;
-            public setBadgeIconType(param0: number): void;
+            /** @deprecated */
             public static createWithNotificationChannel(
               param0: globalAndroid.content.Context,
               param1: string,
@@ -17668,6 +17869,7 @@ declare module com {
               param4: com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter,
               param5: com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener,
             ): com.google.android.exoplayer2.ui.PlayerNotificationManager;
+            public setBadgeIconType(param0: number): void;
             public setMediaSessionToken(param0: globalAndroid.support.v4.media.session.MediaSessionCompat.Token): void;
           }
           export module PlayerNotificationManager {
@@ -17749,6 +17951,8 @@ declare module com {
               public onRepeatModeChanged(param0: number): void;
               public onPlayerStateChanged(param0: boolean, param1: number): void;
               public onShuffleModeEnabledChanged(param0: boolean): void;
+              public onIsPlayingChanged(param0: boolean): void;
+              public onPlaybackSuppressionReasonChanged(param0: number): void;
               public onTracksChanged(
                 param0: com.google.android.exoplayer2.source.TrackGroupArray,
                 param1: com.google.android.exoplayer2.trackselection.TrackSelectionArray,
@@ -17869,6 +18073,8 @@ declare module com {
               public onSingleTapUp(param0: globalAndroid.view.MotionEvent): boolean;
               public onRepeatModeChanged(param0: number): void;
               public onShuffleModeEnabledChanged(param0: boolean): void;
+              public onPlaybackSuppressionReasonChanged(param0: number): void;
+              public onIsPlayingChanged(param0: boolean): void;
               public onPlayerError(param0: com.google.android.exoplayer2.ExoPlaybackException): void;
               public onSeekProcessed(): void;
               public onLayoutChange(
@@ -18416,7 +18622,7 @@ declare module com {
             public read(param0: native.Array<number>, param1: number, param2: number): number;
           }
           export module DataSource {
-            export class Factory {
+            export class Factory extends java.lang.Object {
               public static class: java.lang.Class<com.google.android.exoplayer2.upstream.DataSource.Factory>;
               /**
                * Constructs a new instance of the com.google.android.exoplayer2.upstream.DataSource$Factory interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
@@ -18570,9 +18776,9 @@ declare module com {
               public setInitialBitrateEstimate(param0: number): com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.Builder;
               public setInitialBitrateEstimate(param0: string): com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.Builder;
               public setSlidingWindowMaxWeight(param0: number): com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.Builder;
-              public experimental_resetOnNetworkTypeChange(param0: boolean): com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.Builder;
               public setClock(param0: com.google.android.exoplayer2.util.Clock): com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.Builder;
               public constructor(param0: globalAndroid.content.Context);
+              public setResetOnNetworkTypeChange(param0: boolean): com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.Builder;
             }
             export class ConnectivityActionReceiver {
               public static class: java.lang.Class<com.google.android.exoplayer2.upstream.DefaultBandwidthMeter.ConnectivityActionReceiver>;
@@ -18648,6 +18854,7 @@ declare module com {
               param5: boolean,
               param6: com.google.android.exoplayer2.upstream.HttpDataSource.RequestProperties,
             );
+            public getResponseCode(): number;
             public bytesRead(): number;
             public getUri(): globalAndroid.net.Uri;
             public getResponseHeaders(): java.util.Map<string, java.util.List<string>>;
@@ -18759,6 +18966,7 @@ declare module com {
             public constructor();
             public constructor(param0: com.google.android.exoplayer2.upstream.TransferListener);
             public createDataSource(): com.google.android.exoplayer2.upstream.DataSource;
+            public createDataSource(): com.google.android.exoplayer2.upstream.FileDataSource;
           }
           export class HttpDataSource extends com.google.android.exoplayer2.upstream.DataSource {
             public static class: java.lang.Class<com.google.android.exoplayer2.upstream.HttpDataSource>;
@@ -18772,6 +18980,7 @@ declare module com {
               setRequestProperty(param0: string, param1: string): void;
               clearRequestProperty(param0: string): void;
               clearAllRequestProperties(): void;
+              getResponseCode(): number;
               getResponseHeaders(): java.util.Map<string, java.util.List<string>>;
               lambda$static$0(param0: string): boolean;
               <clinit>(): void;
@@ -18788,6 +18997,7 @@ declare module com {
             public getResponseHeaders(): java.util.Map<string, java.util.List<string>>;
             public open(param0: com.google.android.exoplayer2.upstream.DataSpec): number;
             public close(): void;
+            public getResponseCode(): number;
             public clearRequestProperty(param0: string): void;
             public addTransferListener(param0: com.google.android.exoplayer2.upstream.TransferListener): void;
             public getUri(): globalAndroid.net.Uri;
@@ -18928,8 +19138,10 @@ declare module com {
               param1: com.google.android.exoplayer2.upstream.Loader.Callback<any>,
               param2: number,
             ): number;
+            public hasFatalError(): boolean;
             public release(param0: com.google.android.exoplayer2.upstream.Loader.ReleaseCallback): void;
             public maybeThrowError(param0: number): void;
+            public clearFatalError(): void;
             public release(): void;
             public maybeThrowError(): void;
             public cancelLoading(): void;
@@ -19142,9 +19354,11 @@ declare module com {
                 param0: com.google.android.exoplayer2.upstream.DataSource.Factory,
                 param1: com.google.android.exoplayer2.upstream.ResolvingDataSource.Resolver,
               );
-              public constructor(implementation: { createDataSource(): com.google.android.exoplayer2.upstream.DataSource });
+              public constructor(implementation: { createDataSource(): com.google.android.exoplayer2.upstream.ResolvingDataSource });
+
               public constructor();
               public createDataSource(): com.google.android.exoplayer2.upstream.DataSource;
+              public createDataSource(): com.google.android.exoplayer2.upstream.ResolvingDataSource;
             }
             export class Resolver {
               public static class: java.lang.Class<com.google.android.exoplayer2.upstream.ResolvingDataSource.Resolver>;
@@ -20121,6 +20335,7 @@ declare module com {
               param2: number,
               param3: number,
             ): void;
+            public onPlaybackSuppressionReasonChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
             public onSeekProcessed(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
             public onVolumeChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number): void;
             public onDrmKeysLoaded(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
@@ -20149,6 +20364,7 @@ declare module com {
               param2: com.google.android.exoplayer2.decoder.DecoderCounters,
             ): void;
             public onDrmSessionAcquired(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
+            public onIsPlayingChanged(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: boolean): void;
             public onDroppedVideoFrames(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime, param1: number, param2: number): void;
             public constructor(param0: com.google.android.exoplayer2.trackselection.MappingTrackSelector);
             public onDrmSessionReleased(param0: com.google.android.exoplayer2.analytics.AnalyticsListener.EventTime): void;
@@ -20236,13 +20452,25 @@ declare module com {
             public channels: number;
             public bitsPerSample: number;
             public totalSamples: number;
+            public metadata: com.google.android.exoplayer2.metadata.Metadata;
             public getApproxBytesPerFrame(): number;
             public constructor(param0: native.Array<number>, param1: number);
             public maxDecodedFrameSize(): number;
             public durationUs(): number;
             public bitRate(): number;
             public getSampleIndex(param0: number): number;
-            public constructor(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number);
+            public constructor(
+              param0: number,
+              param1: number,
+              param2: number,
+              param3: number,
+              param4: number,
+              param5: number,
+              param6: number,
+              param7: number,
+              param8: java.util.List<string>,
+              param9: java.util.List<com.google.android.exoplayer2.metadata.flac.PictureFrame>,
+            );
           }
           export class GlUtil {
             public static class: java.lang.Class<com.google.android.exoplayer2.util.GlUtil>;
@@ -20489,8 +20717,16 @@ declare module com {
             public static IMPORTANCE_LOW: number;
             public static IMPORTANCE_DEFAULT: number;
             public static IMPORTANCE_HIGH: number;
+            /** @deprecated */
             public static createNotificationChannel(param0: globalAndroid.content.Context, param1: string, param2: number, param3: number): void;
             public static setNotification(param0: globalAndroid.content.Context, param1: number, param2: globalAndroid.app.Notification): void;
+            public static createNotificationChannel(
+              param0: globalAndroid.content.Context,
+              param1: string,
+              param2: number,
+              param3: number,
+              param4: number,
+            ): void;
           }
           export module NotificationUtil {
             export class Importance {
@@ -20749,12 +20985,12 @@ declare module com {
             public static writeBoolean(param0: globalAndroid.os.Parcel, param1: boolean): void;
             public static toByteArray(param0: java.io.InputStream): native.Array<number>;
             public static binarySearchCeil(param0: native.Array<number>, param1: number, param2: boolean, param3: boolean): number;
-            public static binarySearchCeil<E, T>(param0: java.util.List<E>, param1: java.lang.Comparable<T>, param2: boolean, param3: boolean): number;
+            public static binarySearchCeil(param0: java.util.List<any>, param1: java.lang.Comparable<any>, param2: boolean, param3: boolean): number;
             public static scaleLargeTimestampsInPlace(param0: native.Array<number>, param1: number, param2: number): void;
             public static escapeFileName(param0: string): string;
             public static toLowerInvariant(param0: string): string;
             public static inferContentType(param0: string): number;
-            public static removeRange<E>(param0: java.util.List<E>, param1: number, param2: number): void;
+            public static removeRange(param0: java.util.List<any>, param1: number, param2: number): void;
             public static nullSafeArrayConcatenation(param0: native.Array<any>, param1: native.Array<any>): native.Array<any>;
             public static sneakyThrow(param0: java.lang.Throwable): void;
             public static normalizeLanguageCode(param0: string): string;
@@ -20773,7 +21009,6 @@ declare module com {
               param1: com.google.android.exoplayer2.util.ParsableByteArray,
               param2: java.util.zip.Inflater,
             ): boolean;
-            public static getDefaultBufferSize(param0: number): number;
             public static getLooper(): globalAndroid.os.Looper;
             public static getCountryCode(param0: globalAndroid.content.Context): string;
             public static nullSafeArrayCopy(param0: native.Array<any>, param1: number): native.Array<any>;
@@ -20805,7 +21040,7 @@ declare module com {
             public static splitAtFirst(param0: string, param1: string): native.Array<string>;
             public static contains(param0: native.Array<any>, param1: any): boolean;
             public static getPhysicalDisplaySize(param0: globalAndroid.content.Context): globalAndroid.graphics.Point;
-            public static binarySearchFloor<E, T>(param0: java.util.List<E>, param1: java.lang.Comparable<T>, param2: boolean, param3: boolean): number;
+            public static binarySearchFloor(param0: java.util.List<any>, param1: java.lang.Comparable<any>, param2: boolean, param3: boolean): number;
             public static splitCodecs(param0: string): native.Array<string>;
             public static scaleLargeTimestamps(param0: java.util.List<java.lang.Long>, param1: number, param2: number): native.Array<number>;
             public static getPcmFrameSize(param0: number, param1: number): number;
@@ -21015,13 +21250,6 @@ declare module com {
             public getMediaClock(): com.google.android.exoplayer2.util.MediaClock;
             public isCurrentStreamFinal(): boolean;
             public onInputFormatChanged(param0: com.google.android.exoplayer2.Format): void;
-            public getMediaFormat(
-              param0: com.google.android.exoplayer2.Format,
-              param1: com.google.android.exoplayer2.video.MediaCodecVideoRenderer.CodecMaxValues,
-              param2: number,
-              param3: boolean,
-              param4: number,
-            ): globalAndroid.media.MediaFormat;
             public renderOutputBuffer(param0: globalAndroid.media.MediaCodec, param1: number, param2: number): void;
             public setOperatingRate(param0: number): void;
             public constructor(param0: globalAndroid.content.Context, param1: com.google.android.exoplayer2.mediacodec.MediaCodecSelector);
@@ -21029,6 +21257,14 @@ declare module com {
             public shouldForceRenderOutputBuffer(param0: number, param1: number): boolean;
             public getCapabilities(): com.google.android.exoplayer2.RendererCapabilities;
             public resetPosition(param0: number): void;
+            public getMediaFormat(
+              param0: com.google.android.exoplayer2.Format,
+              param1: string,
+              param2: com.google.android.exoplayer2.video.MediaCodecVideoRenderer.CodecMaxValues,
+              param3: number,
+              param4: boolean,
+              param5: number,
+            ): globalAndroid.media.MediaFormat;
             public hasReadStreamToEnd(): boolean;
             public setIndex(param0: number): void;
             public getTrackType(): number;
@@ -21279,37 +21515,3 @@ declare module com {
     }
   }
 }
-
-//Generics information:
-//com.google.android.exoplayer2.decoder.Decoder:3
-//com.google.android.exoplayer2.decoder.SimpleDecoder:3
-//com.google.android.exoplayer2.drm.DecryptionResource:1
-//com.google.android.exoplayer2.drm.DecryptionResource.Owner:1
-//com.google.android.exoplayer2.drm.DefaultDrmSession:1
-//com.google.android.exoplayer2.drm.DefaultDrmSession.ProvisioningManager:1
-//com.google.android.exoplayer2.drm.DefaultDrmSessionManager:1
-//com.google.android.exoplayer2.drm.DrmSession:1
-//com.google.android.exoplayer2.drm.DrmSessionManager:1
-//com.google.android.exoplayer2.drm.ErrorStateDrmSession:1
-//com.google.android.exoplayer2.drm.ExoMediaDrm:1
-//com.google.android.exoplayer2.drm.ExoMediaDrm.OnEventListener:1
-//com.google.android.exoplayer2.drm.ExoMediaDrm.OnKeyStatusChangeListener:1
-//com.google.android.exoplayer2.drm.OfflineLicenseHelper:1
-//com.google.android.exoplayer2.offline.FilterableManifest:1
-//com.google.android.exoplayer2.offline.FilteringManifestParser:1
-//com.google.android.exoplayer2.offline.SegmentDownloader:1
-//com.google.android.exoplayer2.source.CompositeMediaSource:1
-//com.google.android.exoplayer2.source.ConcatenatingMediaSource.MessageData:1
-//com.google.android.exoplayer2.source.SequenceableLoader.Callback:1
-//com.google.android.exoplayer2.source.chunk.ChunkSampleStream:1
-//com.google.android.exoplayer2.source.chunk.ChunkSampleStream.ReleaseCallback:1
-//com.google.android.exoplayer2.upstream.Loader.Callback:1
-//com.google.android.exoplayer2.upstream.Loader.LoadTask:1
-//com.google.android.exoplayer2.upstream.ParsingLoadable:1
-//com.google.android.exoplayer2.upstream.ParsingLoadable.Parser:1
-//com.google.android.exoplayer2.util.ErrorMessageProvider:1
-//com.google.android.exoplayer2.util.EventDispatcher:1
-//com.google.android.exoplayer2.util.EventDispatcher.Event:1
-//com.google.android.exoplayer2.util.EventDispatcher.HandlerAndListener:1
-//com.google.android.exoplayer2.util.Predicate:1
-//com.google.android.exoplayer2.util.TimedValueQueue:1

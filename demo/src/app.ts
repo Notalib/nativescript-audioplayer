@@ -78,4 +78,4 @@ application.on(application.exitEvent, () => {
   global['nsApp'] = null;
 });
 
-application.run({ moduleName: "app-root" });
+application.run({ moduleName: 'app-root' });

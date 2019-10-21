@@ -435,6 +435,24 @@ function ensureNativeClasses() {
     }
 
     /**
+     * Called when the value of Player.isPlaying() changes.
+     *
+     * TODO: onPlayerStateChanged also updates playing state.
+     */
+    public onIsPlayingChanged(isPlaying: boolean) {
+      const owner = this.owner.get();
+      if (!owner) {
+        return;
+      }
+
+      if (isPlaying) {
+        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
+      } else {
+        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Paused);
+      }
+    }
+
+    /**
      * Called when the timeline and/or manifest has been refreshed.
      *
      * Note that if the timeline has changed then a position discontinuity may also have occurred.
@@ -553,6 +571,8 @@ function ensureNativeClasses() {
             trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
           }
           playbackEvent = playWhenReady ? PlaybackEvent.Playing : PlaybackEvent.Paused;
+
+          // TODO: onIsPlayingChanged also sets this value.
           break;
         }
         default: {
@@ -739,6 +759,34 @@ function ensureNativeClasses() {
     public onSeekProcessed() {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onSeekProcessed()`, notaAudioCategory);
+      }
+    }
+
+    public onPlaybackSuppressionReasonChanged(reason: number) {
+      // TODO:
+      const owner = this.owner.get();
+      if (!owner) {
+        return;
+      }
+
+      switch (reason) {
+        case com.google.android.exoplayer2.Player.PLAYBACK_SUPPRESSION_REASON_NONE: {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - reason = none`, notaAudioCategory);
+          }
+          break;
+        }
+        case com.google.android.exoplayer2.Player.PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS: {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - reason = transient audio focus loss`, notaAudioCategory);
+          }
+          break;
+        }
+        default: {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - unknown reason`, notaAudioCategory, trace.messageType.error);
+          }
+        }
       }
     }
   }

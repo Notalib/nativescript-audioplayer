@@ -170,7 +170,7 @@ declare module com {
                   public static class: java.lang.Class<com.google.android.gms.auth.api.signin.internal.zaa>;
                   public constructor();
                 }
-							}
+              }
               export class zaa {
                 public static class: java.lang.Class<com.google.android.gms.auth.api.signin.zaa>;
                 public compare(param0: any, param1: any): number;
@@ -4284,7 +4284,10 @@ declare module com {
           }
           export class zzv {
             public static class: java.lang.Class<com.google.android.gms.cast.zzv>;
-            public onRouteUnselected(param0: any /* androidx.mediarouter.media.MediaRouter */, param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */): void;
+            public onRouteUnselected(
+              param0: any /* androidx.mediarouter.media.MediaRouter */,
+              param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
+            ): void;
           }
           export class zzw {
             public static class: java.lang.Class<com.google.android.gms.cast.zzw>;
@@ -4924,15 +4927,9 @@ declare module com {
             }
             export class AvailabilityException {
               public static class: java.lang.Class<com.google.android.gms.common.api.AvailabilityException>;
-              public zaj(): androidx.collection.ArrayMap<
-                com.google.android.gms.common.api.internal.zai<any>,
-                com.google.android.gms.common.ConnectionResult
-              >;
+              public zaj(): androidx.collection.ArrayMap<com.google.android.gms.common.api.internal.zai<any>, com.google.android.gms.common.ConnectionResult>;
               public constructor(
-                param0: androidx.collection.ArrayMap<
-                  com.google.android.gms.common.api.internal.zai<any>,
-                  com.google.android.gms.common.ConnectionResult
-                >,
+                param0: androidx.collection.ArrayMap<com.google.android.gms.common.api.internal.zai<any>, com.google.android.gms.common.ConnectionResult>,
               );
               public getMessage(): string;
               public getConnectionResult(param0: com.google.android.gms.common.api.GoogleApi<any>): com.google.android.gms.common.ConnectionResult;
@@ -8688,7 +8685,7 @@ declare module com {
                   param0: globalAndroid.os.Parcel,
                   param1: number,
                   param2: globalAndroid.os.Parcelable.Creator<any>,
-                    ): globalAndroid.util.SparseArray<any>;
+                ): globalAndroid.util.SparseArray<any>;
                 public static createParcelList(param0: globalAndroid.os.Parcel, param1: number): java.util.ArrayList<globalAndroid.os.Parcel>;
                 public static createTypedArray(
                   param0: globalAndroid.os.Parcel,
@@ -9024,7 +9021,7 @@ declare module com {
                   param1: string,
                   param2: globalAndroid.os.Parcelable.Creator<any>,
                 ): java.util.ArrayList<any>;
-                  public static serializeIterableToBundle(param0: java.lang.Iterable<any>, param1: globalAndroid.os.Bundle, param2: string): void;
+                public static serializeIterableToBundle(param0: java.lang.Iterable<any>, param1: globalAndroid.os.Bundle, param2: string): void;
                 public static deserializeFromBytes(
                   param0: native.Array<number>,
                   param1: globalAndroid.os.Parcelable.Creator<any>,
@@ -13708,15 +13705,27 @@ declare module com {
             export class zzw {
               public static class: java.lang.Class<com.google.android.gms.internal.cast.zzw>;
               public constructor(param0: any /* com.google.android.gms.internal.cast.zzm*/);
-              public onRouteAdded(param0: any /* androidx.mediarouter.media.MediaRouter */, param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */): void;
-              public onRouteChanged(param0: any /* androidx.mediarouter.media.MediaRouter */, param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */): void;
+              public onRouteAdded(
+                param0: any /* androidx.mediarouter.media.MediaRouter */,
+                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
+              ): void;
+              public onRouteChanged(
+                param0: any /* androidx.mediarouter.media.MediaRouter */,
+                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
+              ): void;
               public onRouteUnselected(
                 param0: any /* androidx.mediarouter.media.MediaRouter */,
                 param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
                 param2: number,
               ): void;
-              public onRouteRemoved(param0: any /* androidx.mediarouter.media.MediaRouter */, param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */): void;
-              public onRouteSelected(param0: any /* androidx.mediarouter.media.MediaRouter */, param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */): void;
+              public onRouteRemoved(
+                param0: any /* androidx.mediarouter.media.MediaRouter */,
+                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
+              ): void;
+              public onRouteSelected(
+                param0: any /* androidx.mediarouter.media.MediaRouter */,
+                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
+              ): void;
             }
           }
         }
