@@ -17,7 +17,8 @@
     "lint": "npm-run-all format:check tslint",
     "test.android": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build android && tns test android --justlaunch",
     "test.ios": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build ios && tns test ios --justlaunch",
-    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\""
+    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\"",
+    "postinstall": "cd src && npm i"
   },
   "repository": {
     "type": "git",
@@ -33,6 +34,13 @@
     "name": "Daniel Freiling",
     "email": "dfg@nota.dk"
   },
+  "contributors": [
+    {
+      "name": "Morten Sjøgren",
+      "email": "m_abs@mabs.dk",
+      "url": "https://mabs.dk"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/Notalib/nativescript-audioplayer/issues"
   },
@@ -41,10 +49,10 @@
   "devDependencies": {
     "prettier": "^1.18.2",
     "prettier-check": "^2.0.0",
-    "rimraf": "^2.6.3",
-    "tns-platform-declarations": "^6.0.0",
-    "tslint": "^5.18.0",
-    "typescript": "~3.4.5"
+    "rimraf": "^3.0.0",
+    "tns-platform-declarations": "^6.1.2",
+    "tslint": "^5.20.0",
+    "typescript": "~3.5.3"
   },
   "dependencies": {}
 }

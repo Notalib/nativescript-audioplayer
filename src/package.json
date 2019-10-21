@@ -4,8 +4,8 @@
   "description": "Fully featured AudioPlayer for NativeScript. Supports gap-less audio playlist playback with variable playback speed and native remote controls",
   "nativescript": {
     "platforms": {
-      "android": "5.4.0",
-      "ios": "5.4.0"
+      "android": "6.1.0",
+      "ios": "6.1.0"
     }
   },
   "main": "audioplayer",
@@ -24,15 +24,22 @@
     "name": "Daniel Freiling",
     "email": "dfg@nota.dk"
   },
+  "contributors": [
+    {
+      "name": "Morten Sjøgren",
+      "email": "m_abs@mabs.dk",
+      "url": "https://mabs.dk"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/Notalib/nativescript-audioplayer/issues"
   },
   "homepage": "https://github.com/Notalib/nativescript-audioplayer",
   "readmeFilename": "README.md",
   "devDependencies": {
-    "tns-core-modules": "^6.0.0",
-    "tslint": "^5.18.0",
-    "typescript": "^3.4.5"
+    "tns-core-modules": "^6.1.2",
+    "tslint": "~5.20.0",
+    "typescript": "~3.5.3"
   },
   "dependencies": {}
 }
