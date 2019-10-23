@@ -11,6 +11,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return utils.ad.getApplicationContext() as android.content.Context;
   }
 
+  private isReadyResolve: () => void;
+  private isReadyReject: (error: any) => void;
+
+  private _isReadý = false;
+  public readonly isReady = new Promise<void>((resolve, reject) => {
+    this.isReadyResolve = resolve;
+    this.isReadyReject = reject;
+  });
+
   private _mediaService: dk.nota.MediaService | void = null;
 
   private _serviceConnection = new android.content.ServiceConnection({
@@ -20,31 +29,35 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
       this._mediaService = binder.getService();
       this._mediaService.setOwner(this);
+
+      this.isReadyResolve();
     },
     onBindingDied: (componentName) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
       }
+
+      this.isReadyReject(new Error('Died'));
     },
     onNullBinding: (componentName) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
       }
+
+      this.isReadyReject(new Error('Null binding'));
     },
     onServiceDisconnected: (componentName) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
-
-        this._mediaService = null;
       }
+
+      this._mediaService = null;
     },
   });
 
   public get android() {
     return this._mediaService;
   }
-
-  public isReady = Promise.resolve();
 
   private _exitHandler: (args: nsApp.ApplicationEventData) => void;
 
@@ -63,10 +76,20 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         }
       }),
     );
+
+    const noop = () => {};
+    this.isReady.then(
+      () => {
+        this.isReadyReject = noop;
+        this._isReadý = true;
+      },
+      () => (this.isReadyResolve = noop),
+    );
   }
 
   public preparePlaylist(playlist: Playlist): void {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -75,6 +98,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public getCurrentPlaylistIndex(): number {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return -1;
     }
 
@@ -83,6 +107,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public play() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.play() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -91,6 +116,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public pause() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.pause() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -99,6 +125,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public stop() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.stop() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -109,6 +136,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public isPlaying(): boolean {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.isPlaying() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return false;
     }
 
@@ -117,6 +145,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public seekTo(offset: number) {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.seekTo(${offset}) - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -125,6 +154,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
     if (!this._mediaService) {
+      trace.write(
+        `${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - no media service. isReady?: ${this._isReadý}`,
+        notaAudioCategory,
+        trace.messageType.error,
+      );
       return;
     }
 
@@ -133,6 +167,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public skipToNext() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.skipToNext() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -143,6 +178,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public skipToPrevious() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.skipToPrevious() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -153,6 +189,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public skipToPlaylistIndex(playlistIndex: number) {
     if (!this._mediaService) {
+      trace.write(
+        `${this.cls}.skipToPlaylistIndex(${playlistIndex}) - no media service. isReady?: ${this._isReadý}`,
+        notaAudioCategory,
+        trace.messageType.error,
+      );
       return;
     }
 
@@ -161,6 +202,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public setRate(rate: number) {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.setRate(${rate}) - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return;
     }
 
@@ -169,6 +211,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public getRate() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.getRate() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return 1;
     }
 
@@ -177,6 +220,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public getDuration() {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.getDuration() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return 0;
     }
 
@@ -185,6 +229,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public getCurrentTime(): number {
     if (!this._mediaService) {
+      trace.write(`${this.cls}.getCurrentTime() - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
       return -1;
     }
 
@@ -196,6 +241,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     if (this._mediaService) {
       this._mediaService.setSeekIntervalSeconds(seconds);
+    } else {
+      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - no media service. isReady?: ${this._isReadý}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
