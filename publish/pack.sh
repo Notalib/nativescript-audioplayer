@@ -26,7 +26,7 @@ pack() {
 
     # copy src
     echo 'Copying src...'
-    rsync -aP \
+    rsync -a \
         --delete \
         --delete-excluded \
         --exclude node_modules \
