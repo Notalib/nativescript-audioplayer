@@ -82,9 +82,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     super();
   }
 
-  public isReady = Promise.resolve(true);
-
-  public preparePlaylist(playlist: Playlist) {
+  public async preparePlaylist(playlist: Playlist) {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.preparePlaylist($)`, notaAudioCategory);
     }
@@ -141,7 +139,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     trace.write(`${this.cls}.setupAudioPlayer() - TimePitch Algorithm: ${this.player.timePitchAlgorithm}`, notaAudioCategory);
   }
 
-  public play() {
+  public async play() {
     try {
       if (this.player.state === AudioPlayerState.Paused) {
         if (trace.isEnabled()) {
@@ -163,7 +161,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  public pause() {
+  public async pause() {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.pause()`, notaAudioCategory);
     }
@@ -173,7 +171,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  public stop() {
+  public async stop() {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.stop()`, notaAudioCategory);
     }
@@ -183,35 +181,35 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  public isPlaying(): boolean {
+  public async isPlaying(): Promise<boolean> {
     return this.player && this.player.state === AudioPlayerState.Playing;
   }
 
-  public skipToNext() {
+  public async skipToNext() {
     if (this.player) {
       this.player.nextOrStop();
     }
   }
 
-  public skipToPrevious() {
+  public async skipToPrevious() {
     if (this.player) {
       this.player.previous();
     }
   }
 
-  public skipToPlaylistIndex(playlistIndex: number) {
+  public async skipToPlaylistIndex(playlistIndex: number) {
     if (this.player) {
       this.player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
     }
   }
 
-  public setRate(rate: number) {
+  public async setRate(rate: number) {
     if (this.player) {
       this.player.rate = rate;
     }
   }
 
-  public getRate(): number {
+  public async getRate(): Promise<number> {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.getRate(...) => ${this.player.timePitchAlgorithm}`, notaAudioCategory);
     }
@@ -219,14 +217,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this.player ? this.player.rate : 0;
   }
 
-  public getDuration(): number {
+  public async getDuration(): Promise<number> {
     if (this.player && this.player.currentItem && this.player.currentItemDuration) {
       return Math.floor(this.player.currentItemDuration * 1000);
     }
     return -1;
   }
 
-  public getCurrentTime(): number {
+  public async getCurrentTime(): Promise<number> {
     if (this.player && this.player.currentItem && this.player.currentItemProgression) {
       return Math.max(0, Math.floor(this.player.currentItemProgression * 1000));
     }
@@ -242,20 +240,20 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  public getCurrentPlaylistIndex() {
+  public async getCurrentPlaylistIndex() {
     if (this._iosPlaylist && this.player && this.player.currentItem) {
       return this.getIndexForItem(this.player.currentItem);
     }
     return null;
   }
 
-  public seekTo(milliseconds: number) {
+  public async seekTo(milliseconds: number) {
     if (this.player) {
       this._iosSeekTo(milliseconds);
     }
   }
 
-  public setSeekIntervalSeconds(seconds: number) {
+  public async setSeekIntervalSeconds(seconds: number) {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
     }

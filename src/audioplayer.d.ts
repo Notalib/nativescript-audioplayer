@@ -2,29 +2,28 @@ import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './au
 
 export class TNSAudioPlayer {
   playlist: Playlist;
-  isReady: Promise<any>;
-  loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): any;
-  play(): void;
-  pause(): void;
-  stop(): void;
+  loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): Promise<void>;
+  play(): Promise<void>;
+  pause(): Promise<void>;
+  stop(): Promise<void>;
   isPlaying(): boolean;
-  skipToNext(): void;
-  skipToPrevious(): void;
-  skipToPlaylistIndex(playlistIndex: number): void;
-  skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void;
-  setRate(rate: number): void;
+  skipToNext(): Promise<void>;
+  skipToPrevious(): Promise<void>;
+  skipToPlaylistIndex(playlistIndex: number): Promise<void>;
+  skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void>;
+  setRate(rate: number): Promise<void>;
   getRate(): number;
   getDuration(): number;
   getCurrentTime(): number;
   getCurrentPlaylistIndex(): number;
   getCurrentPlaylistUID(): string;
-  seekTo(offset: number): void;
-  seekRelative(relativeOffset: number): void;
-  setSeekIntervalSeconds(seconds: number): void;
-  setPlaybackEventListener(listener: PlaybackEventListener): void;
-  setSleepTimer(milliseconds: number): any;
+  seekTo(offset: number): Promise<void>;
+  seekRelative(relativeOffset: number): Promise<void>;
+  setSeekIntervalSeconds(seconds: number): Promise<void>;
+  setPlaybackEventListener(listener: PlaybackEventListener): Promise<void>;
+  setSleepTimer(milliseconds: number): Promise<void>;
   getSleepTimerRemaining(): number;
-  cancelSleepTimer(): any;
+  cancelSleepTimer(): Promise<void>;
   destroy(): void;
   _onPlaybackEvent(evt: PlaybackEvent, args?: any);
 }

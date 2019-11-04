@@ -4,7 +4,7 @@
 import * as imageSource from 'tns-core-modules/image-source';
 import * as trace from 'tns-core-modules/trace';
 import { TNSAudioPlayer } from './audioplayer';
-import { notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
+import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 
 export namespace dk {
   export namespace nota {
@@ -19,6 +19,9 @@ export namespace dk {
 
         return this._cls;
       }
+
+      private lastCoverArtUrl: string;
+      private lastCoverArtBitMap: any;
 
       private _binder: MediaService.LocalBinder;
       public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
@@ -53,19 +56,17 @@ export namespace dk {
         const renderersFactory = new com.google.android.exoplayer2.DefaultRenderersFactory(this);
         const playerListener = new TNSPlayerEvent(this);
 
-        this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, 'NotaAudio');
+        this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, 'TNS-MediaService-1');
 
         // Do not let MediaButtons restart the player when the app is not visible.
         this._mediaSession.setMediaButtonReceiver(null);
         this._mediaSession.setActive(true);
 
-        let lastCoverArtUrl: string;
-        let lastCoverArtBitMap: any;
-
         this._playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
           this,
-          'NotaAudio',
-          (android.R as any).string.unknownName, // TODO: Find a better way to get the channel name reference... The notification won't show without this.
+          'TNS-MediaService-1',
+          (android.R as any).string.unknownName, // TODO: Find a better way to get the channel name reference...
+          (android.R as any).string.unknownName, // TODO: Find a better way to get the channel description reference...
           1337, // TODO: How should this be defined?
           new com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter({
             createCurrentContentIntent: (player: com.google.android.exoplayer2.Player) => {
@@ -101,32 +102,12 @@ export namespace dk {
                 return null;
               }
 
-              if (lastCoverArtBitMap && lastCoverArtUrl === track.albumArtUrl) {
+              if (this.lastCoverArtBitMap && this.lastCoverArtUrl === track.albumArtUrl) {
                 // callback.onBitmap(lastCoverArtBitMap);
-                return lastCoverArtBitMap;
+                return this.lastCoverArtBitMap;
               }
 
-              const loadImage = async () => {
-                const start = Date.now();
-                try {
-                  const image = await imageSource.fromUrl(track.albumArtUrl);
-                  if (image.android) {
-                    lastCoverArtBitMap = image.android;
-                    lastCoverArtUrl = track.albumArtUrl;
-                    callback.onBitmap(image.android);
-                    if (trace.isEnabled()) {
-                      trace.write(`${track.albumArtUrl} loaded in ${start - Date.now()}`, notaAudioCategory);
-                    }
-                  } else {
-                    if (trace.isEnabled()) {
-                      trace.write(`${track.albumArtUrl} not loaded`, notaAudioCategory);
-                    }
-                  }
-                } catch (err) {
-                  trace.write(`${track.albumArtUrl} couldn't be loaded. ${err} ${err.message}`, notaAudioCategory, trace.messageType.error);
-                }
-              };
-              loadImage();
+              this.loadAlbumArt(track, callback);
 
               return null;
             },
@@ -138,6 +119,18 @@ export namespace dk {
               }
 
               return track.artist;
+            },
+          }),
+          new com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener({
+            onNotificationCancelled: (notificationId, dismissedByUser?) => {
+              this.stopForeground(notificationId);
+              this.stopSelf();
+            },
+            onNotificationPosted: (notificationId, notification, ongoing?) => {
+              this.startForeground(notificationId, notification);
+            },
+            onNotificationStarted(notificationId, notification) {
+              // Deprecated
             },
           }),
         );
@@ -190,6 +183,7 @@ export namespace dk {
         this._binder = null;
 
         this.stopForeground(true);
+
         if (this._pmWakeLock && this._pmWakeLock.isHeld()) {
           this._pmWakeLock.release();
         }
@@ -222,7 +216,7 @@ export namespace dk {
         }
 
         super.onStartCommand(intent, flags, startId);
-        this.startForeground(1, this.createNotification(intent));
+        // this.startForeground(1, this.createNotification(intent));
         return android.app.Service.START_STICKY;
       }
 
@@ -353,6 +347,7 @@ export namespace dk {
         const params = new com.google.android.exoplayer2.PlaybackParameters(rate, rate, rate > 1);
         this.exoPlayer.setPlaybackParameters(params);
       }
+
       public getRate() {
         if (!this.exoPlayer) {
           return 1;
@@ -374,15 +369,38 @@ export namespace dk {
         this.exoPlayer.setPlayWhenReady(true);
         this.acquireWakeLock();
       }
+
       public pause() {
         this.exoPlayer.setPlayWhenReady(false);
         this.releaseWakeLock();
       }
+
       public stop() {
         this.exoPlayer.stop();
 
         this.playlist = null;
         this.releaseWakeLock();
+      }
+
+      private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
+        const start = Date.now();
+        try {
+          const image = await imageSource.fromUrl(track.albumArtUrl);
+          if (image.android) {
+            this.lastCoverArtBitMap = image.android;
+            this.lastCoverArtUrl = track.albumArtUrl;
+            callback.onBitmap(image.android);
+            if (trace.isEnabled()) {
+              trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - loaded in ${start - Date.now()}`, notaAudioCategory);
+            }
+          } else {
+            if (trace.isEnabled()) {
+              trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - not loaded`, notaAudioCategory);
+            }
+          }
+        } catch (err) {
+          trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - couldn't be loaded. ${err} ${err.message}`, notaAudioCategory, trace.messageType.error);
+        }
       }
     }
 

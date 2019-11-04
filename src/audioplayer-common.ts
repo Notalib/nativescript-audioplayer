@@ -16,23 +16,21 @@ export abstract class CommonAudioPlayer {
   private _listener: PlaybackEventListener;
   protected seekIntervalSeconds = 15;
 
-  public abstract isReady: Promise<any>;
-
-  public abstract preparePlaylist(playlist: Playlist);
-  public abstract play();
-  public abstract pause();
-  public abstract stop();
-  public abstract isPlaying(): boolean;
-  public abstract skipToNext();
-  public abstract skipToPrevious();
-  public abstract skipToPlaylistIndex(playlistIndex: number): void;
-  public abstract setRate(rate: number);
-  public abstract getRate(): number;
-  public abstract getDuration(): number;
-  public abstract getCurrentTime(): number;
-  public abstract getCurrentPlaylistIndex(): number;
+  public abstract preparePlaylist(playlist: Playlist): Promise<void>;
+  public abstract play(): Promise<void>;
+  public abstract pause(): Promise<void>;
+  public abstract stop(): Promise<void>;
+  public abstract isPlaying(): Promise<boolean>;
+  public abstract skipToNext(): Promise<void>;
+  public abstract skipToPrevious(): Promise<void>;
+  public abstract skipToPlaylistIndex(playlistIndex: number): Promise<void>;
+  public abstract setRate(rate: number): Promise<void>;
+  public abstract getRate(): Promise<number>;
+  public abstract getDuration(): Promise<number>;
+  public abstract getCurrentTime(): Promise<number>;
+  public abstract getCurrentPlaylistIndex(): Promise<number>;
   public abstract seekTo(offset: number);
-  public abstract setSeekIntervalSeconds(seconds: number): void;
+  public abstract setSeekIntervalSeconds(seconds: number): Promise<void>;
   public getSeekIntervalSeconds() {
     return this.seekIntervalSeconds;
   }
@@ -112,23 +110,24 @@ export abstract class CommonAudioPlayer {
     this._sleepTimerPaused = false;
   }
 
-  public abstract destroy();
+  public abstract destroy(): void;
 
-  public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
-    this.preparePlaylist(playlist);
-    if (startIndex !== undefined && startOffset) {
-      this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
+  public async loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
+    await this.preparePlaylist(playlist);
+
+    if (startIndex !== undefined && startOffset !== undefined) {
+      await this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
       return;
     }
 
     if (startIndex) {
-      this.skipToPlaylistIndex(startIndex);
+      await this.skipToPlaylistIndex(startIndex);
       return;
     }
   }
 
-  public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
-    if (this.getCurrentPlaylistIndex() === playlistIndex) {
+  public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
+    if (await this.getCurrentPlaylistIndex() === playlistIndex) {
       this.seekTo(offset);
       return;
     }
@@ -144,8 +143,8 @@ export abstract class CommonAudioPlayer {
     this.skipToPlaylistIndex(playlistIndex);
   }
 
-  public seekRelative(relativeOffset: number): void {
-    this.seekTo(Math.min(this.getDuration(), Math.max(0, this.getCurrentTime() + relativeOffset)));
+  public async seekRelative(relativeOffset: number): Promise<void> {
+    this.seekTo(Math.min(await this.getDuration(), Math.max(0, await this.getCurrentTime() + relativeOffset)));
   }
 
   public setPlaybackEventListener(listener: PlaybackEventListener) {

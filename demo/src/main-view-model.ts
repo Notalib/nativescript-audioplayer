@@ -22,16 +22,9 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     //     console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
     //   }
     // }, 1000);
-    this.player.isReady
-      .then(() => {
-        console.log(`PLAYER READY`);
-      })
-      .catch((err) => {
-        console.error(`PLAYER FAILED TO READY: ${err}`);
-      });
   }
 
-  public loadAndSetupPlaylist() {
+  public async loadAndSetupPlaylist() {
     const playlistUID = 'UID_12345';
     if (this.player.getCurrentPlaylistUID() === playlistUID) {
       console.log(`Player already has playlist: ${this.player.getCurrentPlaylistUID()}`);
@@ -54,6 +47,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
       // console.log(`local file: ${localFile}: ${filePath}`);
 
       console.log(`Loading new playlist. Old UID: ${this.player.getCurrentPlaylistUID()}`);
+
       const playlist = new Playlist(
         playlistUID,
         // new MediaTrack(`file://${filePath}`, "Title", "Artist", "Album", null),
@@ -79,7 +73,13 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
           'Album 2/4',
           'http://bookcover.nota.dk/714070_w140_h200.jpg',
         ),
-        new MediaTrack('https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3', 'George Orwell', '1984', 'Album 3/4', null),
+        new MediaTrack(
+          'https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3',
+          'George Orwell',
+          '1984',
+          'Album 3/4',
+          null,
+        ),
         new MediaTrack(
           'https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3',
           'George Orwell',
@@ -87,18 +87,19 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
           'Album 4/4',
           'http://bookcover.nota.dk/714070_w140_h200.jpg',
         ),
-        // //new MediaTrack("http://mean2u.rfshq.com/downloads/music/giveyouup.mp3", "Rick Astley", "Rick n' Roll", "album", null),
+        // new MediaTrack("http://mean2u.rfshq.com/downloads/music/giveyouup.mp3", "Rick Astley", "Rick n' Roll", "album", null),
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam2", "Short Test", "http://bookcover.nota.dk/714070_w140_h200.jpg"),
         // new MediaTrack("http://www.moviesoundclips.net/download.php?id=3706&ft=mp3", "SoundSnap.com", "CoffeeSteam3", "Short Test", null)
       );
-      this.player.loadPlaylist(playlist, 0, 1000);
+
+      await this.player.loadPlaylist(playlist, 0, 1000);
     }
   }
 
-  public play() {
-    this.loadAndSetupPlaylist();
+  public async play() {
+    await this.loadAndSetupPlaylist();
     // console.log("play");
-    this.player.play();
+    await this.player.play();
   }
 
   public pause() {
