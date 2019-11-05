@@ -20,9 +20,6 @@ export namespace dk {
         return this._cls;
       }
 
-      private lastCoverArtUrl: string;
-      private lastCoverArtBitMap: any;
-
       private _binder: MediaService.LocalBinder;
       public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
       private _mediaSession: android.support.v4.media.session.MediaSessionCompat;
@@ -38,6 +35,8 @@ export namespace dk {
       private _rate = 1;
       private _seekIntervalSeconds = 15;
       private timeChangeInterval: any;
+
+      private _albumArts: Map<string, Promise<imageSource.ImageSource>>;
 
       public onCreate(): void {
         if (trace.isEnabled()) {
@@ -102,11 +101,6 @@ export namespace dk {
                 return null;
               }
 
-              if (this.lastCoverArtBitMap && this.lastCoverArtUrl === track.albumArtUrl) {
-                // callback.onBitmap(lastCoverArtBitMap);
-                return this.lastCoverArtBitMap;
-              }
-
               this.loadAlbumArt(track, callback);
 
               return null;
@@ -138,6 +132,7 @@ export namespace dk {
         this.exoPlayer = com.google.android.exoplayer2.ExoPlayerFactory.newSimpleInstance(this, renderersFactory, trackSelector, loadControl);
         this.exoPlayer.addListener(playerListener);
         this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
+        this._albumArts = new Map<string, Promise<imageSource.ImageSource>>();
       }
 
       public getTrackInfo(index: number) {
@@ -184,17 +179,12 @@ export namespace dk {
 
         this.stopForeground(true);
 
-        if (this._pmWakeLock && this._pmWakeLock.isHeld()) {
-          this._pmWakeLock.release();
-        }
-
-        if (this._wifiLock && this._wifiLock.isHeld()) {
-          this._wifiLock.release();
-        }
+        this.releaseWakeLock();
 
         this._pmWakeLock = null;
         this._wifiLock = null;
         this._playerNotificationManager.setPlayer(null);
+        this._playerNotificationManager.setNotificationListener(null);
         this.exoPlayer.stop();
         this.exoPlayer.release();
         this._mediaSession.release();
@@ -216,7 +206,7 @@ export namespace dk {
         }
 
         super.onStartCommand(intent, flags, startId);
-        // this.startForeground(1, this.createNotification(intent));
+
         return android.app.Service.START_STICKY;
       }
 
@@ -250,46 +240,6 @@ export namespace dk {
         }
       }
 
-      private createNotification(intent: android.content.Intent): android.app.Notification {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.createNotification(${intent})`, notaAudioCategory);
-        }
-
-        this.createNotificationChannel();
-
-        return this.getNotificationBuilder()
-          .setSmallIcon(android.R.drawable.btn_plus)
-          .build();
-      }
-
-      private getNotificationBuilder() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.getNotificationBuilder() - isAtLeastO? ${!androidx.core.os.BuildCompat.isAtLeastO()}`, notaAudioCategory);
-        }
-
-        if (!androidx.core.os.BuildCompat.isAtLeastO()) {
-          return new androidx.core.app.NotificationCompat.Builder(this);
-        }
-
-        return new androidx.core.app.NotificationCompat.Builder(this, 'TNS-MediaService-1');
-      }
-
-      private createNotificationChannel() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.createNotificationChannel() - skipped? ${!androidx.core.os.BuildCompat.isAtLeastO()}`, notaAudioCategory);
-        }
-
-        if (!androidx.core.os.BuildCompat.isAtLeastO()) {
-          // Not Oreo, not creating notification channel as compatibility issues may exist
-          return;
-        }
-
-        const importance = androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW;
-        const mChannel = new android.app.NotificationChannel('TNS-MediaService-1', 'TNS-MediaService-1', importance);
-        let nm = this.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
-        nm.createNotificationChannel(mChannel);
-      }
-
       public onStart(intent: android.content.Intent, startId: number) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onStart(${intent}, ${startId})`, notaAudioCategory);
@@ -311,13 +261,16 @@ export namespace dk {
 
         const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
 
-        for (let i = 0; i < playlist.tracks.length; i += 1) {
-          const track = playlist.tracks[i];
+        for (const track of playlist.tracks) {
           const mediaSource = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
             new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(this, userAgent),
           ).createMediaSource(android.net.Uri.parse(track.url));
 
           concatenatedSource.addMediaSource(mediaSource);
+
+          if (track.albumArtUrl) {
+            this.makeAlbumArtImageSource(track.albumArtUrl);
+          }
         }
 
         this.exoPlayer.prepare(concatenatedSource);
@@ -377,18 +330,25 @@ export namespace dk {
 
       public stop() {
         this.exoPlayer.stop();
+        this._albumArts.clear();
 
         this.playlist = null;
         this.releaseWakeLock();
       }
 
+      private makeAlbumArtImageSource(url: string) {
+        if (!this._albumArts.has(url)) {
+          this._albumArts.set(url, imageSource.fromUrl(url));
+        }
+
+        return this._albumArts.get(url);
+      }
+
       private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
         const start = Date.now();
         try {
-          const image = await imageSource.fromUrl(track.albumArtUrl);
+          const image = await this.makeAlbumArtImageSource(track.albumArtUrl);
           if (image.android) {
-            this.lastCoverArtBitMap = image.android;
-            this.lastCoverArtUrl = track.albumArtUrl;
             callback.onBitmap(image.android);
             if (trace.isEnabled()) {
               trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - loaded in ${start - Date.now()}`, notaAudioCategory);
