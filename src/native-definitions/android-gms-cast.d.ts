@@ -1663,7 +1663,7 @@ declare module com {
             }
             export class CastButtonFactory {
               public static class: java.lang.Class<com.google.android.gms.cast.framework.CastButtonFactory>;
-              public static setUpMediaRouteButton(param0: globalAndroid.content.Context, param1: any /* globalAndroid.support.v7.app.MediaRouteButton */): void;
+              public static setUpMediaRouteButton(param0: globalAndroid.content.Context, param1: androidx.mediarouter.app.MediaRouteButton): void;
               public static setUpMediaRouteButton(
                 param0: globalAndroid.content.Context,
                 param1: globalAndroid.view.Menu,
@@ -1674,7 +1674,7 @@ declare module com {
               public static class: java.lang.Class<com.google.android.gms.cast.framework.CastContext>;
               public static OPTIONS_PROVIDER_CLASS_NAME_KEY: string;
               public onDispatchVolumeKeyEventBeforeJellyBean(param0: globalAndroid.view.KeyEvent): boolean;
-              public getMergedSelector(): any /* globalAndroid.support.v7.media.MediaRouteSelector */;
+              public getMergedSelector(): androidx.mediarouter.media.MediaRouteSelector;
               public removeCastStateListener(param0: com.google.android.gms.cast.framework.CastStateListener): void;
               public getSessionManager(): com.google.android.gms.cast.framework.SessionManager;
               public getPrecacheManager(): com.google.android.gms.cast.framework.PrecacheManager;
@@ -1826,7 +1826,7 @@ declare module com {
                 public setButtonText(param0: number): com.google.android.gms.cast.framework.IntroductoryOverlay.Builder;
                 public setTitleText(param0: number): com.google.android.gms.cast.framework.IntroductoryOverlay.Builder;
                 public setSingleTime(): com.google.android.gms.cast.framework.IntroductoryOverlay.Builder;
-                public constructor(param0: globalAndroid.app.Activity, param1: any /* globalAndroid.support.v7.app.MediaRouteButton */);
+                public constructor(param0: globalAndroid.app.Activity, param1: androidx.mediarouter.app.MediaRouteButton);
                 public setFocusRadius(param0: number): com.google.android.gms.cast.framework.IntroductoryOverlay.Builder;
                 public constructor(param0: globalAndroid.app.Activity, param1: globalAndroid.view.MenuItem);
                 public setTitleText(param0: string): com.google.android.gms.cast.framework.IntroductoryOverlay.Builder;
@@ -1928,7 +1928,7 @@ declare module com {
                 param0: com.google.android.gms.cast.framework.SessionManagerListener<com.google.android.gms.cast.framework.Session>,
               ): void;
               public endCurrentSession(param0: boolean): void;
-              public constructor(param0: any /* com.google.android.gms.cast.framework.zzw*/, param1: globalAndroid.content.Context);
+              public constructor(param0: com.google.android.gms.cast.framework.zzw, param1: globalAndroid.content.Context);
               public addSessionManagerListener(param0: com.google.android.gms.cast.framework.SessionManagerListener<any>, param1: java.lang.Class<any>): void;
               public removeSessionManagerListener(
                 param0: com.google.android.gms.cast.framework.SessionManagerListener<any>,
@@ -3493,10 +3493,10 @@ declare module com {
               public constructor(implementation: {
                 zzw(): globalAndroid.os.Bundle;
                 isAppVisible(): boolean;
-                zza(param0: any /* com.google.android.gms.cast.framework.zzg*/): void;
-                zzb(param0: any /* com.google.android.gms.cast.framework.zzg*/): void;
-                zzx(): any /* com.google.android.gms.cast.framework.zzw*/;
-                zzy(): any /* com.google.android.gms.cast.framework.zzq*/;
+                zza(param0: com.google.android.gms.cast.framework.zzg): void;
+                zzb(param0: com.google.android.gms.cast.framework.zzg): void;
+                zzx(): com.google.android.gms.cast.framework.zzw;
+                zzy(): com.google.android.gms.cast.framework.zzq;
                 zza(param0: string, param1: java.util.Map<any, any>): void;
                 zzr(): boolean;
               });
@@ -3694,10 +3694,10 @@ declare module com {
                */
               public constructor(implementation: {
                 zzab(): com.google.android.gms.dynamic.IObjectWrapper;
-                zza(param0: any /* com.google.android.gms.cast.framework.zzy*/): void;
-                zzb(param0: any /* com.google.android.gms.cast.framework.zzy*/): void;
-                zza(param0: any /* com.google.android.gms.cast.framework.zzo*/): void;
-                zzb(param0: any /* com.google.android.gms.cast.framework.zzo*/): void;
+                zza(param0: com.google.android.gms.cast.framework.zzy): void;
+                zzb(param0: com.google.android.gms.cast.framework.zzy): void;
+                zza(param0: com.google.android.gms.cast.framework.zzo): void;
+                zzb(param0: com.google.android.gms.cast.framework.zzo): void;
                 zza(param0: boolean, param1: boolean): void;
                 zzz(): com.google.android.gms.dynamic.IObjectWrapper;
                 getCastState(): number;
@@ -4284,10 +4284,7 @@ declare module com {
           }
           export class zzv {
             public static class: java.lang.Class<com.google.android.gms.cast.zzv>;
-            public onRouteUnselected(
-              param0: any /* androidx.mediarouter.media.MediaRouter */,
-              param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
-            ): void;
+            public onRouteUnselected(param0: androidx.mediarouter.media.MediaRouter, param1: androidx.mediarouter.media.MediaRouter.RouteInfo): void;
           }
           export class zzw {
             public static class: java.lang.Class<com.google.android.gms.cast.zzw>;
@@ -11598,7 +11595,7 @@ declare module com {
               public constructor(
                 param0: com.google.android.gms.cast.framework.media.widget.CastSeekBar,
                 param1: number,
-                param2: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/,
+                param2: com.google.android.gms.cast.framework.media.uicontroller.zza,
               );
               public onSessionEnded(): void;
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
@@ -11633,7 +11630,7 @@ declare module com {
               public onSessionEnded(): void;
               public onSendingRemoteMediaRequest(): void;
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
-              public constructor(param0: globalAndroid.view.View, param1: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/);
+              public constructor(param0: globalAndroid.view.View, param1: com.google.android.gms.cast.framework.media.uicontroller.zza);
               public onMediaStatusUpdated(): void;
             }
           }
@@ -11763,7 +11760,7 @@ declare module com {
               public onSessionEnded(): void;
               public onSendingRemoteMediaRequest(): void;
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
-              public constructor(param0: globalAndroid.view.View, param1: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/);
+              public constructor(param0: globalAndroid.view.View, param1: com.google.android.gms.cast.framework.media.uicontroller.zza);
               public onMediaStatusUpdated(): void;
             }
           }
@@ -11798,11 +11795,7 @@ declare module com {
               public constructor();
               public onProgressUpdated(param0: number, param1: number): void;
               public onSessionEnded(): void;
-              public constructor(
-                param0: globalAndroid.widget.SeekBar,
-                param1: number,
-                param2: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/,
-              );
+              public constructor(param0: globalAndroid.widget.SeekBar, param1: number, param2: com.google.android.gms.cast.framework.media.uicontroller.zza);
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
               public onMediaStatusUpdated(): void;
             }
@@ -11909,7 +11902,7 @@ declare module com {
               implements com.google.android.gms.cast.framework.media.RemoteMediaClient.ProgressListener {
               public static class: java.lang.Class<com.google.android.gms.internal.cast.zzbo>;
               public constructor();
-              public constructor(param0: globalAndroid.widget.TextView, param1: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/);
+              public constructor(param0: globalAndroid.widget.TextView, param1: com.google.android.gms.cast.framework.media.uicontroller.zza);
               public onProgressUpdated(param0: number, param1: number): void;
               public onSessionEnded(): void;
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
@@ -11923,7 +11916,7 @@ declare module com {
               implements com.google.android.gms.cast.framework.media.RemoteMediaClient.ProgressListener {
               public static class: java.lang.Class<com.google.android.gms.internal.cast.zzbp>;
               public constructor();
-              public constructor(param0: globalAndroid.widget.TextView, param1: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/);
+              public constructor(param0: globalAndroid.widget.TextView, param1: com.google.android.gms.cast.framework.media.uicontroller.zza);
               public onProgressUpdated(param0: number, param1: number): void;
               public onSessionEnded(): void;
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
@@ -11940,7 +11933,7 @@ declare module com {
               public onProgressUpdated(param0: number, param1: number): void;
               public onSessionEnded(): void;
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
-              public constructor(param0: globalAndroid.view.View, param1: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/);
+              public constructor(param0: globalAndroid.view.View, param1: com.google.android.gms.cast.framework.media.uicontroller.zza);
               public onMediaStatusUpdated(): void;
             }
           }
@@ -11954,7 +11947,7 @@ declare module com {
               public constructor(
                 param0: globalAndroid.widget.RelativeLayout,
                 param1: com.google.android.gms.cast.framework.media.widget.CastSeekBar,
-                param2: any /* com.google.android.gms.cast.framework.media.uicontroller.zza*/,
+                param2: com.google.android.gms.cast.framework.media.uicontroller.zza,
               );
               public onSessionConnected(param0: com.google.android.gms.cast.framework.CastSession): void;
               public onMediaStatusUpdated(): void;
@@ -13524,27 +13517,23 @@ declare module com {
                 zza(
                   param0: com.google.android.gms.dynamic.IObjectWrapper,
                   param1: com.google.android.gms.cast.framework.CastOptions,
-                  param2: any /* com.google.android.gms.internal.cast.zzk*/,
+                  param2: com.google.android.gms.internal.cast.zzk,
                   param3: java.util.Map<any, any>,
-                ): any /* com.google.android.gms.cast.framework.zzj*/;
-                zza(
-                  param0: string,
-                  param1: string,
-                  param2: any /* com.google.android.gms.cast.framework.zzac*/,
-                ): any /* com.google.android.gms.cast.framework.zzs*/;
+                ): com.google.android.gms.cast.framework.zzj;
+                zza(param0: string, param1: string, param2: com.google.android.gms.cast.framework.zzac): com.google.android.gms.cast.framework.zzs;
                 zza(
                   param0: com.google.android.gms.cast.framework.CastOptions,
                   param1: com.google.android.gms.dynamic.IObjectWrapper,
-                  param2: any /* com.google.android.gms.cast.framework.zzi*/,
-                ): any /* com.google.android.gms.cast.framework.zzk*/;
+                  param2: com.google.android.gms.cast.framework.zzi,
+                ): com.google.android.gms.cast.framework.zzk;
                 zza(
                   param0: com.google.android.gms.dynamic.IObjectWrapper,
                   param1: com.google.android.gms.dynamic.IObjectWrapper,
                   param2: com.google.android.gms.dynamic.IObjectWrapper,
-                ): any /* com.google.android.gms.cast.framework.zzr*/;
+                ): com.google.android.gms.cast.framework.zzr;
                 zza(
                   param0: com.google.android.gms.dynamic.IObjectWrapper,
-                  param1: any /* com.google.android.gms.internal.cast.zzaf*/,
+                  param1: com.google.android.gms.internal.cast.zzaf,
                   param2: number,
                   param3: number,
                   param4: boolean,
@@ -13552,7 +13541,7 @@ declare module com {
                   param6: number,
                   param7: number,
                   param8: number,
-                ): any /* com.google.android.gms.internal.cast.zzae*/;
+                ): com.google.android.gms.internal.cast.zzae;
               });
               public constructor();
             }
@@ -13696,7 +13685,7 @@ declare module com {
               public constructor();
               public setMediaSessionCompat(param0: globalAndroid.support.v4.media.session.MediaSessionCompat): void;
               public constructor(param0: string);
-              public constructor(param0: any /* androidx.mediarouter.media.MediaRouter */);
+              public constructor(param0: androidx.mediarouter.media.MediaRouter);
             }
           }
         }
@@ -13705,27 +13694,15 @@ declare module com {
             export class zzw {
               public static class: java.lang.Class<com.google.android.gms.internal.cast.zzw>;
               public constructor(param0: any /* com.google.android.gms.internal.cast.zzm*/);
-              public onRouteAdded(
-                param0: any /* androidx.mediarouter.media.MediaRouter */,
-                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
-              ): void;
-              public onRouteChanged(
-                param0: any /* androidx.mediarouter.media.MediaRouter */,
-                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
-              ): void;
+              public onRouteAdded(param0: androidx.mediarouter.media.MediaRouter, param1: androidx.mediarouter.media.MediaRouter.RouteInfo): void;
+              public onRouteChanged(param0: androidx.mediarouter.media.MediaRouter, param1: androidx.mediarouter.media.MediaRouter.RouteInfo): void;
               public onRouteUnselected(
-                param0: any /* androidx.mediarouter.media.MediaRouter */,
-                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
+                param0: androidx.mediarouter.media.MediaRouter,
+                param1: androidx.mediarouter.media.MediaRouter.RouteInfo,
                 param2: number,
               ): void;
-              public onRouteRemoved(
-                param0: any /* androidx.mediarouter.media.MediaRouter */,
-                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
-              ): void;
-              public onRouteSelected(
-                param0: any /* androidx.mediarouter.media.MediaRouter */,
-                param1: any /* androidx.mediarouter.media.MediaRouter.RouteInfo */,
-              ): void;
+              public onRouteRemoved(param0: androidx.mediarouter.media.MediaRouter, param1: androidx.mediarouter.media.MediaRouter.RouteInfo): void;
+              public onRouteSelected(param0: androidx.mediarouter.media.MediaRouter, param1: androidx.mediarouter.media.MediaRouter.RouteInfo): void;
             }
           }
         }

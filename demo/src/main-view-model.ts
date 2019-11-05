@@ -73,13 +73,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
           'Album 2/4',
           'http://bookcover.nota.dk/714070_w140_h200.jpg',
         ),
-        new MediaTrack(
-          'https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3',
-          'George Orwell',
-          '1984',
-          'Album 3/4',
-          null,
-        ),
+        new MediaTrack('https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3', 'George Orwell', '1984', 'Album 3/4', null),
         new MediaTrack(
           'https://archive.org/download/George-Orwell-1984-Audio-book/1984-04.mp3',
           'George Orwell',

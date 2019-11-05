@@ -1,7 +1,6 @@
-/// <reference path="./native-definitions/KDEAudioPlayer.d.ts" />
+/// <reference path="./native-definitions/ios.d.ts" />
 
 import * as imageSrc from 'tns-core-modules/image-source';
-import { ImageSource } from 'tns-core-modules/image-source';
 import * as trace from 'tns-core-modules/trace';
 import { CommonAudioPlayer } from './audioplayer-common';
 import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';

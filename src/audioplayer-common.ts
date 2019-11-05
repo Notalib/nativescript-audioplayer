@@ -128,7 +128,7 @@ export abstract class CommonAudioPlayer {
   }
 
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
-    if (await this.getCurrentPlaylistIndex() === playlistIndex) {
+    if ((await this.getCurrentPlaylistIndex()) === playlistIndex) {
       this.seekTo(offset);
       return;
     }
@@ -145,7 +145,7 @@ export abstract class CommonAudioPlayer {
   }
 
   public async seekRelative(relativeOffset: number): Promise<void> {
-    this.seekTo(Math.min(await this.getDuration(), Math.max(0, await this.getCurrentTime() + relativeOffset)));
+    this.seekTo(Math.min(await this.getDuration(), Math.max(0, (await this.getCurrentTime()) + relativeOffset)));
   }
 
   public setPlaybackEventListener(listener: PlaybackEventListener) {

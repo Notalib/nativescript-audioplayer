@@ -1,5 +1,4 @@
-/// <reference path="./native-definitions/android-gms-cast.d.ts" />
-/// <reference path="./native-definitions/exoplayer.d.ts" />
+/// <reference path="./native-definitions/android.d.ts" />
 
 import * as imageSource from 'tns-core-modules/image-source';
 import * as trace from 'tns-core-modules/trace';
