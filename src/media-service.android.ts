@@ -297,7 +297,7 @@ export namespace dk {
       public setRate(rate: number) {
         this._rate = rate;
 
-        const params = new com.google.android.exoplayer2.PlaybackParameters(rate, rate, rate > 1);
+        const params = new com.google.android.exoplayer2.PlaybackParameters(rate);
         this.exoPlayer.setPlaybackParameters(params);
       }
 

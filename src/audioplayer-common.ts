@@ -15,6 +15,7 @@ export abstract class CommonAudioPlayer {
   protected _queuedSeekTo: number = null;
   private _listener: PlaybackEventListener;
   protected seekIntervalSeconds = 15;
+  protected playbackRate = 1;
 
   public abstract preparePlaylist(playlist: Playlist): Promise<void>;
   public abstract play(): Promise<void>;

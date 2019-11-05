@@ -113,8 +113,9 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
   }
 
   public toggleRate() {
-    console.log(`setRate to ${this.rateToggled ? 1 : 2}`);
-    this.player.setRate(this.rateToggled ? 1 : 2);
+    const newRate = this.rateToggled ? 1 : 2;
+    console.log(`setRate to ${newRate}`);
+    this.player.setRate(newRate);
     this.rateToggled = !this.rateToggled;
   }
 
