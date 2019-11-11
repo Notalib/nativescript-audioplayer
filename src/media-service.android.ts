@@ -5,9 +5,12 @@ import * as trace from 'tns-core-modules/trace';
 import { TNSAudioPlayer } from './audioplayer';
 import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 
+const MEDIA_SERVICE_NAME = 'TNS-MediaService-1';
+
 export namespace dk {
   export namespace nota {
     let instance = 0;
+
     @JavaProxy('dk.nota.MediaService')
     export class MediaService extends android.app.Service {
       private _cls: string;
@@ -54,7 +57,7 @@ export namespace dk {
         const renderersFactory = new com.google.android.exoplayer2.DefaultRenderersFactory(this);
         const playerListener = new TNSPlayerEvent(this);
 
-        this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, 'TNS-MediaService-1');
+        this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
 
         // Do not let MediaButtons restart the player when the app is not visible.
         this._mediaSession.setMediaButtonReceiver(null);
@@ -62,7 +65,7 @@ export namespace dk {
 
         this._playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
           this,
-          'TNS-MediaService-1',
+          MEDIA_SERVICE_NAME,
           (android.R as any).string.unknownName, // TODO: Find a better way to get the channel name reference...
           (android.R as any).string.unknownName, // TODO: Find a better way to get the channel description reference...
           1337, // TODO: How should this be defined?
@@ -115,14 +118,15 @@ export namespace dk {
             },
           }),
           new com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener({
-            onNotificationCancelled: (notificationId, dismissedByUser?) => {
+            onNotificationCancelled: (notificationId: number, dismissedByUser?: boolean) => {
               this.stopForeground(notificationId);
+
               this.stopSelf();
             },
-            onNotificationPosted: (notificationId, notification, ongoing?) => {
+            onNotificationPosted: (notificationId: number, notification: android.app.Notification, ongoing?: boolean) => {
               this.startForeground(notificationId, notification);
             },
-            onNotificationStarted(notificationId, notification) {
+            onNotificationStarted(notificationId: number, notification: android.app.Notification) {
               // Deprecated
             },
           }),
@@ -132,6 +136,14 @@ export namespace dk {
         this.exoPlayer.addListener(playerListener);
         this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
         this._albumArts = new Map<string, Promise<imageSource.ImageSource>>();
+
+        // Setup audio focus
+        const audioAttributes = new com.google.android.exoplayer2.audio.AudioAttributes.Builder()
+          .setUsage(com.google.android.exoplayer2.C.USAGE_MEDIA)
+          .setContentType(com.google.android.exoplayer2.C.CONTENT_TYPE_MUSIC)
+          .build();
+
+        this.exoPlayer.getAudioComponent().setAudioAttributes(audioAttributes, true);
       }
 
       public getTrackInfo(index: number) {
