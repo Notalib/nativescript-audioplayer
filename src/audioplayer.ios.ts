@@ -5,9 +5,6 @@ import * as trace from '@nativescript/core/trace';
 import { CommonAudioPlayer } from './audioplayer-common';
 import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 
-// Available on iOS 9+
-declare var AVAudioSessionModeSpokenAudio: string;
-
 class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
   public static ObjCProtocols = [AudioPlayerDelegate];
 
@@ -78,6 +75,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private _isSeeking = false;
   private _iosPlaylist: NSArray<AudioItem>;
+
+  constructor() {
+    super(() => this.destroy());
+  }
 
   public async preparePlaylist(playlist: Playlist) {
     if (trace.isEnabled()) {
@@ -179,7 +180,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async isPlaying(): Promise<boolean> {
-    return this.player && this.player.state === AudioPlayerState.Playing;
+    return this.player?.state === AudioPlayerState.Playing;
   }
 
   public async skipToNext() {
@@ -215,16 +216,18 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getDuration(): Promise<number> {
-    if (this.player && this.player.currentItem && this.player.currentItemDuration) {
+    if (this.player?.currentItem && this.player?.currentItemDuration) {
       return Math.floor(this.player.currentItemDuration * 1000);
     }
+
     return -1;
   }
 
   public async getCurrentTime(): Promise<number> {
-    if (this.player && this.player.currentItem && this.player.currentItemProgression) {
+    if (this.player?.currentItem && this.player?.currentItemProgression) {
       return Math.max(0, Math.floor(this.player.currentItemProgression * 1000));
     }
+
     return 0;
   }
 
@@ -238,9 +241,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getCurrentPlaylistIndex() {
-    if (this._iosPlaylist && this.player && this.player.currentItem) {
+    if (this._iosPlaylist && this.player?.currentItem) {
       return this.getIndexForItem(this.player.currentItem);
     }
+
     return null;
   }
 
@@ -270,6 +274,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this.player = null;
     this.delegate = null;
     this._iosPlaylist = null;
+
+    super.destroy();
   }
 
   /** PRIVATE HELPERS **/
@@ -344,7 +350,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           trace.write(`${this.cls} - Volume faded out!`, notaAudioCategory);
         }
 
-        if (this.player && this.player.state !== AudioPlayerState.Paused) {
+        if (this.player?.state !== AudioPlayerState.Paused) {
           if (trace.isEnabled()) {
             trace.write(`${this.cls} - Volume faded out! - pausing`, notaAudioCategory);
           }

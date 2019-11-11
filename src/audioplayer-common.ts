@@ -1,3 +1,4 @@
+import * as nsApp from '@nativescript/core/application';
 import * as trace from '@nativescript/core/trace';
 import { notaAudioCategory, PlaybackEvent, PlaybackEventListener, Playlist } from './audioplayer.types';
 
@@ -15,6 +16,10 @@ export abstract class CommonAudioPlayer {
   private _listener: PlaybackEventListener;
   protected seekIntervalSeconds = 15;
   protected playbackRate = 1;
+
+  constructor(private _exitHandler: (args: nsApp.ApplicationEventData) => void) {
+    nsApp.on(nsApp.exitEvent, this._exitHandler);
+  }
 
   public abstract preparePlaylist(playlist: Playlist): Promise<void>;
   public abstract play(): Promise<void>;
@@ -55,8 +60,8 @@ export abstract class CommonAudioPlayer {
         if (this.isPlaying()) {
           this.onSleepTimerExpired();
         }
-        clearInterval(this._sleepTimer);
-        this._sleepTimer = undefined;
+
+        this.cancelSleepTimer();
       }
     }, countdownTick);
 
@@ -72,13 +77,14 @@ export abstract class CommonAudioPlayer {
       trace.write(`${this.cls}.cancelSleepTimer()`, notaAudioCategory);
     }
 
-    if (this._sleepTimer === undefined) {
+    if (this._sleepTimer == null) {
       return;
     }
 
     clearInterval(this._sleepTimer);
-    this._sleepTimer = undefined;
+    this._sleepTimer = null;
     this._sleepTimerMillisecondsLeft = 0;
+
     this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
   }
 
@@ -87,7 +93,7 @@ export abstract class CommonAudioPlayer {
   protected _sleepTimerMillisecondsLeft = 0;
 
   public pauseSleepTimer() {
-    if (this._sleepTimer === undefined) {
+    if (this._sleepTimer == null) {
       return;
     }
 
@@ -99,7 +105,7 @@ export abstract class CommonAudioPlayer {
   }
 
   public resumeSleepTimer() {
-    if (this._sleepTimer === undefined) {
+    if (this._sleepTimer == null) {
       return;
     }
 
@@ -110,18 +116,17 @@ export abstract class CommonAudioPlayer {
     this._sleepTimerPaused = false;
   }
 
-  public abstract destroy(): void;
-
   public async loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
     await this.preparePlaylist(playlist);
 
-    if (startIndex !== undefined && startOffset !== undefined) {
+    if (startIndex != null && startOffset != null) {
       await this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
       return;
     }
 
-    if (startIndex) {
+    if (startIndex != null) {
       await this.skipToPlaylistIndex(startIndex);
+
       return;
     }
   }
@@ -186,5 +191,11 @@ export abstract class CommonAudioPlayer {
 
   protected onSleepTimerExpired() {
     this.pause();
+
+    this._onPlaybackEvent(PlaybackEvent.SleepTimerEnded);
+  }
+
+  public destroy() {
+    nsApp.off(nsApp.exitEvent, this._exitHandler);
   }
 }

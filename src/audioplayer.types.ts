@@ -27,16 +27,17 @@ export class Playlist {
 }
 
 export enum PlaybackEvent {
-  Stopped,
-  Buffering,
-  Playing,
-  Paused,
-  EndOfTrackReached,
-  EndOfPlaylistReached,
-  EncounteredError,
-  TimeChanged,
-  SleepTimerChanged,
-  WaitingForNetwork,
+  Stopped = 'Stopped',
+  Buffering = 'Buffering',
+  Playing = 'Playing',
+  Paused = 'Paused',
+  EndOfTrackReached = 'EndOfTrackReached',
+  EndOfPlaylistReached = 'EndOfPlaylistReached',
+  EncounteredError = 'EncounteredError',
+  TimeChanged = 'TimeChanged',
+  SleepTimerChanged = 'SleepTimerChanged',
+  SleepTimerEnded = 'SleepTimerEnded',
+  WaitingForNetwork = 'WaitingForNetwork',
 }
 
 export interface Config {

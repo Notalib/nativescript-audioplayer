@@ -13,3 +13,4 @@ audioplayer.*.d.ts
 *.aar
 *.tsbuildinfo
 *.d.ts
+publish/src

@@ -103,21 +103,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._mediaService;
   }
 
-  private _exitHandler: (args: nsApp.ApplicationEventData) => void;
-
   constructor() {
-    super();
-
-    nsApp.on(
-      nsApp.exitEvent,
-      (this._exitHandler = (args: nsApp.ApplicationEventData) => {
-        if (args.android && args.android.isFinishing()) {
-          // Handle temporary destruction.
-          this.destroy();
-          return;
-        }
-      }),
-    );
+    super((args: nsApp.ApplicationEventData) => {
+      const activity = args.android as android.app.Activity;
+      if (activity?.isFinishing()) {
+        // Handle temporary destruction.
+        this.destroy();
+        return;
+      }
+    });
   }
 
   public async preparePlaylist(playlist: Playlist) {
@@ -386,7 +380,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     this.stopMediaService();
 
-    nsApp.off(nsApp.exitEvent, this._exitHandler);
+    super.destroy();
   }
 
   private startMediaService() {

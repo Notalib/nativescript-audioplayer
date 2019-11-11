@@ -35,6 +35,7 @@ pack() {
         --exclude "*.map" \
         --exclude "*.css" \
         --exclude "*.metadata.json" \
+        --exclude "*.tsbuildinfo" \
          "${SOURCE_DIR}/" \
          "${ROOT_DIR}/LICENSE" \
          "${ROOT_DIR}/README.md" \

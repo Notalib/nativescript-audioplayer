@@ -19,11 +19,17 @@ export namespace dk {
         return this._cls;
       }
 
+      constructor() {
+        super();
+
+        return global.__native(this);
+      }
+
       private _binder: MediaService.LocalBinder;
       public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
       private _mediaSession: android.support.v4.media.session.MediaSessionCompat;
-      private _pmWakeLock: android.os.PowerManager.WakeLock | void;
-      private _wifiLock: android.net.wifi.WifiManager.WifiLock | void;
+      private _pmWakeLock: android.os.PowerManager.WakeLock;
+      private _wifiLock: android.net.wifi.WifiManager.WifiLock;
       private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
       private playlist: Playlist | null;
 
@@ -184,7 +190,7 @@ export namespace dk {
         this._wifiLock = null;
         this._playerNotificationManager.setPlayer(null);
         this._playerNotificationManager.setNotificationListener(null);
-        this.exoPlayer.stop();
+        // this.exoPlayer.stop();
         this.exoPlayer.release();
         this._mediaSession.release();
         clearInterval(this.timeChangeInterval);
@@ -230,12 +236,14 @@ export namespace dk {
       }
 
       private releaseWakeLock() {
-        if (this._pmWakeLock && this._pmWakeLock.isHeld()) {
+        if (this._pmWakeLock?.isHeld()) {
           this._pmWakeLock.release();
+          this._pmWakeLock = null;
         }
 
-        if (this._wifiLock && this._wifiLock.isHeld()) {
+        if (this._wifiLock?.isHeld()) {
           this._wifiLock.release();
+          this._wifiLock = null;
         }
       }
 
@@ -267,7 +275,7 @@ export namespace dk {
 
           concatenatedSource.addMediaSource(mediaSource);
 
-          if (track.albumArtUrl) {
+          if (track.albumArtUrl != null) {
             this.makeAlbumArtImageSource(track.albumArtUrl);
           }
         }
@@ -314,16 +322,18 @@ export namespace dk {
       }
 
       public isPlaying() {
-        return this.exoPlayer.getPlayWhenReady();
+        return this.exoPlayer.isPlaying();
       }
 
       public play() {
         this.exoPlayer.setPlayWhenReady(true);
+
         this.acquireWakeLock();
       }
 
       public pause() {
         this.exoPlayer.setPlayWhenReady(false);
+
         this.releaseWakeLock();
       }
 
@@ -422,6 +432,10 @@ function ensureNativeClasses() {
         return;
       }
 
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onIsPlayingChanged() - isPlaying: ${isPlaying}`, notaAudioCategory);
+      }
+
       if (isPlaying) {
         owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
       } else {
@@ -482,7 +496,7 @@ function ensureNativeClasses() {
       trackSelections: com.google.android.exoplayer2.trackselection.TrackSelectionArray,
     ) {
       if (trace.isEnabled()) {
-        trace.write(`onTracksChanged(${trackGroups}, ${trackSelections})`, notaAudioCategory);
+        trace.write(`${this.cls}.onTracksChanged(${trackGroups}, ${trackSelections})`, notaAudioCategory);
       }
     }
 
@@ -492,7 +506,7 @@ function ensureNativeClasses() {
      */
     public onLoadingChanged(isLoading: boolean) {
       if (trace.isEnabled()) {
-        trace.write(`onTracksChanged(${isLoading})`, notaAudioCategory);
+        trace.write(`${this.cls}.onLoadingChanged(${isLoading})`, notaAudioCategory);
       }
     }
 
@@ -513,7 +527,7 @@ function ensureNativeClasses() {
         // The player is not able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_BUFFERING: {
           if (trace.isEnabled()) {
-            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, notaAudioCategory);
+            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, notaAudioCategory);
           }
 
           playbackEvent = PlaybackEvent.Buffering;
@@ -522,15 +536,16 @@ function ensureNativeClasses() {
         // The player does not have any media to play.
         case com.google.android.exoplayer2.Player.STATE_IDLE: {
           if (trace.isEnabled()) {
-            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, notaAudioCategory);
+            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, notaAudioCategory);
           }
+
           playbackEvent = PlaybackEvent.Paused;
           break;
         }
         // The player has finished playing the media.
         case com.google.android.exoplayer2.Player.STATE_ENDED: {
           if (trace.isEnabled()) {
-            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, notaAudioCategory);
+            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, notaAudioCategory);
           }
 
           if (owner.exoPlayer.hasNext()) {
@@ -545,7 +560,7 @@ function ensureNativeClasses() {
         // The player is able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_READY: {
           if (trace.isEnabled()) {
-            trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
+            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
           }
           playbackEvent = playWhenReady ? PlaybackEvent.Playing : PlaybackEvent.Paused;
 
@@ -553,14 +568,14 @@ function ensureNativeClasses() {
           break;
         }
         default: {
-          trace.write(`onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, notaAudioCategory);
+          trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, notaAudioCategory);
           break;
         }
       }
 
       if (playWhenReady) {
         owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
-      } else if (playbackEvent !== undefined) {
+      } else if (playbackEvent != null) {
         owner._exoPlayerOnPlayerEvent(playbackEvent);
       }
     }
@@ -575,18 +590,21 @@ function ensureNativeClasses() {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ALL'`, notaAudioCategory);
           }
+
           break;
         }
         case com.google.android.exoplayer2.Player.REPEAT_MODE_OFF: {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'OFF'`, notaAudioCategory);
           }
+
           break;
         }
         case com.google.android.exoplayer2.Player.REPEAT_MODE_ONE: {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ONE'`, notaAudioCategory);
           }
+
           break;
         }
         default: {
@@ -649,7 +667,7 @@ function ensureNativeClasses() {
 
       const error = new ExoPlaybackError(errorType, errorMessage, exoPlaybackException);
 
-      trace.write(`${this}.onPlayerError() - ${error.message}`, notaAudioCategory, trace.messageType.error);
+      trace.write(`${this.cls}.onPlayerError() - ${error.message}`, notaAudioCategory, trace.messageType.error);
 
       owner._exoPlayerOnPlayerEvent(PlaybackEvent.EncounteredError, error);
     }
@@ -692,6 +710,7 @@ function ensureNativeClasses() {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`, notaAudioCategory);
           }
+
           owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
           break;
         }
@@ -700,6 +719,7 @@ function ensureNativeClasses() {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK"`, notaAudioCategory);
           }
+
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT: {
@@ -707,10 +727,12 @@ function ensureNativeClasses() {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK_ADJUSTMENT"`, notaAudioCategory);
           }
+
           break;
         }
         default: {
           trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "${reason}" is unknown`, notaAudioCategory, trace.messageType.error);
+
           break;
         }
       }
