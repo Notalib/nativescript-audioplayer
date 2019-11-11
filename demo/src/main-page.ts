@@ -1,11 +1,11 @@
-import * as observable from 'tns-core-modules/data/observable';
-import * as pages from 'tns-core-modules/ui/page';
+import { EventData } from '@nativescript/core/data/observable';
+import { Page } from '@nativescript/core/ui/page';
 import { HelloWorldModel } from './main-view-model';
 
 // Event handler for Page "loaded" event attached in main-page.xml
-export function pageLoaded(args: observable.EventData) {
+export function pageLoaded(args: EventData) {
   // Get the event sender
-  const page = <pages.Page>args.object;
+  const page = <Page>args.object;
   if (!page.bindingContext) {
     page.bindingContext = new HelloWorldModel();
   }

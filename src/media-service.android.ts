@@ -1,7 +1,7 @@
 /// <reference path="./native-definitions/android.d.ts" />
 
-import * as imageSource from 'tns-core-modules/image-source';
-import * as trace from 'tns-core-modules/trace';
+import { ImageSource } from '@nativescript/core/image-source';
+import * as trace from '@nativescript/core/trace';
 import { TNSAudioPlayer } from './audioplayer';
 import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 
@@ -35,7 +35,7 @@ export namespace dk {
       private _seekIntervalSeconds = 15;
       private timeChangeInterval: any;
 
-      private _albumArts: Map<string, Promise<imageSource.ImageSource>>;
+      private _albumArts: Map<string, Promise<ImageSource>>;
 
       public onCreate(): void {
         if (trace.isEnabled()) {
@@ -131,7 +131,7 @@ export namespace dk {
         this.exoPlayer = com.google.android.exoplayer2.ExoPlayerFactory.newSimpleInstance(this, renderersFactory, trackSelector, loadControl);
         this.exoPlayer.addListener(playerListener);
         this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
-        this._albumArts = new Map<string, Promise<imageSource.ImageSource>>();
+        this._albumArts = new Map<string, Promise<ImageSource>>();
       }
 
       public getTrackInfo(index: number) {
@@ -337,7 +337,7 @@ export namespace dk {
 
       private makeAlbumArtImageSource(url: string) {
         if (!this._albumArts.has(url)) {
-          this._albumArts.set(url, imageSource.fromUrl(url));
+          this._albumArts.set(url, ImageSource.fromUrl(url));
         }
 
         return this._albumArts.get(url);

@@ -1,12 +1,11 @@
-import { isIOS } from 'tns-core-modules/platform';
-import * as trace from 'tns-core-modules/trace';
+import * as trace from '@nativescript/core/trace';
 import { notaAudioCategory, PlaybackEvent, PlaybackEventListener, Playlist } from './audioplayer.types';
 
 let instanceNo = 0;
 export abstract class CommonAudioPlayer {
   protected instance = ++instanceNo;
 
-  protected readonly cls = `TNSAudioPlayer.${isIOS ? 'ios' : 'android'}<${this.instance}>`;
+  protected readonly cls = `TNSAudioPlayer<${this.instance}>`;
 
   public android: any;
   public ios: any;

@@ -1,7 +1,7 @@
 /// <reference path="./native-definitions/ios.d.ts" />
 
-import * as imageSrc from 'tns-core-modules/image-source';
-import * as trace from 'tns-core-modules/trace';
+import { ImageSource, isFileOrResourcePath } from '@nativescript/core/image-source';
+import * as trace from '@nativescript/core/trace';
 import { CommonAudioPlayer } from './audioplayer-common';
 import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 
@@ -71,15 +71,13 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 }
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
+  protected readonly cls = `TNSAudioPlayer.ios<${this.instance}>`;
+
   private player: AudioPlayer;
   private delegate: AudioPlayerDelegateImpl;
 
   private _isSeeking = false;
   private _iosPlaylist: NSArray<AudioItem>;
-
-  constructor() {
-    super();
-  }
 
   public async preparePlaylist(playlist: Playlist) {
     if (trace.isEnabled()) {
@@ -494,7 +492,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._isRetrievingArtwork = true;
 
     try {
-      const image = imageSrc.isFileOrResourcePath(artworkUrl) ? imageSrc.fromFileOrResource(artworkUrl) : await imageSrc.fromUrl(artworkUrl);
+      const image = isFileOrResourcePath(artworkUrl) ? ImageSource.fromFileOrResourceSync(artworkUrl) : await ImageSource.fromUrl(artworkUrl);
       if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
         const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
         this._cachedCover = { url: artworkUrl, artwork };

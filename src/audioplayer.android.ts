@@ -1,12 +1,14 @@
-import * as nsApp from 'tns-core-modules/application';
-import * as trace from 'tns-core-modules/trace';
-import { traceWrite } from 'tns-core-modules/ui/page/page';
-import * as utils from 'tns-core-modules/utils/utils';
+import * as nsApp from '@nativescript/core/application';
+import * as trace from '@nativescript/core/trace';
+import { traceWrite } from '@nativescript/core/ui/page/page';
+import * as utils from '@nativescript/core/utils/utils';
 import { CommonAudioPlayer } from './audioplayer-common';
 import { notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
 import './media-service';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
+  protected readonly cls = `TNSAudioPlayer.android<${this.instance}>`;
+
   private get context() {
     return utils.ad.getApplicationContext() as android.content.Context;
   }
