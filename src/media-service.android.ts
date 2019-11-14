@@ -169,9 +169,10 @@ export namespace dk {
         this.timeChangeInterval = setInterval(() => {
           const currentPlaylistIndex = this.exoPlayer.getCurrentWindowIndex();
           const currentTime = this.exoPlayer.getCurrentPosition();
+          const duration = this.exoPlayer.getDuration();
 
           if (lastCurrentTime !== currentTime || lastPlaylistIndex !== currentPlaylistIndex) {
-            this.owner?._onTimeChanged(currentTime, currentPlaylistIndex);
+            this.owner?._onTimeChanged(currentTime, duration, currentPlaylistIndex);
 
             lastCurrentTime = currentTime;
             lastPlaylistIndex = currentPlaylistIndex;

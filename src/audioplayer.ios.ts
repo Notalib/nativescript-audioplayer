@@ -211,12 +211,16 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this.player ? this.player.rate : 0;
   }
 
-  public async getDuration(): Promise<number> {
+  private _getDuration() {
     if (this.player?.currentItem && this.player?.currentItemDuration) {
       return Math.floor(this.player.currentItemDuration * 1000);
     }
 
     return -1;
+  }
+
+  public async getDuration(): Promise<number> {
+    return this._getDuration();
   }
 
   public async getCurrentTime(): Promise<number> {
@@ -290,7 +294,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           trace.write(`${this.cls} - time-update skipped, we're seeking`, notaAudioCategory);
         }
       } else {
-        this._onTimeChanged(timeMilliseconds, this._getCurrentPlaylistIndex());
+        this._onTimeChanged(timeMilliseconds, this._getDuration(), this._getCurrentPlaylistIndex());
       }
     };
     this.delegate.onBufferingUpdate = (item, earliest, latest) => {

@@ -176,12 +176,13 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     return this.playlist?.UID ?? null;
   }
 
-  public _onTimeChanged(currentTime: number, playlistIndex: number) {
+  public _onTimeChanged(currentTime: number, duration: number, playlistIndex: number) {
     this.notify({
       object: this,
       eventName: CommonAudioPlayer.timeChangedEvent,
       currentTime,
       playlistIndex,
+      duration,
     });
 
     this._listener?.onPlaybackEvent(PlaybackEvent.TimeChanged, currentTime);
