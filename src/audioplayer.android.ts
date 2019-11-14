@@ -103,15 +103,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._mediaService;
   }
 
-  constructor() {
-    super((args: nsApp.ApplicationEventData) => {
-      const activity = args.android as android.app.Activity;
-      if (activity?.isFinishing()) {
-        // Handle temporary destruction.
-        this.destroy();
-        return;
-      }
-    });
+  protected readonly _exitHandler = (args: nsApp.ApplicationEventData) => {
+    const activity = args.android as android.app.Activity;
+    if (activity?.isFinishing()) {
+      // Handle temporary destruction.
+      this.destroy();
+      return;
+    }
   }
 
   public async preparePlaylist(playlist: Playlist) {
