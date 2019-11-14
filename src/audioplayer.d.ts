@@ -128,5 +128,14 @@ export class TNSAudioPlayer extends Observable {
   /**
    * For internal use only. Used by the native service to emit events to nativescript layer.
    */
-  public _onPlaybackEvent(evt: PlaybackEvent, args?: any);
+  public _onTimeChanged(currentTime: number, playlistIndex: number): void;
+  public _onPlaying(): void;
+  public _onPaused(): void;
+  public _onStopped(): void;
+  public _onSleepTimerChanged(): void;
+  public _onEndOfTrackReached(endedTrackIndex: number): void;
+  public _onEndOfPlaylistReached(): void;
+  public _onBuffering(): void;
+  public _onWaitingForNetwork(): void;
+  public _onPlaybackError(errorData?: any): void;
 }

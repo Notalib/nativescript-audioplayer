@@ -236,12 +236,16 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  public async getCurrentPlaylistIndex() {
+  public _getCurrentPlaylistIndex() {
     if (this._iosPlaylist && this.player?.currentItem) {
       return this.getIndexForItem(this.player.currentItem);
     }
 
     return null;
+  }
+
+  public async getCurrentPlaylistIndex() {
+    return this._getCurrentPlaylistIndex();
   }
 
   public async seekTo(milliseconds: number) {
@@ -286,7 +290,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           trace.write(`${this.cls} - time-update skipped, we're seeking`, notaAudioCategory);
         }
       } else {
-        this._onPlaybackEvent(PlaybackEvent.TimeChanged, timeMilliseconds);
+        this._onTimeChanged(timeMilliseconds, this._getCurrentPlaylistIndex());
       }
     };
     this.delegate.onBufferingUpdate = (item, earliest, latest) => {
@@ -322,9 +326,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
 
       const finishedIndex = this._iosPlaylist.indexOfObject(item);
-      this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached, finishedIndex);
+      this._onEndOfTrackReached(finishedIndex);
       if (finishedIndex >= this._iosPlaylist.count - 1) {
-        this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+        this._onEndOfPlaylistReached();
       }
     };
     this.delegate.onStateChanged = (from, to) => {
@@ -333,7 +337,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     // this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
   }
 
-  protected onSleepTimerExpired() {
+  protected _onSleepTimerExpired() {
     const fadeTickMilliseconds = 250.0;
     const sleepTimerFadeDuration = 5000.0;
     const previousVolume = this.player.volume;
@@ -346,7 +350,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           trace.write(`${this.cls} - Volume faded out!`, notaAudioCategory);
         }
 
-        if (this.player?.state !== AudioPlayerState.Paused) {
+        if (this.player.state !== AudioPlayerState.Paused) {
           if (trace.isEnabled()) {
             trace.write(`${this.cls} - Volume faded out! - pausing`, notaAudioCategory);
           }
@@ -355,7 +359,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         this.player.volume = previousVolume;
         clearInterval(fadeInterval);
 
-        super.onSleepTimerExpired();
+        super._onSleepTimerExpired();
       }
     }, fadeTickMilliseconds);
   }
@@ -401,7 +405,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private _iosSetPlayingState() {
-    this._onPlaybackEvent(PlaybackEvent.Playing);
+    this._onPlaying();
   }
 
   private _iosPlayerStateChanged(from: AudioPlayerState, to: AudioPlayerState) {
@@ -411,7 +415,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     switch (to) {
       case AudioPlayerState.Buffering: {
-        this._onPlaybackEvent(PlaybackEvent.Buffering);
+        this._onBuffering();
         break;
       }
       case AudioPlayerState.Playing: {
@@ -424,19 +428,19 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         break;
       }
       case AudioPlayerState.Paused: {
-        this._onPlaybackEvent(PlaybackEvent.Paused);
+        this._onPaused();
         break;
       }
       case AudioPlayerState.Stopped: {
-        this._onPlaybackEvent(PlaybackEvent.Stopped);
+        this._onStopped();
         break;
       }
       case AudioPlayerState.WaitingForConnection: {
-        this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
+        this._onWaitingForNetwork();
         break;
       }
       case AudioPlayerState.Failed: {
-        this._onPlaybackEvent(PlaybackEvent.EncounteredError, this.player.failedError);
+        this._onPlaybackError(this.player.failedError);
         break;
       }
       default: {

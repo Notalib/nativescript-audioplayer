@@ -40,6 +40,11 @@ export enum PlaybackEvent {
   WaitingForNetwork = 'WaitingForNetwork',
 }
 
+export interface TimeChangedEventData {
+  playlistIndex: number;
+  currentTime: number;
+}
+
 export interface Config {
   /**
    * Max number of retry attempts before considering streaming failed

@@ -68,20 +68,20 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this._sleepTimer = setInterval(() => {
       if (!this._sleepTimerPaused && this.isPlaying()) {
         this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
-        this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+        this._onSleepTimerChanged();
       }
 
       if (this._sleepTimerMillisecondsLeft === 0) {
         // Fade out volume and pause if not already paused.
         if (this.isPlaying()) {
-          this.onSleepTimerExpired();
+          this._onSleepTimerExpired();
         }
 
         this.cancelSleepTimer();
       }
     }, countdownTick);
 
-    this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+    this._onSleepTimerChanged();
   }
 
   public getSleepTimerRemaining(): number {
@@ -101,7 +101,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this._sleepTimer = null;
     this._sleepTimerMillisecondsLeft = 0;
 
-    this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+    this._onSleepTimerChanged();
   }
 
   protected _sleepTimer: number;
@@ -176,41 +176,112 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     return this.playlist?.UID ?? null;
   }
 
-  public _onPlaybackEvent(eventName: PlaybackEvent, data?: any) {
-    try {
-      switch (eventName) {
-        case PlaybackEvent.Playing: {
-          this.resumeSleepTimer();
-          break;
-        }
-        case PlaybackEvent.Stopped: {
-          this.cancelSleepTimer();
-          break;
-        }
-        case PlaybackEvent.Paused:
-        case PlaybackEvent.WaitingForNetwork:
-        case PlaybackEvent.EncounteredError: {
-          this.pauseSleepTimer();
-          break;
-        }
-      }
-    } catch (err) {
-      trace.write(`${this.cls}._onPlaybackEvent(${eventName}) - handle sleep timer failed. ${err}`, notaAudioCategory, trace.messageType.error);
-    }
+  public _onTimeChanged(currentTime: number, playlistIndex: number) {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.timeChangedEvent,
+      currentTime,
+      playlistIndex,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.TimeChanged, currentTime);
+  }
+
+  public _onPlaying() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.playingEvent,
+    });
+
+    this.resumeSleepTimer();
+    this._listener?.onPlaybackEvent(PlaybackEvent.Playing);
+  }
+
+  public _onPaused() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.pausedEvent,
+    });
+
+    this.resumeSleepTimer();
+    this._listener?.onPlaybackEvent(PlaybackEvent.Playing);
+  }
+
+  public _onStopped() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.stoppedEvent,
+    });
+
+    this.cancelSleepTimer();
+    this._listener?.onPlaybackEvent(PlaybackEvent.Stopped);
+  }
+
+  public _onEndOfPlaylistReached() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.endOfPlaylistReachedEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+  }
+
+  public _onEndOfTrackReached(endedTrackIndex: number) {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.endOfPlaylistReachedEvent,
+      endedTrackIndex,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+  }
+
+  protected _onSleepTimerExpired() {
+    this.pause();
 
     this.notify({
       object: this,
-      eventName,
-      data,
+      eventName: CommonAudioPlayer.sleepTimerEndedEvent,
     });
 
-    this._listener?.onPlaybackEvent(eventName, data);
+    this._listener?.onPlaybackEvent(PlaybackEvent.SleepTimerEnded);
   }
 
-  protected onSleepTimerExpired() {
-    this.pause();
+  public _onSleepTimerChanged() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.sleepTimerChangedEvent,
+      remainingTime: this._sleepTimerMillisecondsLeft,
+    });
 
-    this._onPlaybackEvent(PlaybackEvent.SleepTimerEnded);
+    this._listener?.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+  }
+
+  public _onBuffering() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.bufferingEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.Buffering);
+  }
+
+  public _onPlaybackError(errorData: any) {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.bufferingEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.EncounteredError, errorData);
+  }
+
+  public _onWaitingForNetwork() {
+    this.notify({
+      object: this,
+      eventName: CommonAudioPlayer.waitingForNetworkEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
   }
 
   public destroy() {

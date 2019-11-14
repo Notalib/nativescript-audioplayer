@@ -161,30 +161,57 @@ export namespace dk {
         return this.playlist.tracks[index] || null;
       }
 
-      public _exoPlayerOnPlayerEvent(evt: PlaybackEvent, arg?: any) {
-        if (this.owner) {
-          this.owner._onPlaybackEvent(evt, arg);
-        }
+      public _onPlaying() {
+        clearInterval(this.timeChangeInterval);
 
-        if (evt === PlaybackEvent.Playing) {
-          clearInterval(this.timeChangeInterval);
+        let lastCurrentTime: number;
+        let lastPlaylistIndex: number;
+        this.timeChangeInterval = setInterval(() => {
+          const currentPlaylistIndex = this.exoPlayer.getCurrentWindowIndex();
+          const currentTime = this.exoPlayer.getCurrentPosition();
 
-          let lastCurrentTime: number;
-          let lastPlaylistIndex: number;
-          this.timeChangeInterval = setInterval(() => {
-            const currentPlaylistIndex = this.exoPlayer.getCurrentWindowIndex();
-            const currentTime = this.exoPlayer.getCurrentPosition();
+          if (lastCurrentTime !== currentTime || lastPlaylistIndex !== currentPlaylistIndex) {
+            this.owner?._onTimeChanged(currentTime, currentPlaylistIndex);
 
-            if (lastCurrentTime !== currentTime || lastPlaylistIndex !== currentPlaylistIndex) {
-              this._exoPlayerOnPlayerEvent(PlaybackEvent.TimeChanged);
+            lastCurrentTime = currentTime;
+            lastPlaylistIndex = currentPlaylistIndex;
+          }
+        }, 100);
 
-              lastCurrentTime = currentTime;
-              lastPlaylistIndex = currentPlaylistIndex;
-            }
-          }, 100);
-        } else if (evt === PlaybackEvent.Paused || evt === PlaybackEvent.Stopped) {
-          clearInterval(this.timeChangeInterval);
-        }
+        this.owner?._onPlaying();
+      }
+
+      public _onPaused() {
+        clearInterval(this.timeChangeInterval);
+
+        this.owner?._onPaused();
+      }
+
+      public _onStopped() {
+        clearInterval(this.timeChangeInterval);
+
+        this.owner?._onStopped();
+      }
+
+      public _onEndOfPlaylistReached() {
+        this.owner?._onEndOfPlaylistReached();
+      }
+
+      public _onEndOfTrackReached() {
+        const endedTrackIndex = this.exoPlayer?.getCurrentWindowIndex();
+        this.owner?._onEndOfTrackReached(endedTrackIndex);
+      }
+
+      public _onBuffering() {
+        this.owner?._onBuffering();
+      }
+
+      public _onWaitingForNetwork() {
+        this.owner?._onWaitingForNetwork();
+      }
+
+      public _onPlaybackError(errorData: any) {
+        this.owner?._onPlaybackError(errorData);
       }
 
       public onDestroy(): void {
@@ -450,9 +477,9 @@ function ensureNativeClasses() {
       }
 
       if (isPlaying) {
-        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
+        owner._onPlaying();
       } else {
-        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Paused);
+        owner._onPaused();
       }
     }
 
@@ -535,7 +562,6 @@ function ensureNativeClasses() {
         return;
       }
 
-      let playbackEvent: PlaybackEvent;
       switch (playbackState) {
         // The player is not able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_BUFFERING: {
@@ -543,7 +569,7 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, notaAudioCategory);
           }
 
-          playbackEvent = PlaybackEvent.Buffering;
+          owner._onBuffering();
           break;
         }
         // The player does not have any media to play.
@@ -552,7 +578,7 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, notaAudioCategory);
           }
 
-          playbackEvent = PlaybackEvent.Paused;
+          owner._onPaused();
           break;
         }
         // The player has finished playing the media.
@@ -561,13 +587,11 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, notaAudioCategory);
           }
 
-          if (owner.exoPlayer.hasNext()) {
-            playbackEvent = PlaybackEvent.EndOfTrackReached;
-          } else {
-            playbackEvent = PlaybackEvent.EndOfPlaylistReached;
+          owner._onEndOfTrackReached();
+          if (!owner.exoPlayer.hasNext()) {
+            owner._onEndOfPlaylistReached();
           }
 
-          owner._exoPlayerOnPlayerEvent(playbackEvent);
           return;
         }
         // The player is able to immediately play from its current position.
@@ -575,7 +599,12 @@ function ensureNativeClasses() {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
           }
-          playbackEvent = playWhenReady ? PlaybackEvent.Playing : PlaybackEvent.Paused;
+
+          if (playWhenReady) {
+            owner._onPlaying();
+          } else {
+            owner._onPaused();
+          }
 
           // TODO: onIsPlayingChanged also sets this value.
           break;
@@ -584,12 +613,6 @@ function ensureNativeClasses() {
           trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, notaAudioCategory);
           break;
         }
-      }
-
-      if (playWhenReady) {
-        owner._exoPlayerOnPlayerEvent(PlaybackEvent.Playing);
-      } else if (playbackEvent != null) {
-        owner._exoPlayerOnPlayerEvent(playbackEvent);
       }
     }
 
@@ -682,7 +705,7 @@ function ensureNativeClasses() {
 
       trace.write(`${this.cls}.onPlayerError() - ${error.message}`, notaAudioCategory, trace.messageType.error);
 
-      owner._exoPlayerOnPlayerEvent(PlaybackEvent.EncounteredError, error);
+      owner._onPlaybackError(error);
     }
 
     /**
@@ -724,7 +747,7 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`, notaAudioCategory);
           }
 
-          owner._exoPlayerOnPlayerEvent(PlaybackEvent.EndOfTrackReached);
+          owner._onEndOfTrackReached();
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK: {

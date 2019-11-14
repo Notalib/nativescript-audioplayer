@@ -211,12 +211,7 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
     // console.log(`Player position: ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()} / ${this.player.getDuration()}`);
   }
 
-  public onPlaybackEvent(evt: PlaybackEvent) {
-    /*
-    if (evt === PlaybackEvent.SleepTimerChanged) {
-      console.log(`SleepTimerChanged: ${this.player.getSleepTimerRemaining()}`);
-    } else {
-      console.log(`Playback event received: ${PlaybackEvent[evt]} - ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()}`);
-    } */
+  public onPlaybackEvent(evt: PlaybackEvent, data: any) {
+    // console.log('onPlaybackEvent', { evt, data });
   }
 }
