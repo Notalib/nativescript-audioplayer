@@ -1,6 +1,19 @@
 import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer.types';
+import { Observable } from '@nativescript/core/data/observable';
 
-export class TNSAudioPlayer {
+export class TNSAudioPlayer extends Observable {
+  public static readonly stoppedEvent = 'Stopped';
+  public static readonly bufferingEvent = 'Buffering';
+  public static readonly playingEvent = 'Playing';
+  public static readonly pausedEvent = 'Paused';
+  public static readonly endOfTrackReachedEvent = 'EndOfTrackReached';
+  public static readonly endOfPlaylistReachedEvent = 'EndOfPlaylistReached';
+  public static readonly encounteredErrorEvent = 'EncounteredError';
+  public static readonly timeChangedEvent = 'TimeChanged';
+  public static readonly sleepTimerChangedEvent = 'SleepTimerChanged';
+  public static readonly sleepTimerEndedEvent = 'SleepTimerEnded';
+  public static readonly waitingForNetworkEvent = 'WaitingForNetwork';
+
   /**
    * Load new playlist
    */
@@ -93,6 +106,7 @@ export class TNSAudioPlayer {
 
   /**
    * Setup event listener
+   * @deprecated
    */
   public setPlaybackEventListener(listener: PlaybackEventListener): void;
 
@@ -102,7 +116,7 @@ export class TNSAudioPlayer {
   public setSleepTimer(milliseconds: number): void;
 
   /**
-   * Get remainting sleep timer.
+   * Get remaining sleep timer.
    */
   public getSleepTimerRemaining(): number;
 
@@ -114,5 +128,5 @@ export class TNSAudioPlayer {
   /**
    * For internal use only. Used by the native service to emit events to nativescript layer.
    */
-  _onPlaybackEvent(evt: PlaybackEvent, args?: any);
+  public _onPlaybackEvent(evt: PlaybackEvent, args?: any);
 }

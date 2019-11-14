@@ -76,8 +76,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _isSeeking = false;
   private _iosPlaylist: NSArray<AudioItem>;
 
-  protected readonly _exitHandler = () => this.destroy();
-
   public async preparePlaylist(playlist: Playlist) {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.preparePlaylist($)`, notaAudioCategory);
@@ -356,6 +354,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         }
         this.player.volume = previousVolume;
         clearInterval(fadeInterval);
+
+        super.onSleepTimerExpired();
       }
     }, fadeTickMilliseconds);
   }
@@ -515,6 +515,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     } finally {
       this._isRetrievingArtwork = false;
     }
+  }
+
+  protected _exitHandler() {
+    this.destroy();
   }
 }
 

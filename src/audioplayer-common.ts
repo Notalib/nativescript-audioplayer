@@ -1,10 +1,23 @@
 import * as nsApp from '@nativescript/core/application';
+import { Observable } from '@nativescript/core/data/observable';
 import * as trace from '@nativescript/core/trace';
 import * as definitions from '.';
 import { notaAudioCategory, PlaybackEvent, PlaybackEventListener, Playlist } from './audioplayer.types';
 
 let instanceNo = 0;
-export abstract class CommonAudioPlayer implements definitions.TNSAudioPlayer {
+export abstract class CommonAudioPlayer extends Observable implements definitions.TNSAudioPlayer {
+  public static readonly stoppedEvent = 'Stopped';
+  public static readonly bufferingEvent = 'Buffering';
+  public static readonly playingEvent = 'Playing';
+  public static readonly pausedEvent = 'Paused';
+  public static readonly endOfTrackReachedEvent = 'EndOfTrackReached';
+  public static readonly endOfPlaylistReachedEvent = 'EndOfPlaylistReached';
+  public static readonly encounteredErrorEvent = 'EncounteredError';
+  public static readonly timeChangedEvent = 'TimeChanged';
+  public static readonly sleepTimerChangedEvent = 'SleepTimerChanged';
+  public static readonly sleepTimerEndedEvent = 'SleepTimerEnded';
+  public static readonly waitingForNetworkEvent = 'WaitingForNetwork';
+
   protected instance = ++instanceNo;
 
   protected readonly cls = `TNSAudioPlayer<${this.instance}>`;
@@ -18,10 +31,10 @@ export abstract class CommonAudioPlayer implements definitions.TNSAudioPlayer {
   protected seekIntervalSeconds = 15;
   protected playbackRate = 1;
 
-  protected _exitHandler: (args: nsApp.ApplicationEventData) => void;
-
   constructor() {
-    nsApp.on(nsApp.exitEvent, this._exitHandler);
+    super();
+
+    nsApp.on(nsApp.exitEvent, this._exitHandler, this);
   }
 
   public abstract preparePlaylist(playlist: Playlist): Promise<void>;
@@ -160,12 +173,12 @@ export abstract class CommonAudioPlayer implements definitions.TNSAudioPlayer {
   }
 
   public getCurrentPlaylistUID(): string {
-    return this.playlist ? this.playlist.UID : null;
+    return this.playlist?.UID ?? null;
   }
 
-  public _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
+  public _onPlaybackEvent(eventName: PlaybackEvent, data?: any) {
     try {
-      switch (evt) {
+      switch (eventName) {
         case PlaybackEvent.Playing: {
           this.resumeSleepTimer();
           break;
@@ -182,14 +195,16 @@ export abstract class CommonAudioPlayer implements definitions.TNSAudioPlayer {
         }
       }
     } catch (err) {
-      trace.write(`${this.cls}._onPlaybackEvent(${evt}) - handle sleep timer failed. ${err}`, notaAudioCategory, trace.messageType.error);
+      trace.write(`${this.cls}._onPlaybackEvent(${eventName}) - handle sleep timer failed. ${err}`, notaAudioCategory, trace.messageType.error);
     }
 
-    if (!this._listener) {
-      return;
-    }
+    this.notify({
+      object: this,
+      eventName,
+      data,
+    });
 
-    this._listener.onPlaybackEvent(evt, arg);
+    this._listener?.onPlaybackEvent(eventName, data);
   }
 
   protected onSleepTimerExpired() {
@@ -199,6 +214,8 @@ export abstract class CommonAudioPlayer implements definitions.TNSAudioPlayer {
   }
 
   public destroy() {
-    nsApp.off(nsApp.exitEvent, this._exitHandler);
+    nsApp.off(nsApp.exitEvent, this._exitHandler, this);
   }
+
+  protected abstract _exitHandler(args: nsApp.ApplicationEventData): void;
 }

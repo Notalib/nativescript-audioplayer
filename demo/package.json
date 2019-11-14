@@ -16,7 +16,7 @@
   "devDependencies": {
     "nativescript-dev-webpack": "~1.3.0",
     "tslint": "~5.20.0",
-    "typescript": "~3.5.3"
+    "typescript": "^3.7.2"
   },
   "scripts": {
     "ci.tslint": "npm i && tslint --config '../tslint.json' 'app/**/*.ts' --exclude '**/node_modules/**'"
