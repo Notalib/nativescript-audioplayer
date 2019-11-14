@@ -417,5 +417,3 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._mediaService = null;
   }
 }
-
-export * from './audioplayer.types';

@@ -116,5 +116,3 @@ export class TNSAudioPlayer {
    */
   _onPlaybackEvent(evt: PlaybackEvent, args?: any);
 }
-
-export * from './audioplayer.types';
