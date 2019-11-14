@@ -1,9 +1,10 @@
 import * as nsApp from '@nativescript/core/application';
 import * as trace from '@nativescript/core/trace';
+import * as definitions from '.';
 import { notaAudioCategory, PlaybackEvent, PlaybackEventListener, Playlist } from './audioplayer.types';
 
 let instanceNo = 0;
-export abstract class CommonAudioPlayer {
+export abstract class CommonAudioPlayer implements definitions.TNSAudioPlayer {
   protected instance = ++instanceNo;
 
   protected readonly cls = `TNSAudioPlayer<${this.instance}>`;
@@ -17,7 +18,9 @@ export abstract class CommonAudioPlayer {
   protected seekIntervalSeconds = 15;
   protected playbackRate = 1;
 
-  constructor(private _exitHandler: (args: nsApp.ApplicationEventData) => void) {
+  protected _exitHandler: (args: nsApp.ApplicationEventData) => void;
+
+  constructor() {
     nsApp.on(nsApp.exitEvent, this._exitHandler);
   }
 

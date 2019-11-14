@@ -76,9 +76,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _isSeeking = false;
   private _iosPlaylist: NSArray<AudioItem>;
 
-  constructor() {
-    super(() => this.destroy());
-  }
+  protected readonly _exitHandler = () => this.destroy();
 
   public async preparePlaylist(playlist: Playlist) {
     if (trace.isEnabled()) {

@@ -4,112 +4,112 @@ export class TNSAudioPlayer {
   /**
    * Load new playlist
    */
-  loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): Promise<void>;
+  public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number): Promise<void>;
 
   /**
    * Start playback
    */
-  play(): Promise<void>;
+  public play(): Promise<void>;
 
   /**
    * Pause playback
    */
-  pause(): Promise<void>;
+  public pause(): Promise<void>;
 
   /**
    * Stop playback and unload playlist
    */
-  stop(): Promise<void>;
+  public stop(): Promise<void>;
 
   /**
    * Is currently playing?
    */
-  isPlaying(): Promise<boolean>;
+  public isPlaying(): Promise<boolean>;
 
   /**
    * Skip to previous item
    */
-  skipToPrevious(): Promise<void>;
+  public skipToPrevious(): Promise<void>;
 
   /**
    * Skip to next item.
    */
-  skipToNext(): Promise<void>;
+  public skipToNext(): Promise<void>;
 
   /**
    * Skip to the start of a new playlist index
    */
-  skipToPlaylistIndex(playlistIndex: number): Promise<void>;
+  public skipToPlaylistIndex(playlistIndex: number): Promise<void>;
 
   /**
    * Skip to the offset of a new playlist index
    */
-  skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void>;
+  public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void>;
 
   /**
    * Seek to offset in current track
    */
-  seekTo(offset: number): Promise<void>;
+  public seekTo(offset: number): Promise<void>;
 
   /**
    * Set playbackRate
    */
-  setRate(rate: number): Promise<void>;
+  public setRate(rate: number): Promise<void>;
 
   /**
    * Get playbackRate
    */
-  getRate(): Promise<number>;
+  public getRate(): Promise<number>;
 
   /**
    * Get duration of current track
    */
-  getDuration(): Promise<number>;
+  public getDuration(): Promise<number>;
 
   /**
    * Get current time offset
    */
-  getCurrentTime(): Promise<number>;
+  public getCurrentTime(): Promise<number>;
 
   /**
    * Get the current playlist index
    */
-  getCurrentPlaylistIndex(): Promise<number>;
+  public getCurrentPlaylistIndex(): Promise<number>;
 
   /**
    * Playlist UID
    */
-  getCurrentPlaylistUID(): string;
+  public getCurrentPlaylistUID(): string;
 
   /**
    * Seek relative in current track
    */
-  seekRelative(relativeOffset: number): Promise<void>;
+  public seekRelative(relativeOffset: number): Promise<void>;
 
   /**
    * Set seek interval for remote control
    */
-  setSeekIntervalSeconds(seconds: number): Promise<void>;
+  public setSeekIntervalSeconds(seconds: number): Promise<void>;
 
   /**
    * Setup event listener
    */
-  setPlaybackEventListener(listener: PlaybackEventListener): Promise<void>;
+  public setPlaybackEventListener(listener: PlaybackEventListener): void;
 
   /**
    * Start new sleep timer
    */
-  setSleepTimer(milliseconds: number): Promise<void>;
+  public setSleepTimer(milliseconds: number): void;
 
   /**
    * Get remainting sleep timer.
    */
-  getSleepTimerRemaining(): number;
+  public getSleepTimerRemaining(): number;
 
   /**
    * Cancel/stop sleep timer.
    */
-  cancelSleepTimer(): Promise<void>;
+  public cancelSleepTimer(): void;
 
   /**
    * For internal use only. Used by the native service to emit events to nativescript layer.
