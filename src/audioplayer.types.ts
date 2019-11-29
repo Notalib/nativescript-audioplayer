@@ -1,4 +1,5 @@
 export const notaAudioCategory = 'NotaAudioPlayer';
+import { EventData } from '@nativescript/core/data/observable';
 
 export class MediaTrack {
   constructor(url: string, title: string, artist: string, album: string, albumArtUrl: string) {
@@ -40,9 +41,57 @@ export enum PlaybackEvent {
   WaitingForNetwork = 'WaitingForNetwork',
 }
 
-export interface TimeChangedEventData {
+export interface TimeChangedEventData extends EventData {
+  eventName: 'TimeChanged';
   playlistIndex: number;
   currentTime: number;
+  duration: number;
+}
+
+export interface PlayingEventData extends EventData {
+  eventName: 'Playing';
+  playlistIndex: number;
+  currentTime: number;
+  duration: number;
+}
+
+export interface PausedEventData extends EventData {
+  eventName: 'Paused';
+  playlistIndex: number;
+  currentTime: number;
+  duration: number;
+}
+
+export interface StoppedEventData extends EventData {
+  eventName: 'Stopped';
+}
+
+export interface BufferingEventData extends EventData {
+  eventName: 'Buffering';
+}
+
+export interface WaitingForNetworkEventData extends EventData {
+  eventName: 'WaitingForNetwork';
+}
+export interface PlaybackErrorEventData extends EventData {
+  eventName: 'EncounteredError';
+}
+
+export interface SleepTimerChangedEventData extends EventData {
+  eventName: 'SleepTimerChanged';
+}
+
+export interface EndOfTrackReachedEventData extends EventData {
+  eventName: 'EndOfTrackReached';
+  endedTrackIndex: number;
+}
+
+export interface EndOfPlaylistReachedEventData extends EventData {
+  eventName: 'EndOfPlaylistReached';
+}
+
+export interface SleepTimerEndedEventData extends EventData {
+  eventName: 'SleepTimerEnded';
 }
 
 export interface Config {

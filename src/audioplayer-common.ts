@@ -2,7 +2,23 @@ import * as nsApp from '@nativescript/core/application';
 import { Observable } from '@nativescript/core/data/observable';
 import * as trace from '@nativescript/core/trace';
 import * as definitions from '.';
-import { notaAudioCategory, PlaybackEvent, PlaybackEventListener, Playlist } from './audioplayer.types';
+import {
+  BufferingEventData,
+  EndOfPlaylistReachedEventData,
+  EndOfTrackReachedEventData,
+  notaAudioCategory,
+  PausedEventData,
+  PlaybackErrorEventData,
+  PlaybackEvent,
+  PlaybackEventListener,
+  PlayingEventData,
+  Playlist,
+  SleepTimerChangedEventData,
+  SleepTimerEndedEventData,
+  StoppedEventData,
+  TimeChangedEventData,
+  WaitingForNetworkEventData,
+} from './audioplayer.types';
 
 let instanceNo = 0;
 export abstract class CommonAudioPlayer extends Observable implements definitions.TNSAudioPlayer {
@@ -169,6 +185,8 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public setPlaybackEventListener(listener: PlaybackEventListener) {
+    trace.write(`${this.cls}.setPlaybackEventListener(..) is deprecated`, notaAudioCategory, trace.messageType.error);
+
     this._listener = listener;
   }
 
@@ -177,7 +195,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public _onTimeChanged(currentTime: number, duration: number, playlistIndex: number) {
-    this.notify({
+    this.notify(<TimeChangedEventData>{
       object: this,
       eventName: CommonAudioPlayer.timeChangedEvent,
       currentTime,
@@ -188,28 +206,34 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this._listener?.onPlaybackEvent(PlaybackEvent.TimeChanged, currentTime);
   }
 
-  public _onPlaying() {
-    this.notify({
+  public async _onPlaying() {
+    this.notify(<PlayingEventData>{
       object: this,
       eventName: CommonAudioPlayer.playingEvent,
+      currentTime: await this.getCurrentTime(),
+      playlistIndex: await this.getCurrentPlaylistIndex(),
+      duration: await this.getDuration(),
     });
 
     this.resumeSleepTimer();
     this._listener?.onPlaybackEvent(PlaybackEvent.Playing);
   }
 
-  public _onPaused() {
-    this.notify({
+  public async _onPaused() {
+    this.notify(<PausedEventData>{
       object: this,
       eventName: CommonAudioPlayer.pausedEvent,
+      currentTime: await this.getCurrentTime(),
+      playlistIndex: await this.getCurrentPlaylistIndex(),
+      duration: await this.getDuration(),
     });
 
     this.resumeSleepTimer();
-    this._listener?.onPlaybackEvent(PlaybackEvent.Playing);
+    this._listener?.onPlaybackEvent(PlaybackEvent.Paused);
   }
 
   public _onStopped() {
-    this.notify({
+    this.notify(<StoppedEventData>{
       object: this,
       eventName: CommonAudioPlayer.stoppedEvent,
     });
@@ -219,7 +243,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public _onEndOfPlaylistReached() {
-    this.notify({
+    this.notify(<EndOfPlaylistReachedEventData>{
       object: this,
       eventName: CommonAudioPlayer.endOfPlaylistReachedEvent,
     });
@@ -228,9 +252,9 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public _onEndOfTrackReached(endedTrackIndex: number) {
-    this.notify({
+    this.notify(<EndOfTrackReachedEventData>{
       object: this,
-      eventName: CommonAudioPlayer.endOfPlaylistReachedEvent,
+      eventName: CommonAudioPlayer.endOfTrackReachedEvent,
       endedTrackIndex,
     });
 
@@ -240,7 +264,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   protected _onSleepTimerExpired() {
     this.pause();
 
-    this.notify({
+    this.notify(<SleepTimerEndedEventData>{
       object: this,
       eventName: CommonAudioPlayer.sleepTimerEndedEvent,
     });
@@ -249,7 +273,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public _onSleepTimerChanged() {
-    this.notify({
+    this.notify(<SleepTimerChangedEventData>{
       object: this,
       eventName: CommonAudioPlayer.sleepTimerChangedEvent,
       remainingTime: this._sleepTimerMillisecondsLeft,
@@ -259,7 +283,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public _onBuffering() {
-    this.notify({
+    this.notify(<BufferingEventData>{
       object: this,
       eventName: CommonAudioPlayer.bufferingEvent,
     });
@@ -268,16 +292,17 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public _onPlaybackError(errorData: any) {
-    this.notify({
+    this.notify(<PlaybackErrorEventData>{
       object: this,
-      eventName: CommonAudioPlayer.bufferingEvent,
+      eventName: CommonAudioPlayer.encounteredErrorEvent,
+      error: errorData,
     });
 
     this._listener?.onPlaybackEvent(PlaybackEvent.EncounteredError, errorData);
   }
 
   public _onWaitingForNetwork() {
-    this.notify({
+    this.notify(<WaitingForNetworkEventData>{
       object: this,
       eventName: CommonAudioPlayer.waitingForNetworkEvent,
     });

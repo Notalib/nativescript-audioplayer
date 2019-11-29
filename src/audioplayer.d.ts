@@ -1,4 +1,19 @@
-import { Playlist, MediaTrack, PlaybackEvent, PlaybackEventListener } from './audioplayer.types';
+import {
+  BufferingEventData,
+  EndOfPlaylistReachedEventData,
+  EndOfTrackReachedEventData,
+  notaAudioCategory,
+  PausedEventData,
+  PlaybackErrorEventData,
+  PlaybackEvent,
+  PlaybackEventListener,
+  PlayingEventData,
+  Playlist,
+  SleepTimerChangedEventData,
+  SleepTimerEndedEventData,
+  StoppedEventData,
+  TimeChangedEventData,
+  WaitingForNetworkEventData } from './audioplayer.types';
 import { Observable } from '@nativescript/core/data/observable';
 
 export class TNSAudioPlayer extends Observable {

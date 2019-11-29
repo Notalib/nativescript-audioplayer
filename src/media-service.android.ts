@@ -474,7 +474,7 @@ function ensureNativeClasses() {
       }
 
       if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onIsPlayingChanged() - isPlaying: ${isPlaying}`, notaAudioCategory);
+        trace.write(`${this.cls}.onIsPlayingChanged() - isPlaying: ${JSON.stringify(isPlaying)}`, notaAudioCategory);
       }
 
       if (isPlaying) {
