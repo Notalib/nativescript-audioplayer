@@ -21,7 +21,7 @@ import {
   WaitingForNetworkEventData,
 } from './audioplayer.types';
 
-export abstract class CommonAudioPlayer extends Observable {
+export class CommonAudioPlayer extends Observable {
   protected static instanceNo = 0;
 
   public static readonly bufferingEvent = 'Buffering';
@@ -54,77 +54,107 @@ export abstract class CommonAudioPlayer extends Observable {
     nsApp.on(nsApp.exitEvent, this._exitHandler, this);
   }
 
-  public abstract preparePlaylist(playlist: Playlist): Promise<void>;
+  public preparePlaylist(playlist: Playlist): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Start playback
    */
-  public abstract play(): Promise<void>;
+  public play(): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Pause playback
    */
-  public abstract pause(): Promise<void>;
+  public pause(): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Stop playback and unload playlist
    */
-  public abstract stop(): Promise<void>;
+  public stop(): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Is currently playing?
    */
-  public abstract isPlaying(): Promise<boolean>;
+  public isPlaying(): Promise<boolean> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Skip to previous item
    */
-  public abstract skipToPrevious(): Promise<void>;
+  public skipToPrevious(): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Skip to next item.
    */
-  public abstract skipToNext(): Promise<void>;
+  public skipToNext(): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Skip to the start of a new playlist index
    */
-  public abstract skipToPlaylistIndex(playlistIndex: number): Promise<void>;
+  public skipToPlaylistIndex(playlistIndex: number): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Set playbackRate
    */
-  public abstract setRate(rate: number): Promise<void>;
+  public setRate(rate: number): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Get playbackRate
    */
-  public abstract getRate(): Promise<number>;
+  public getRate(): Promise<number> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Get duration of current track
    */
-  public abstract getDuration(): Promise<number>;
+  public getDuration(): Promise<number> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Get current time offset
    */
-  public abstract getCurrentTime(): Promise<number>;
+  public getCurrentTime(): Promise<number> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Get the current playlist index
    */
-  public abstract getCurrentPlaylistIndex(): Promise<number>;
+  public getCurrentPlaylistIndex(): Promise<number> {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Seek to offset in current track
    */
-  public abstract seekTo(offset: number);
+  public seekTo(offset: number) {
+    throw new Error('Not implemented');
+  }
 
   /**
    * Set seek interval for remote control
    */
-  public abstract setSeekIntervalSeconds(seconds: number): Promise<void>;
+  public setSeekIntervalSeconds(seconds: number): Promise<void> {
+    throw new Error('Not implemented');
+  }
   public getSeekIntervalSeconds() {
     return this.seekIntervalSeconds;
   }
@@ -401,5 +431,7 @@ export abstract class CommonAudioPlayer extends Observable {
     nsApp.off(nsApp.exitEvent, this._exitHandler, this);
   }
 
-  protected abstract _exitHandler(args: nsApp.ApplicationEventData): void;
+  protected _exitHandler(args: nsApp.ApplicationEventData): void {
+    throw new Error('Not implemented');
+  }
 }
