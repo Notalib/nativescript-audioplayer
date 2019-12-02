@@ -68,7 +68,7 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 }
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
-  protected readonly cls = `TNSAudioPlayer.ios<${this.instance}>`;
+  protected readonly cls = `TNSAudioPlayer.ios<${++CommonAudioPlayer.instanceNo}>`;
 
   private player: AudioPlayer;
   private delegate: AudioPlayerDelegateImpl;

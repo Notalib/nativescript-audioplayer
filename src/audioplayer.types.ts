@@ -39,6 +39,18 @@ export enum PlaybackEvent {
   SleepTimerChanged = 'SleepTimerChanged',
   SleepTimerEnded = 'SleepTimerEnded',
   WaitingForNetwork = 'WaitingForNetwork',
+  PlaybackSuspend = 'PlaybackSuspend',
+}
+
+export enum PlaybackSuspend {
+  None = 'none',
+  FocusLoss = 'focus_lost',
+  Unknown = 'unknown',
+}
+
+export interface PlaybackSuspendEventData extends EventData {
+  eventName: 'PlaybackSuspend';
+  reason: PlaybackSuspend;
 }
 
 export interface TimeChangedEventData extends EventData {
@@ -79,6 +91,7 @@ export interface PlaybackErrorEventData extends EventData {
 
 export interface SleepTimerChangedEventData extends EventData {
   eventName: 'SleepTimerChanged';
+  remaining: number;
 }
 
 export interface EndOfTrackReachedEventData extends EventData {

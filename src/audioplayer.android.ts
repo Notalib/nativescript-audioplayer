@@ -7,7 +7,7 @@ import { notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types'
 import './media-service';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
-  protected readonly cls = `TNSAudioPlayer.android<${this.instance}>`;
+  protected readonly cls = `TNSAudioPlayer.android<${++CommonAudioPlayer.instanceNo}>`;
 
   private get context() {
     return utils.ad.getApplicationContext() as android.content.Context;

@@ -1,7 +1,6 @@
 import * as nsApp from '@nativescript/core/application';
 import { Observable } from '@nativescript/core/data/observable';
 import * as trace from '@nativescript/core/trace';
-import * as definitions from '.';
 import {
   BufferingEventData,
   EndOfPlaylistReachedEventData,
@@ -11,6 +10,8 @@ import {
   PlaybackErrorEventData,
   PlaybackEvent,
   PlaybackEventListener,
+  PlaybackSuspend,
+  PlaybackSuspendEventData,
   PlayingEventData,
   Playlist,
   SleepTimerChangedEventData,
@@ -20,23 +21,23 @@ import {
   WaitingForNetworkEventData,
 } from './audioplayer.types';
 
-let instanceNo = 0;
-export abstract class CommonAudioPlayer extends Observable implements definitions.TNSAudioPlayer {
-  public static readonly stoppedEvent = 'Stopped';
+export abstract class CommonAudioPlayer extends Observable {
+  protected static instanceNo = 0;
+
   public static readonly bufferingEvent = 'Buffering';
-  public static readonly playingEvent = 'Playing';
-  public static readonly pausedEvent = 'Paused';
-  public static readonly endOfTrackReachedEvent = 'EndOfTrackReached';
-  public static readonly endOfPlaylistReachedEvent = 'EndOfPlaylistReached';
   public static readonly encounteredErrorEvent = 'EncounteredError';
-  public static readonly timeChangedEvent = 'TimeChanged';
+  public static readonly endOfPlaylistReachedEvent = 'EndOfPlaylistReached';
+  public static readonly endOfTrackReachedEvent = 'EndOfTrackReached';
+  public static readonly pausedEvent = 'Paused';
+  public static readonly playbackSuspendEvent = 'PlaybackSuspend';
+  public static readonly playingEvent = 'Playing';
   public static readonly sleepTimerChangedEvent = 'SleepTimerChanged';
   public static readonly sleepTimerEndedEvent = 'SleepTimerEnded';
+  public static readonly stoppedEvent = 'Stopped';
+  public static readonly timeChangedEvent = 'TimeChanged';
   public static readonly waitingForNetworkEvent = 'WaitingForNetwork';
 
-  protected instance = ++instanceNo;
-
-  protected readonly cls = `TNSAudioPlayer<${this.instance}>`;
+  protected readonly cls = `TNSAudioPlayer<${++CommonAudioPlayer.instanceNo}>`;
 
   public android: any;
   public ios: any;
@@ -54,24 +55,83 @@ export abstract class CommonAudioPlayer extends Observable implements definition
   }
 
   public abstract preparePlaylist(playlist: Playlist): Promise<void>;
+
+  /**
+   * Start playback
+   */
   public abstract play(): Promise<void>;
+
+  /**
+   * Pause playback
+   */
   public abstract pause(): Promise<void>;
+
+  /**
+   * Stop playback and unload playlist
+   */
   public abstract stop(): Promise<void>;
+
+  /**
+   * Is currently playing?
+   */
   public abstract isPlaying(): Promise<boolean>;
-  public abstract skipToNext(): Promise<void>;
+
+  /**
+   * Skip to previous item
+   */
   public abstract skipToPrevious(): Promise<void>;
+
+  /**
+   * Skip to next item.
+   */
+  public abstract skipToNext(): Promise<void>;
+
+  /**
+   * Skip to the start of a new playlist index
+   */
   public abstract skipToPlaylistIndex(playlistIndex: number): Promise<void>;
+
+  /**
+   * Set playbackRate
+   */
   public abstract setRate(rate: number): Promise<void>;
+
+  /**
+   * Get playbackRate
+   */
   public abstract getRate(): Promise<number>;
+
+  /**
+   * Get duration of current track
+   */
   public abstract getDuration(): Promise<number>;
+
+  /**
+   * Get current time offset
+   */
   public abstract getCurrentTime(): Promise<number>;
+
+  /**
+   * Get the current playlist index
+   */
   public abstract getCurrentPlaylistIndex(): Promise<number>;
+
+  /**
+   * Seek to offset in current track
+   */
   public abstract seekTo(offset: number);
+
+  /**
+   * Set seek interval for remote control
+   */
   public abstract setSeekIntervalSeconds(seconds: number): Promise<void>;
   public getSeekIntervalSeconds() {
     return this.seekIntervalSeconds;
   }
 
+  /**
+   * Start new sleep timer
+   */
   public setSleepTimer(milliseconds: number) {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, notaAudioCategory);
@@ -100,10 +160,16 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this._onSleepTimerChanged();
   }
 
+  /**
+   * Get remaining sleep timer.
+   */
   public getSleepTimerRemaining(): number {
     return this._sleepTimerMillisecondsLeft;
   }
 
+  /**
+   * Cancel/stop sleep timer.
+   */
   public cancelSleepTimer() {
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.cancelSleepTimer()`, notaAudioCategory);
@@ -148,6 +214,9 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this._sleepTimerPaused = false;
   }
 
+  /**
+   * Load new playlist
+   */
   public async loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
     await this.preparePlaylist(playlist);
 
@@ -163,6 +232,9 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     }
   }
 
+  /**
+   * Skip to the offset of a new playlist index
+   */
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
     if ((await this.getCurrentPlaylistIndex()) === playlistIndex) {
       this.seekTo(offset);
@@ -180,10 +252,17 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this.skipToPlaylistIndex(playlistIndex);
   }
 
+  /**
+   * Seek relative in current track
+   */
   public async seekRelative(relativeOffset: number): Promise<void> {
     this.seekTo(Math.min(await this.getDuration(), Math.max(0, (await this.getCurrentTime()) + relativeOffset)));
   }
 
+  /**
+   * Setup event listener
+   * @deprecated
+   */
   public setPlaybackEventListener(listener: PlaybackEventListener) {
     trace.write(`${this.cls}.setPlaybackEventListener(..) is deprecated`, notaAudioCategory, trace.messageType.error);
 
@@ -276,7 +355,7 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     this.notify(<SleepTimerChangedEventData>{
       object: this,
       eventName: CommonAudioPlayer.sleepTimerChangedEvent,
-      remainingTime: this._sleepTimerMillisecondsLeft,
+      remaining: this._sleepTimerMillisecondsLeft,
     });
 
     this._listener?.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
@@ -308,6 +387,14 @@ export abstract class CommonAudioPlayer extends Observable implements definition
     });
 
     this._listener?.onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
+  }
+
+  public _onPlaybackSuspended(reason: PlaybackSuspend) {
+    this.notify(<PlaybackSuspendEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.playbackSuspendEvent,
+      reason,
+    });
   }
 
   public destroy() {
