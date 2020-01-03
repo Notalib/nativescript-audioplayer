@@ -14,3 +14,4 @@ audioplayer.*.d.ts
 *.tsbuildinfo
 *.d.ts
 publish/src
+.update_backup

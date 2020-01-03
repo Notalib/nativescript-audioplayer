@@ -3,7 +3,7 @@ import * as trace from '@nativescript/core/trace';
 import { traceWrite } from '@nativescript/core/ui/page/page';
 import * as utils from '@nativescript/core/utils/utils';
 import { CommonAudioPlayer } from './audioplayer-common';
-import { notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
+import { notaAudioCategory, Playlist } from './audioplayer.types';
 import './media-service';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
