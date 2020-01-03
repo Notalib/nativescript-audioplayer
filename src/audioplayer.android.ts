@@ -347,6 +347,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async setSeekIntervalSeconds(seconds: number) {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
+    }
+
     this.seekIntervalSeconds = seconds;
 
     if (!this._mediaService) {
@@ -373,6 +377,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private startMediaService() {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.startMediaService()`, notaAudioCategory);
+    }
+
     if (!this.context) {
       trace.write(`${this.cls}.startMediaService() - no context, cannot start MediaService`, notaAudioCategory, trace.messageType.error);
       return;
@@ -386,11 +394,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private stopMediaService() {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.stopMediaService()`, notaAudioCategory);
+    }
+
     this.mediaServicePromise = null;
 
     if (!this._mediaService) {
       if (trace.isEnabled()) {
-        trace.write(`${this.cls}.stopForeground() - no media service`, notaAudioCategory);
+        trace.write(`${this.cls}.stopMediaService() - no media service`, notaAudioCategory);
       }
 
       return;
