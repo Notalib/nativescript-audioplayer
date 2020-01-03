@@ -1,334 +1,417 @@
-/// <reference path="./native-definitions/libvlc-service.d.ts" />
-
-import * as app from 'tns-core-modules/application';
-import { CommonAudioPlayer, MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';
-
-interface TNSConnectionCallback {
-  isConnected: boolean;
-}
-
-let TNSConnectionCallback: new (
-  owner: WeakRef<TNSAudioPlayer>,
-  resolve: (value?: any) => void,
-  reject: (reason?: any) => void,
-) => dk.nota.lyt.libvlc.ConnectionCallback;
-
-function ensureTNSConnectionCallback() {
-  if (TNSConnectionCallback) {
-    return;
-  }
-
-  @Interfaces([dk.nota.lyt.libvlc.ConnectionCallback])
-  class TNSConnectionCallbackImpl extends java.lang.Object {
-    constructor(private owner: WeakRef<TNSAudioPlayer>, private resolve: (value?: any) => void, private reject: (reason?: any) => void) {
-      super();
-
-      return global.__native(this);
-    }
-
-    public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
-      if (this.owner.get()) {
-        this.owner.get().onConnected(service);
-        this.resolve();
-      } else {
-        this.reject();
-      }
-    }
-
-    public onDisconnected() {
-      if (this.owner.get()) {
-        this.owner.get().onDisconnected();
-      }
-      this.reject();
-    }
-  }
-
-  TNSConnectionCallback = TNSConnectionCallbackImpl;
-}
+import * as nsApp from '@nativescript/core/application';
+import * as trace from '@nativescript/core/trace';
+import { traceWrite } from '@nativescript/core/ui/page/page';
+import * as utils from '@nativescript/core/utils/utils';
+import { CommonAudioPlayer } from './audioplayer-common';
+import { notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
+import './media-service';
 
 export class TNSAudioPlayer extends CommonAudioPlayer {
-  public service: dk.nota.lyt.libvlc.PlaybackService;
+  protected readonly cls = `TNSAudioPlayer.android<${++CommonAudioPlayer.instanceNo}>`;
 
-  private _serviceHelper: dk.nota.lyt.libvlc.PlaybackServiceHelper;
-  private _callback: any;
-  private _readyPromise: Promise<any>;
+  private get context() {
+    return utils.ad.getApplicationContext() as android.content.Context;
+  }
 
-  public get isReady(): Promise<any> {
-    if (!this._readyPromise) {
-      this._readyPromise = new Promise<any>((resolve, reject) => {
-        ensureTNSConnectionCallback();
-        this._callback = new TNSConnectionCallback(new WeakRef(this), resolve, reject);
-        this._serviceHelper = new dk.nota.lyt.libvlc.PlaybackServiceHelper(app.android.context, this._callback);
-        this._serviceHelper.onStart();
+  private mediaServicePromise: Promise<dk.nota.MediaService>;
+  private mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
+  private mediaServiceReject: (error: any) => void;
+
+  private _mediaService: dk.nota.MediaService;
+
+  private get mediaService() {
+    if (this._mediaService) {
+      return Promise.resolve(this._mediaService);
+    }
+
+    if (!this.mediaServicePromise) {
+      this.mediaServicePromise = new Promise<dk.nota.MediaService>((resolve, reject) => {
+        this.mediaServiceResolve = resolve;
+        this.mediaServiceReject = reject;
+
+        this.startMediaService();
       });
+
+      const noop = () => {};
+
+      this.mediaServicePromise
+        .then(
+          (mediaService) => {
+            this.mediaServicePromise = null;
+
+            const seekIntervalSeconds = this.seekIntervalSeconds;
+            if (typeof seekIntervalSeconds === 'number' && !Number.isNaN(seekIntervalSeconds)) {
+              mediaService.setSeekIntervalSeconds(seekIntervalSeconds);
+            }
+
+            const rate = this.playbackRate;
+            if (typeof rate === 'number' && !Number.isNaN(rate)) {
+              mediaService.setRate(rate);
+            }
+          },
+          (err) => {
+            traceWrite(`${this.cls} - couldn't init mediaService: ${err.stack || err}`, notaAudioCategory, trace.messageType.error);
+          },
+        )
+        .then(() => {
+          this.mediaServiceResolve = noop;
+          this.mediaServiceReject = noop;
+        });
     }
-    return this._readyPromise;
+
+    return this.mediaServicePromise;
   }
 
-  constructor() {
-    super();
-    this.android = this;
+  private _serviceConnection = new android.content.ServiceConnection({
+    onServiceConnected: (componentName, binder: dk.nota.MediaService.LocalBinder) => {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onServiceConnected(${componentName.toString()}, ${binder})`, notaAudioCategory);
+      }
+
+      const mediaService = binder.getService();
+      mediaService.setOwner(this);
+
+      this._mediaService = mediaService;
+
+      this.mediaServiceResolve(mediaService);
+    },
+    onBindingDied: (componentName) => {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
+      }
+
+      this.mediaServiceReject(new Error('Died'));
+    },
+    onNullBinding: (componentName) => {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
+      }
+
+      this.mediaServiceReject(new Error('Null binding'));
+    },
+    onServiceDisconnected: (componentName) => {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
+      }
+
+      this.mediaServicePromise = null;
+      this._mediaService = null;
+    },
+  });
+
+  public get android() {
+    return this._mediaService;
   }
 
-  public onConnected(service: dk.nota.lyt.libvlc.PlaybackService) {
-    this._log('PlaybackService - Connected');
-    this.setupServiceCallbacks(service);
-    this.service = service;
-    if (service.getMediaListIdentifier()) {
-      this._log(`- existing playlist ID: ${service.getMediaListIdentifier()}`);
+  public async preparePlaylist(playlist: Playlist) {
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.preparePlaylist(playlist);
+    } catch (err) {
+      trace.write(`${this.cls}.preparePlaylist() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public onDisconnected() {
-    this._log('PlaybackService - Disconnected');
-    // NOTE: avoid recursive onDisconnected calls
-    if (!this.service) {
+  public async getCurrentPlaylistIndex(): Promise<number> {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service.`, notaAudioCategory, trace.messageType.error);
+
+      return -1;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      return mediaService.exoPlayer.getCurrentWindowIndex();
+    } catch (err) {
+      trace.write(`${this.cls}.getCurrentPlaylistIndex() - ${err}`, notaAudioCategory, trace.messageType.error);
+
+      return -1;
+    }
+  }
+
+  public async play() {
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.play();
+    } catch (err) {
+      trace.write(`${this.cls}.play() - ${err}`, notaAudioCategory, trace.messageType.error);
+    }
+  }
+
+  public async pause() {
+    if (!this._mediaService) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.pause() - no media service - cannot pause`, notaAudioCategory);
+      }
+
       return;
     }
 
-    this.service = null;
-    this._serviceHelper.onStop();
-    this._serviceHelper = null;
-    this._readyPromise = null;
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.pause();
+    } catch (err) {
+      trace.write(`${this.cls}.pause() - ${err}`, notaAudioCategory, trace.messageType.error);
+    }
   }
 
-  private setupServiceCallbacks(service: dk.nota.lyt.libvlc.PlaybackService) {
-    service.setNotificationActivity(app.android.startActivity, 'LAUNCHED_FROM_NOTIFICATION');
-    service.removeAllCallbacks();
-    service.addCallback(this.lytPlaybackEventHandler);
-  }
+  public async stop() {
+    this.playlist = null;
+    this._onStopped();
 
-  private getNewMediaWrapper(track: MediaTrack): dk.nota.lyt.libvlc.media.MediaWrapper {
-    const uri: android.net.Uri = dk.nota.lyt.libvlc.Utils.LocationToUri(track.url);
-    const media: dk.nota.lyt.libvlc.media.MediaWrapper = new dk.nota.lyt.libvlc.media.MediaWrapper(uri);
-    media.setDisplayTitle(track.title);
-    media.setArtist(track.artist);
-    media.setAlbum(track.album);
-    media.setArtworkURL(track.albumArtUrl);
-    return media;
-  }
-
-  public preparePlaylist(playlist: Playlist): void {
-    if (this.service) {
-      this.service.stopPlayback();
-      // Ensure callbacks are setup properly.
-      this.setupServiceCallbacks(this.service);
-      this.playlist = playlist;
-      const mediaList = new java.util.ArrayList<dk.nota.lyt.libvlc.media.MediaWrapper>();
-      for (const track of this.playlist.tracks) {
-        // this._log('Creating MediaWrapper for: '+ track.title);
-        mediaList.add(this.getNewMediaWrapper(track));
+    if (!this._mediaService) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.stop() - no media service - nothing to stop`, notaAudioCategory);
       }
 
-      this.service.load(mediaList);
-      this._log(`Set playlist identifier = ${playlist.UID}`);
-      this.service.setMediaListIdentifier(playlist.UID);
+      return;
+    }
+
+    try {
+      this._mediaService.stop();
+      this.stopMediaService();
+    } catch (err) {
+      trace.write(`${this.cls}.stop() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public getCurrentPlaylistIndex(): number {
-    return this.service ? this.service.getCurrentMediaPosition() : -1;
-  }
+  public async isPlaying(): Promise<boolean> {
+    if (!this._mediaService) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.isPlaying() - no media service. - is not playing`, notaAudioCategory);
+      }
 
-  public play() {
-    if (this.service) {
-      // Ensure callbacks are setup properly,
-      // since service could have been reset during a pause.
-      this.setupServiceCallbacks(this.service);
-      this.service.play();
+      return false;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      return mediaService.isPlaying();
+    } catch (err) {
+      trace.write(`${this.cls}.isPlaying() - ${err}`, notaAudioCategory, trace.messageType.error);
+      return false;
     }
   }
 
-  public pause() {
-    if (this.service) {
-      this.service.pause();
+  public async seekTo(offset: number) {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.seekTo(${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
+      return;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.exoPlayer.seekTo(offset);
+    } catch (err) {
+      trace.write(`${this.cls}.seekTo(${offset}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public stop() {
-    if (this.service) {
-      this.service.stopPlayback();
-      // On Android the playback service is stopped on stopPlayback,
-      // so we have to manually send the Stopped event to our listener.
-      this._listener.onPlaybackEvent(PlaybackEvent.Stopped);
+  public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number) {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
+
+      return;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.exoPlayer.seekTo(playlistIndex, offset);
+    } catch (err) {
+      trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public isPlaying(): boolean {
-    return !!(this.service && this.service.isPlaying());
-  }
+  public async skipToPrevious() {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.skipToPrevious() - no media service.`, notaAudioCategory, trace.messageType.error);
+      return;
+    }
 
-  public seekTo(offset: number) {
-    if (this.service && this.service.hasMedia()) {
-      this.service.setTime(offset);
+    try {
+      const mediaService = await this.mediaService;
+      if (mediaService.exoPlayer.hasPrevious()) {
+        mediaService.exoPlayer.previous();
+      }
+    } catch (err) {
+      trace.write(`${this.cls}.skipToPrevious() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public skipToNext() {
-    if (this.service && this.service.hasNext()) {
-      this.service.next();
+  public async skipToNext() {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.skipToNext() - no media service.`, notaAudioCategory, trace.messageType.error);
+      return;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+      if (mediaService.exoPlayer.hasNext()) {
+        mediaService.exoPlayer.next();
+      }
+    } catch (err) {
+      trace.write(`${this.cls}.skipToNext() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public skipToPrevious() {
-    if (this.service && this.service.hasPrevious()) {
-      this.service.previous();
+  public async skipToPlaylistIndex(playlistIndex: number) {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - no media service.`, notaAudioCategory, trace.messageType.error);
+      return;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.exoPlayer.seekTo(playlistIndex, 0);
+    } catch (err) {
+      trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
-  public skipToPlaylistIndex(playlistIndex: number) {
-    if (this.service) {
-      this.service.playIndex(playlistIndex, 0);
-    }
-  }
-
-  public setRate(rate: number) {
-    if (this.service) {
-      this.service.setRate(rate);
-    }
-  }
-
-  public getRate() {
-    return this.service ? this.service.getRate() : 1;
-  }
-
-  public getDuration() {
-    if (this.service) {
-      return this.service.getLength();
+  public async setRate(rate: number) {
+    if (typeof rate === 'number' && !Number.isNaN(rate)) {
+      this.playbackRate = rate;
     } else {
+      rate = 1;
+
+      this.playbackRate = rate;
+    }
+
+    if (!this._mediaService) {
+      return;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      mediaService.setRate(rate);
+    } catch (err) {
+      trace.write(`${this.cls}.setRate(${rate}) - ${err}`, notaAudioCategory, trace.messageType.error);
+    }
+  }
+
+  public async getRate() {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.getRate() - no media service.`, notaAudioCategory, trace.messageType.error);
+      return this.playbackRate || 1;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      return mediaService.getRate();
+    } catch (err) {
+      trace.write(`${this.cls}.getRate() - ${err}`, notaAudioCategory, trace.messageType.error);
+      return this.playbackRate || 1;
+    }
+  }
+
+  public async getDuration() {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.getDuration() - no media service.`, notaAudioCategory, trace.messageType.error);
+      return 0;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      return mediaService.exoPlayer.getDuration();
+    } catch (err) {
+      trace.write(`${this.cls}.getDuration() - ${err}`, notaAudioCategory, trace.messageType.error);
       return 0;
     }
   }
 
-  public getCurrentTime(): number {
-    if (this.service) {
-      return this.service.getTime();
-    } else {
-      return 0;
+  public async getCurrentTime(): Promise<number> {
+    if (!this._mediaService) {
+      trace.write(`${this.cls}.getCurrentTime() - no media service.`, notaAudioCategory, trace.messageType.error);
+      return -1;
+    }
+
+    try {
+      const mediaService = await this.mediaService;
+
+      return mediaService.exoPlayer.getCurrentPosition();
+    } catch (err) {
+      trace.write(`${this.cls}.getCurrentTime() - ${err}`, notaAudioCategory, trace.messageType.error);
+      return -1;
     }
   }
 
-  /* Override */
-  public getCurrentPlaylistUID(): string {
-    if (this.service) {
-      return this.service.getMediaListIdentifier();
-    } else {
-      return null;
-    }
-  }
+  public async setSeekIntervalSeconds(seconds: number) {
+    this.seekIntervalSeconds = seconds;
 
-  public setSleepTimer(milliseconds: number) {
-    if (this.service) {
-      this.service.setSleepTimer(milliseconds);
+    if (!this._mediaService) {
+      return;
     }
-  }
 
-  public getSleepTimerRemaining(): number {
-    if (this.service) {
-      return this.service.getSleepTimerRemaining();
-    } else {
-      return 0;
-    }
-  }
+    try {
+      const mediaService = await this.mediaService;
 
-  public cancelSleepTimer() {
-    if (this.service) {
-      this.service.cancelSleepTimer();
-    }
-  }
-
-  public setSeekIntervalSeconds(seconds: number) {
-    if (this.service) {
-      this.service.setSeekIntervalSeconds(seconds);
+      mediaService.setSeekIntervalSeconds(seconds);
+    } catch (err) {
+      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
   }
 
   public destroy() {
-    this._log('Destroy');
-
-    if (this.service) {
-      this._log('Stopping PlaybackService');
-      this.service.stopService();
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.destroy()`, notaAudioCategory);
     }
-    this._serviceHelper.onStop();
 
-    delete this.service;
-    delete this._callback;
-    delete this._serviceHelper;
-    delete this._readyPromise;
+    this.stopMediaService();
+
+    super.destroy();
   }
 
-  private lytPlaybackEventHandler = new dk.nota.lyt.libvlc.PlaybackEventHandler({
-    update: () => {
-      // this._log('update');
-    },
-    updateProgress: () => {
-      // this._log('progress');
-    },
-    onMediaEvent: (event: dk.nota.lyt.libvlc.media.MediaEvent) => {
-      // this._log('mediaEvent: '+ event.type);
-      if (event.type === dk.nota.lyt.libvlc.media.MediaEvent.MetaChanged) {
-        // this._log('^ MetaChanged ==');
-      } else if (event.type === dk.nota.lyt.libvlc.media.MediaEvent.ParsedChanged) {
-        // this._log('^ ParsedChanged ==');
-      } else if (event.type === dk.nota.lyt.libvlc.media.MediaEvent.StateChanged) {
-        // this._log('^ StateChanged ==');
-      }
-    },
-    onMediaPlayerEvent: (event: dk.nota.lyt.libvlc.media.MediaPlayerEvent) => {
-      const PlayerEvent = dk.nota.lyt.libvlc.media.MediaPlayerEvent;
-      // TODO: Simplify: VLCToClientEventMap
-      if (event.type === PlayerEvent.SeekableChanged) {
-        if (event.getSeekable() === true && this._queuedSeekTo != null) {
-          this._log(`Executing queued SeekTo: ${this._queuedSeekTo}`);
-          this.seekTo(this._queuedSeekTo);
-          this._queuedSeekTo = null;
-        }
-      } else if (event.type === PlayerEvent.PausableChanged) {
-      } else if (event.type === PlayerEvent.TimeChanged) {
-        this._onPlaybackEvent(PlaybackEvent.TimeChanged, event.getTimeChanged());
-      } else if (event.type === PlayerEvent.MediaChanged) {
-      } else if (event.type === PlayerEvent.Opening) {
-        this._onPlaybackEvent(PlaybackEvent.Buffering);
-      } else if (event.type === PlayerEvent.Playing) {
-        this._onPlaybackEvent(PlaybackEvent.Playing);
-      } else if (event.type === PlayerEvent.Paused) {
-        this._onPlaybackEvent(PlaybackEvent.Paused);
-      } else if (event.type === PlayerEvent.Stopped) {
-        this._onPlaybackEvent(PlaybackEvent.Stopped);
-      } else if (event.type === PlayerEvent.EndReached) {
-        this._onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
-        if (this.getCurrentPlaylistIndex() >= this.playlist.length - 1) {
-          this._onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
-        }
-      } else if (event.type === PlayerEvent.SleepTimerChanged) {
-        this._onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
-      } else if (event.type === PlayerEvent.WaitingForNetwork) {
-        this._onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
-      } else if (event.type === PlayerEvent.Buffering) {
-        // This only tells % of the buffer-size required to start playback
-        // this._onPlaybackEvent(PlaybackEvent.Buffering, event.getBuffering());
-      } else if (event.type === PlayerEvent.EncounteredError) {
-        this._log('PlayerEvent.EncounteredError');
-        this._onPlaybackEvent(PlaybackEvent.EncounteredError);
-        // throw new Error("Android PlaybackService encountered an error");
-      } else {
-        // this._log('^ Unhandled PlayerEvent: '+ event.type);
-      }
-    },
-  });
-
-  private isServiceRunning(serviceClassName: string) {
-    const manager: android.app.ActivityManager = app.android.context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
-    const runningServices = manager.getRunningServices(100000);
-    for (let i = 0; i < runningServices.size(); i++) {
-      const service = runningServices.get(i);
-      if (serviceClassName === service.service.getClassName()) {
-        return true;
-      }
+  private startMediaService() {
+    if (!this.context) {
+      trace.write(`${this.cls}.startMediaService() - no context, cannot start MediaService`, notaAudioCategory, trace.messageType.error);
+      return;
     }
-    return false;
+
+    const context = this.context;
+    const foregroundNotificationIntent = new android.content.Intent(context, dk.nota.MediaService.class);
+    context.startService(foregroundNotificationIntent);
+
+    context.bindService(foregroundNotificationIntent, this._serviceConnection, android.content.Context.BIND_AUTO_CREATE);
+  }
+
+  private stopMediaService() {
+    this.mediaServicePromise = null;
+
+    if (!this._mediaService) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.stopForeground() - no media service`, notaAudioCategory);
+      }
+
+      return;
+    }
+
+    const context = this.context;
+    const foregroundNotificationIntent = new android.content.Intent(context, dk.nota.MediaService.class);
+    context.unbindService(this._serviceConnection);
+    context.stopService(foregroundNotificationIntent);
+
+    this._mediaService.stopForeground(true);
+    this._mediaService.stopSelf();
+    this._mediaService = null;
+  }
+
+  protected _exitHandler(args: nsApp.ApplicationEventData) {
+    const activity = args.android as android.app.Activity;
+    if (activity?.isFinishing()) {
+      // Handle temporary destruction.
+      this.destroy();
+      return;
+    }
   }
 }
-
-export { MediaTrack, PlaybackEvent, Playlist } from './audioplayer-common';

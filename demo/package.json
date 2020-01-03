@@ -2,26 +2,23 @@
   "nativescript": {
     "id": "org.nativescript.demo",
     "tns-ios": {
-      "version": "5.4.0"
+      "version": "6.2.0"
     },
     "tns-android": {
-      "version": "5.4.0"
+      "version": "6.2.0"
     }
   },
   "dependencies": {
+    "@nativescript/theme": "^2.2.0",
     "@nota/nativescript-audioplayer": "file:../src",
-    "nativescript-theme-core": "^1.0.6",
-    "tns-core-modules": "^5.4.3"
+    "tns-core-modules": "~6.2.0"
   },
   "devDependencies": {
-    "nativescript-dev-typescript": "^0.6.0",
-    "nativescript-dev-webpack": "^0.24.1",
-    "tns-platform-declarations": "^5.4.0",
-    "tslint": "~5.18.0",
-    "typescript": "~3.5.3"
+    "nativescript-dev-webpack": "~1.3.0",
+    "tslint": "~5.20.0",
+    "typescript": "^3.7.2"
   },
   "scripts": {
-    "build.plugin": "cd ../src && npm run build",
     "ci.tslint": "npm i && tslint --config '../tslint.json' 'app/**/*.ts' --exclude '**/node_modules/**'"
   }
 }

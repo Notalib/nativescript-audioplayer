@@ -1,133 +1,405 @@
-import { isIOS } from 'tns-core-modules/platform';
+import * as nsApp from '@nativescript/core/application';
+import { Observable } from '@nativescript/core/data/observable';
+import * as trace from '@nativescript/core/trace';
+import {
+  BufferingEventData,
+  EndOfPlaylistReachedEventData,
+  EndOfTrackReachedEventData,
+  notaAudioCategory,
+  PausedEventData,
+  PlaybackErrorEventData,
+  PlaybackEvent,
+  PlaybackEventListener,
+  PlaybackSuspend,
+  PlaybackSuspendEventData,
+  PlayingEventData,
+  Playlist,
+  SleepTimerChangedEventData,
+  SleepTimerEndedEventData,
+  StoppedEventData,
+  TimeChangedEventData,
+  WaitingForNetworkEventData,
+} from './audioplayer.types';
 
-export class MediaTrack {
-  constructor(url: string, title: string, artist: string, album: string, albumArtUrl: string) {
-    this.url = url;
-    this.title = title;
-    this.artist = artist;
-    this.album = album;
-    this.albumArtUrl = albumArtUrl;
-  }
-  public url: string;
-  public title: string;
-  public artist: string;
-  public album: string;
-  public albumArtUrl: string;
-}
+export abstract class CommonAudioPlayer extends Observable {
+  protected static instanceNo = 0;
 
-export class Playlist {
-  public tracks: MediaTrack[];
-  public get length(): number {
-    return this.tracks.length;
-  }
-  constructor(public UID: string, ...tracks: MediaTrack[]) {
-    this.UID = UID;
-    this.tracks = tracks;
-  }
-}
+  public static readonly bufferingEvent = 'Buffering';
+  public static readonly encounteredErrorEvent = 'EncounteredError';
+  public static readonly endOfPlaylistReachedEvent = 'EndOfPlaylistReached';
+  public static readonly endOfTrackReachedEvent = 'EndOfTrackReached';
+  public static readonly pausedEvent = 'Paused';
+  public static readonly playbackSuspendEvent = 'PlaybackSuspend';
+  public static readonly playingEvent = 'Playing';
+  public static readonly sleepTimerChangedEvent = 'SleepTimerChanged';
+  public static readonly sleepTimerEndedEvent = 'SleepTimerEnded';
+  public static readonly stoppedEvent = 'Stopped';
+  public static readonly timeChangedEvent = 'TimeChanged';
+  public static readonly waitingForNetworkEvent = 'WaitingForNetwork';
 
-export enum PlaybackEvent {
-  Stopped,
-  Buffering,
-  Playing,
-  Paused,
-  EndOfTrackReached,
-  EndOfPlaylistReached,
-  EncounteredError,
-  TimeChanged,
-  SleepTimerChanged,
-  WaitingForNetwork,
-}
+  protected readonly cls = `TNSAudioPlayer<${++CommonAudioPlayer.instanceNo}>`;
 
-export interface Config {
-  /**
-   * Max number of retry attempts before considering streaming failed
-   */
-  maxNetworkRetryCount: number;
-
-  /**
-   * Required number of seconds buffered before starting playback
-   */
-  requiredPrebufferSizeInSeconds: number;
-}
-
-export interface PlaybackEventListener {
-  onPlaybackEvent(evt: PlaybackEvent, arg?: any): void;
-}
-
-export abstract class CommonAudioPlayer {
   public android: any;
   public ios: any;
   public playlist: Playlist;
-  public debugOutputEnabled: boolean = false;
 
   protected _queuedSeekTo: number = null;
-  protected _listener: PlaybackEventListener;
-  public abstract isReady: Promise<any>;
+  private _listener: PlaybackEventListener;
+  protected seekIntervalSeconds = 15;
+  protected playbackRate = 1;
 
-  public abstract preparePlaylist(playlist: Playlist);
-  public abstract play();
-  public abstract pause();
-  public abstract stop();
-  public abstract isPlaying(): boolean;
-  public abstract skipToNext();
-  public abstract skipToPrevious();
-  public abstract skipToPlaylistIndex(playlistIndex: number): void;
-  public abstract setRate(rate: number);
-  public abstract getRate(): number;
-  public abstract getDuration(): number;
-  public abstract getCurrentTime(): number;
-  public abstract getCurrentPlaylistIndex(): number;
+  constructor() {
+    super();
+
+    nsApp.on(nsApp.exitEvent, this._exitHandler, this);
+  }
+
+  public abstract preparePlaylist(playlist: Playlist): Promise<void>;
+
+  /**
+   * Start playback
+   */
+  public abstract play(): Promise<void>;
+
+  /**
+   * Pause playback
+   */
+  public abstract pause(): Promise<void>;
+
+  /**
+   * Stop playback and unload playlist
+   */
+  public abstract stop(): Promise<void>;
+
+  /**
+   * Is currently playing?
+   */
+  public abstract isPlaying(): Promise<boolean>;
+
+  /**
+   * Skip to previous item
+   */
+  public abstract skipToPrevious(): Promise<void>;
+
+  /**
+   * Skip to next item.
+   */
+  public abstract skipToNext(): Promise<void>;
+
+  /**
+   * Skip to the start of a new playlist index
+   */
+  public abstract skipToPlaylistIndex(playlistIndex: number): Promise<void>;
+
+  /**
+   * Set playbackRate
+   */
+  public abstract setRate(rate: number): Promise<void>;
+
+  /**
+   * Get playbackRate
+   */
+  public abstract getRate(): Promise<number>;
+
+  /**
+   * Get duration of current track
+   */
+  public abstract getDuration(): Promise<number>;
+
+  /**
+   * Get current time offset
+   */
+  public abstract getCurrentTime(): Promise<number>;
+
+  /**
+   * Get the current playlist index
+   */
+  public abstract getCurrentPlaylistIndex(): Promise<number>;
+
+  /**
+   * Seek to offset in current track
+   */
   public abstract seekTo(offset: number);
-  public abstract setSeekIntervalSeconds(seconds: number): void;
-  public abstract setSleepTimer(milliseconds: number);
-  public abstract getSleepTimerRemaining(): number;
-  public abstract cancelSleepTimer();
-  public abstract destroy();
 
-  public loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
-    this.preparePlaylist(playlist);
-    if (startIndex && startOffset) {
-      this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
-    } else if (startIndex) {
-      this.skipToPlaylistIndex(startIndex);
-    }
+  /**
+   * Set seek interval for remote control
+   */
+  public abstract setSeekIntervalSeconds(seconds: number): Promise<void>;
+  public getSeekIntervalSeconds() {
+    return this.seekIntervalSeconds;
   }
 
-  public skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): void {
-    if (this.getCurrentPlaylistIndex() === playlistIndex) {
-      this.seekTo(offset);
-    } else {
-      if (offset > 0) {
-        this._log(`Set queuedSeek to ${offset}`);
-        this._queuedSeekTo = offset;
+  /**
+   * Start new sleep timer
+   */
+  public setSleepTimer(milliseconds: number) {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, notaAudioCategory);
+    }
+
+    this.cancelSleepTimer();
+
+    const countdownTick = 1000;
+    this._sleepTimerMillisecondsLeft = milliseconds;
+    this._sleepTimer = setInterval(() => {
+      if (!this._sleepTimerPaused && this.isPlaying()) {
+        this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
+        this._onSleepTimerChanged();
       }
-      this.skipToPlaylistIndex(playlistIndex);
+
+      if (this._sleepTimerMillisecondsLeft === 0) {
+        // Fade out volume and pause if not already paused.
+        if (this.isPlaying()) {
+          this._onSleepTimerExpired();
+        }
+
+        this.cancelSleepTimer();
+      }
+    }, countdownTick);
+
+    this._onSleepTimerChanged();
+  }
+
+  /**
+   * Get remaining sleep timer.
+   */
+  public getSleepTimerRemaining(): number {
+    return this._sleepTimerMillisecondsLeft;
+  }
+
+  /**
+   * Cancel/stop sleep timer.
+   */
+  public cancelSleepTimer() {
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.cancelSleepTimer()`, notaAudioCategory);
+    }
+
+    if (this._sleepTimer == null) {
+      return;
+    }
+
+    clearInterval(this._sleepTimer);
+    this._sleepTimer = null;
+    this._sleepTimerMillisecondsLeft = 0;
+
+    this._onSleepTimerChanged();
+  }
+
+  protected _sleepTimer: number;
+  protected _sleepTimerPaused = false;
+  protected _sleepTimerMillisecondsLeft = 0;
+
+  public pauseSleepTimer() {
+    if (this._sleepTimer == null) {
+      return;
+    }
+
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.pauseSleepTimer()`, notaAudioCategory);
+    }
+
+    this._sleepTimerPaused = true;
+  }
+
+  public resumeSleepTimer() {
+    if (this._sleepTimer == null) {
+      return;
+    }
+
+    if (trace.isEnabled()) {
+      trace.write(`${this.cls}.resumeSleepTimer()`, notaAudioCategory);
+    }
+
+    this._sleepTimerPaused = false;
+  }
+
+  /**
+   * Load new playlist
+   */
+  public async loadPlaylist(playlist: Playlist, startIndex?: number, startOffset?: number) {
+    await this.preparePlaylist(playlist);
+
+    if (startIndex != null && startOffset != null) {
+      await this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
+      return;
+    }
+
+    if (startIndex != null) {
+      await this.skipToPlaylistIndex(startIndex);
+
+      return;
     }
   }
 
-  public seekRelative(relativeOffset: number): void {
-    this.seekTo(Math.min(this.getDuration(), Math.max(0, this.getCurrentTime() + relativeOffset)));
+  /**
+   * Skip to the offset of a new playlist index
+   */
+  public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
+    if ((await this.getCurrentPlaylistIndex()) === playlistIndex) {
+      this.seekTo(offset);
+      return;
+    }
+
+    if (offset > 0) {
+      if (trace.isEnabled()) {
+        trace.write(`Set queuedSeek to ${offset}`, notaAudioCategory);
+      }
+
+      this._queuedSeekTo = offset;
+    }
+
+    this.skipToPlaylistIndex(playlistIndex);
   }
 
+  /**
+   * Seek relative in current track
+   */
+  public async seekRelative(relativeOffset: number): Promise<void> {
+    this.seekTo(Math.min(await this.getDuration(), Math.max(0, (await this.getCurrentTime()) + relativeOffset)));
+  }
+
+  /**
+   * Setup event listener
+   * @deprecated
+   */
   public setPlaybackEventListener(listener: PlaybackEventListener) {
+    trace.write(`${this.cls}.setPlaybackEventListener(..) is deprecated`, notaAudioCategory, trace.messageType.error);
+
     this._listener = listener;
   }
 
   public getCurrentPlaylistUID(): string {
-    return this.playlist ? this.playlist.UID : null;
+    return this.playlist?.UID ?? null;
   }
 
-  protected _onPlaybackEvent(evt: PlaybackEvent, arg?: any) {
-    if (this._listener) {
-      this._listener.onPlaybackEvent(evt, arg);
-    }
+  public _onTimeChanged(currentTime: number, duration: number, playlistIndex: number) {
+    this.notify(<TimeChangedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.timeChangedEvent,
+      currentTime,
+      playlistIndex,
+      duration,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.TimeChanged, currentTime);
   }
 
-  protected _log(logStr: string) {
-    if (this.debugOutputEnabled) {
-      let platform = isIOS ? 'iOS' : 'Android';
-      console.log(`tns-audioplayer(${platform}): ${logStr}`);
-    }
+  public async _onPlaying() {
+    this.notify(<PlayingEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.playingEvent,
+      currentTime: await this.getCurrentTime(),
+      playlistIndex: await this.getCurrentPlaylistIndex(),
+      duration: await this.getDuration(),
+    });
+
+    this.resumeSleepTimer();
+    this._listener?.onPlaybackEvent(PlaybackEvent.Playing);
   }
+
+  public async _onPaused() {
+    this.notify(<PausedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.pausedEvent,
+      currentTime: await this.getCurrentTime(),
+      playlistIndex: await this.getCurrentPlaylistIndex(),
+      duration: await this.getDuration(),
+    });
+
+    this.resumeSleepTimer();
+    this._listener?.onPlaybackEvent(PlaybackEvent.Paused);
+  }
+
+  public _onStopped() {
+    this.notify(<StoppedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.stoppedEvent,
+    });
+
+    this.cancelSleepTimer();
+    this._listener?.onPlaybackEvent(PlaybackEvent.Stopped);
+  }
+
+  public _onEndOfPlaylistReached() {
+    this.notify(<EndOfPlaylistReachedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.endOfPlaylistReachedEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.EndOfPlaylistReached);
+  }
+
+  public _onEndOfTrackReached(endedTrackIndex: number) {
+    this.notify(<EndOfTrackReachedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.endOfTrackReachedEvent,
+      endedTrackIndex,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.EndOfTrackReached);
+  }
+
+  protected _onSleepTimerExpired() {
+    this.pause();
+
+    this.notify(<SleepTimerEndedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.sleepTimerEndedEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.SleepTimerEnded);
+  }
+
+  public _onSleepTimerChanged() {
+    this.notify(<SleepTimerChangedEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.sleepTimerChangedEvent,
+      remaining: this._sleepTimerMillisecondsLeft,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.SleepTimerChanged);
+  }
+
+  public _onBuffering() {
+    this.notify(<BufferingEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.bufferingEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.Buffering);
+  }
+
+  public _onPlaybackError(errorData: any) {
+    this.notify(<PlaybackErrorEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.encounteredErrorEvent,
+      error: errorData,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.EncounteredError, errorData);
+  }
+
+  public _onWaitingForNetwork() {
+    this.notify(<WaitingForNetworkEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.waitingForNetworkEvent,
+    });
+
+    this._listener?.onPlaybackEvent(PlaybackEvent.WaitingForNetwork);
+  }
+
+  public _onPlaybackSuspended(reason: PlaybackSuspend) {
+    this.notify(<PlaybackSuspendEventData>{
+      object: this,
+      eventName: CommonAudioPlayer.playbackSuspendEvent,
+      reason,
+    });
+  }
+
+  public destroy() {
+    nsApp.off(nsApp.exitEvent, this._exitHandler, this);
+  }
+
+  protected abstract _exitHandler(args: nsApp.ApplicationEventData): void;
 }

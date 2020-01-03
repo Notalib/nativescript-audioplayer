@@ -6,3 +6,4 @@ package/
 references.d.ts
 tsconfig.json
 *.tgz
+*.tsbuildinfo

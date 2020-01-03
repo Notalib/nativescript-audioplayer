@@ -13,12 +13,20 @@
     "editor.insertSpaces": true,
     "cSpell.words": [
         "Astley",
+        "Freiling",
         "NSURL",
         "Prebuffer",
         "Siri",
+        "androidx",
         "audioplayer",
-        "libvlc",
+        "downlevel",
+        "exoplayer",
+        "justlaunch",
         "nospace",
-        "quotemark"
-    ]
+        "prettierrc",
+        "quotemark",
+        "trackselection",
+        "wifi"
+    ],
+    "typescript.tsdk": "node_modules/typescript/lib"
 }

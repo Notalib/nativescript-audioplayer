@@ -1,3 +1,7 @@
 dependencies {
-  compile 'dk.nota.lyt:libvlc-service:0.8.4'
+  // implementation 'com.google.android.exoplayer:exoplayer:2.10+'
+  implementation 'com.google.android.exoplayer:exoplayer-core:2.10.+'
+  // implementation 'com.google.android.exoplayer:exoplayer-dash:2.10.+'
+  implementation 'com.google.android.exoplayer:exoplayer-ui:2.10.+'
+  implementation 'com.google.android.exoplayer:extension-cast:2.10.+'
 }

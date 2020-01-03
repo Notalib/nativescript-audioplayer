@@ -1,0 +1,58 @@
+{
+  "private": true,
+  "name": "@nota/nativescript-audioplayer",
+  "version": "6.2.0-alpha.2",
+  "description": "Fully featured AudioPlayer for NativeScript. Supports gap-less audio playlist playback with variable playback speed and native remote controls",
+  "scripts": {
+    "build.apk": "cd demo && tns build android --copy-to .",
+    "build": "cd src && npm i && tsc",
+    "ci.tslint": "npm i && tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config './tslint.json' --exclude '**/node_modules/**'",
+    "clean": "cd demo && rimraf hooks node_modules platforms && cd ../src && rimraf node_modules",
+    "demo.android": "npm run demo.reset && cd demo && tns debug android --no-hmr",
+    "demo.ios": "npm run demo.reset && cd demo && tns debug ios --no-hmr",
+    "demo.reset": "rimraf demo/platforms src/platforms/android/nativescript_audioplayer.aar",
+    "format:check": "prettier -c --config ./.prettierrc.json 'src/*.ts' 'src/native-definitions/**/*.ts' 'demo/src/**/*.{ts,html,css,scss}'",
+    "format": "prettier --write --config ./.prettierrc.json 'src/*.ts' 'src/native-definitions/**/*.ts' 'demo/src/**/*.{ts,html,css,scss}'",
+    "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios",
+    "lint": "npm-run-all format:check tslint",
+    "test.android": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build android && tns test android --justlaunch",
+    "test.ios": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build ios && tns test ios --justlaunch",
+    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\"",
+    "postinstall": "cd src && npm i"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Notalib/nativescript-audioplayer.git"
+  },
+  "keywords": [
+    "NativeScript",
+    "JavaScript",
+    "Android",
+    "iOS"
+  ],
+  "author": {
+    "name": "Daniel Freiling",
+    "email": "dfg@nota.dk"
+  },
+  "contributors": [
+    {
+      "name": "Morten Sjøgren",
+      "email": "m_abs@mabs.dk",
+      "url": "https://mabs.dk"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/Notalib/nativescript-audioplayer/issues"
+  },
+  "homepage": "https://github.com/Notalib/nativescript-audioplayer",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.19.1",
+    "rimraf": "^3.0.0",
+    "tns-platform-declarations": "^6.2.0",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {}
+}
