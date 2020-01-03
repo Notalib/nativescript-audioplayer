@@ -20,6 +20,7 @@ import {
   TimeChangedEventData,
   WaitingForNetworkEventData,
 } from './audioplayer.types';
+export * from './audioplayer.types';
 
 export class CommonAudioPlayer extends Observable {
   protected static instanceNo = 0;
