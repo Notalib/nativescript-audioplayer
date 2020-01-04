@@ -338,7 +338,7 @@ export class CommonAudioPlayer extends Observable {
       duration: await this.getDuration(),
     });
 
-    this.resumeSleepTimer();
+    this.pauseSleepTimer();
     this._listener?.onPlaybackEvent(PlaybackEvent.Paused);
   }
 

@@ -691,7 +691,7 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, notaAudioCategory);
           }
 
-          this.owner?._onPaused();
+          this.owner?._onStopped();
           break;
         }
         // The player has finished playing the media.
