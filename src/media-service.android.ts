@@ -201,6 +201,7 @@ export namespace dk {
           const exoPlayer = this.exoPlayer;
           if (!exoPlayer) {
             clearInterval(this.timeChangeInterval);
+
             return;
           }
 
@@ -231,6 +232,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}._onStopped()`, notaAudioCategory);
         }
+
         clearInterval(this.timeChangeInterval);
         this.owner?._onStopped();
       }
@@ -239,6 +241,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}._onEndOfPlaylistReached()`, notaAudioCategory);
         }
+
         this.owner?._onEndOfPlaylistReached();
       }
 
@@ -254,6 +257,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}._onBuffering()`, notaAudioCategory);
         }
+
         this.owner?._onBuffering();
       }
 
@@ -456,6 +460,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.isPlaying()`, notaAudioCategory);
         }
+
         return this.exoPlayer.isPlaying();
       }
 
@@ -488,7 +493,7 @@ export namespace dk {
         this.releaseWakeLock();
       }
 
-      private async makeAlbumArtImageSource(url: string) {
+      private makeAlbumArtImageSource(url: string) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.makeAlbumArtImageSource(${url})`, notaAudioCategory);
         }
@@ -497,7 +502,7 @@ export namespace dk {
           this._albumArts.set(url, ImageSource.fromUrl(url));
         }
 
-        return await this._albumArts.get(url);
+        return this._albumArts.get(url);
       }
 
       private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {

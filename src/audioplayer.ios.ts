@@ -473,6 +473,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       audioItem.title = track.title;
       audioItem.artist = track.artist;
       audioItem.album = track.album;
+
       return audioItem;
     } catch (err) {
       trace.write(
@@ -480,6 +481,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         notaAudioCategory,
         trace.messageType.error,
       );
+
       return null;
     }
   }
@@ -535,5 +537,6 @@ function NSArrayFromItems<T>(items: T[]): NSArray<T> {
   for (const item of items) {
     arr.addObject(item);
   }
+
   return arr;
 }

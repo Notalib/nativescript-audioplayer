@@ -253,6 +253,7 @@ export class CommonAudioPlayer extends Observable {
 
     if (startIndex != null && startOffset != null) {
       await this.skipToPlaylistIndexAndOffset(startIndex, startOffset);
+
       return;
     }
 
@@ -269,6 +270,7 @@ export class CommonAudioPlayer extends Observable {
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
     if ((await this.getCurrentPlaylistIndex()) === playlistIndex) {
       this.seekTo(offset);
+
       return;
     }
 
