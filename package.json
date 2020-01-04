@@ -18,7 +18,7 @@
     "test.android": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build android && tns test android --justlaunch",
     "test.ios": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build ios && tns test ios --justlaunch",
     "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\"",
-    "postinstall": "cd src && npm i"
+    "postinstall": "cd src && ([ \"$npm_config_refer\" = \"ci\" ] && npm ci || npm i)"
   },
   "repository": {
     "type": "git",

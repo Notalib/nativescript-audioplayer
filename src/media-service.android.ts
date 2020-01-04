@@ -368,7 +368,7 @@ export namespace dk {
         this._owner = new WeakRef(owner);
       }
 
-      public preparePlaylist(playlist: Playlist): void {
+      public async preparePlaylist(playlist: Playlist) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
         }
@@ -379,6 +379,8 @@ export namespace dk {
         );
 
         const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
+
+        this._albumArts.clear();
 
         for (const track of playlist.tracks) {
           const mediaSource = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
@@ -392,7 +394,14 @@ export namespace dk {
           }
         }
 
-        this.exoPlayer.prepare(concatenatedSource);
+        // Wait for all album arts to be loadeed.
+        if (this._albumArts?.size > 0) {
+          try {
+            await Promise.all([...this._albumArts.values()]);
+          } catch {
+            // ignore
+          }
+        }
         this._playerNotificationManager.setPlayer(this.exoPlayer);
         this._playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
         this._playerNotificationManager.setUseNavigationActionsInCompactView(true);
@@ -404,6 +413,7 @@ export namespace dk {
 
         this.setRate(this._rate);
         this.setSeekIntervalSeconds(this._seekIntervalSeconds);
+        this.exoPlayer.prepare(concatenatedSource);
       }
 
       public setSeekIntervalSeconds(seconds: number) {
@@ -478,15 +488,16 @@ export namespace dk {
         this.releaseWakeLock();
       }
 
-      private makeAlbumArtImageSource(url: string) {
+      private async makeAlbumArtImageSource(url: string) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.makeAlbumArtImageSource(${url})`, notaAudioCategory);
         }
+
         if (!this._albumArts.has(url)) {
           this._albumArts.set(url, ImageSource.fromUrl(url));
         }
 
-        return this._albumArts.get(url);
+        return await this._albumArts.get(url);
       }
 
       private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
@@ -500,7 +511,7 @@ export namespace dk {
           if (image.android) {
             callback.onBitmap(image.android);
             if (trace.isEnabled()) {
-              trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - loaded in ${start - Date.now()}`, notaAudioCategory);
+              trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
             }
           } else {
             if (trace.isEnabled()) {
@@ -594,7 +605,14 @@ function ensureNativeClasses() {
      * @param manifest The latest manifest. May be null
      * @param reason The Player.TimelineChangeReason responsible for this timeline change
      */
-    public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, reason: number) {
+    public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, _reason: number) {
+      let reason: number;
+      if (arguments.length === 3) {
+        reason = arguments[2];
+      } else if (arguments.length === 2) {
+        reason = arguments[1];
+      }
+
       switch (reason) {
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_PREPARED: {
           if (trace.isEnabled()) {
