@@ -29,11 +29,11 @@ export namespace dk {
       }
 
       private _binder: MediaService.LocalBinder;
-      public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
-      private _mediaSession: android.support.v4.media.session.MediaSessionCompat;
-      private _pmWakeLock: android.os.PowerManager.WakeLock;
-      private _wifiLock: android.net.wifi.WifiManager.WifiLock;
-      private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager;
+      public exoPlayer: com.google.android.exoplayer2.ExoPlayer | null;
+      private _mediaSession: android.support.v4.media.session.MediaSessionCompat | null;
+      private _pmWakeLock: android.os.PowerManager.WakeLock | null;
+      private _wifiLock: android.net.wifi.WifiManager.WifiLock | null;
+      private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager | null;
       private playlist: Playlist | null;
 
       private _owner: WeakRef<TNSAudioPlayer>;
@@ -246,11 +246,16 @@ export namespace dk {
       }
 
       public _onEndOfTrackReached() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onEndOfTrackReached()`, notaAudioCategory);
+        if (this.exoPlayer) {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}._onEndOfTrackReached()`, notaAudioCategory);
+          }
+
+          const endedTrackIndex = this.exoPlayer.getCurrentWindowIndex();
+          this.owner?._onEndOfTrackReached(endedTrackIndex);
+        } else {
+          trace.write(`${this.cls}._onEndOfTrackReached() - exoplayer not inited`, notaAudioCategory, trace.messageType.error);
         }
-        const endedTrackIndex = this.exoPlayer?.getCurrentWindowIndex();
-        this.owner?._onEndOfTrackReached(endedTrackIndex);
       }
 
       public _onBuffering() {
@@ -292,11 +297,21 @@ export namespace dk {
 
         this._pmWakeLock = null;
         this._wifiLock = null;
-        this._playerNotificationManager.setPlayer(null);
-        this._playerNotificationManager.setNotificationListener(null);
-        // this.exoPlayer.stop();
-        this.exoPlayer.release();
-        this._mediaSession.release();
+        if (this._playerNotificationManager) {
+          this._playerNotificationManager.setPlayer(null);
+          this._playerNotificationManager.setNotificationListener(null);
+          this._playerNotificationManager = null;
+        }
+
+        if (this.exoPlayer) {
+          this.exoPlayer.release();
+          this.exoPlayer = null;
+        }
+
+        if (this._mediaSession) {
+          this._mediaSession.release();
+          this._mediaSession = null;
+        }
         clearInterval(this.timeChangeInterval);
         super.onDestroy();
       }
@@ -346,6 +361,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.releaseWakeLock()`, notaAudioCategory);
         }
+
         if (this._pmWakeLock?.isHeld()) {
           this._pmWakeLock.release();
           this._pmWakeLock = null;
@@ -369,10 +385,17 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.setOwner()`, notaAudioCategory);
         }
+
         this._owner = new WeakRef(owner);
       }
 
       public async preparePlaylist(playlist: Playlist) {
+        if (!this.exoPlayer || !this._playerNotificationManager) {
+          trace.write(`${this.cls}.preparePlaylist() - exoplayer not inited`, notaAudioCategory);
+
+          return;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
         }
@@ -406,6 +429,7 @@ export namespace dk {
             // ignore
           }
         }
+
         this._playerNotificationManager.setPlayer(this.exoPlayer);
         this._playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
         this._playerNotificationManager.setUseNavigationActionsInCompactView(true);
@@ -421,71 +445,116 @@ export namespace dk {
       }
 
       public setSeekIntervalSeconds(seconds: number) {
+        if (!this._playerNotificationManager) {
+          trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, trace.messageType.error);
+
+          return;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
         }
         this._seekIntervalSeconds = Math.max(seconds || 15, 15);
 
-        this._playerNotificationManager.setFastForwardIncrementMs(this._seekIntervalSeconds * 1000);
-        this._playerNotificationManager.setRewindIncrementMs(this._seekIntervalSeconds * 1000);
+        const seekMs = this._seekIntervalSeconds * 1000;
+        this._playerNotificationManager.setFastForwardIncrementMs(seekMs);
+        this._playerNotificationManager.setRewindIncrementMs(seekMs);
       }
 
       public setRate(rate: number) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory);
         }
+
+        if (typeof rate !== 'number' || Number.isNaN(rate) || rate <= 0) {
+          trace.write(`${this.cls}.setRate(${rate}) - ${JSON.stringify(rate)} isn't a valid value, setting to 1`, notaAudioCategory, trace.messageType.error);
+
+          rate = 1;
+        }
+
         this._rate = rate;
+
+        if (!this.exoPlayer) {
+          trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory, trace.messageType.error);
+
+          return;
+        }
 
         const params = new com.google.android.exoplayer2.PlaybackParameters(rate);
         this.exoPlayer.setPlaybackParameters(params);
       }
 
       public getRate() {
+        if (!this.exoPlayer) {
+          trace.write(`${this.cls}.getRate() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+
+          return this._rate;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.getRate()`, notaAudioCategory);
         }
-        if (!this.exoPlayer) {
-          return 1;
-        }
 
-        const params = this.exoPlayer.getPlaybackParameters();
-        if (!params) {
-          return 1;
-        }
-
-        return params.speed;
+        return this.exoPlayer.getPlaybackParameters()?.speed ?? this._rate ?? 1;
       }
 
       public isPlaying() {
+        if (!this.exoPlayer) {
+          trace.write(`${this.cls}.isPlaying() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+
+          return false;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.isPlaying()`, notaAudioCategory);
         }
 
-        return this.exoPlayer.isPlaying();
+        return !!this.exoPlayer.isPlaying();
       }
 
       public play() {
+        if (!this.exoPlayer) {
+          trace.write(`${this.cls}.play() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+
+          return;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.play()`, notaAudioCategory);
         }
+
         this.exoPlayer.setPlayWhenReady(true);
 
         this.acquireWakeLock();
       }
 
       public pause() {
+        if (!this.exoPlayer) {
+          trace.write(`${this.cls}.pause() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+
+          return;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.pause()`, notaAudioCategory);
         }
+
         this.exoPlayer.setPlayWhenReady(false);
 
         this.releaseWakeLock();
       }
 
       public stop() {
+        if (!this.exoPlayer) {
+          trace.write(`${this.cls}.pause() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+
+          return;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.stop()`, notaAudioCategory);
         }
+
         this.exoPlayer.stop();
         this._albumArts.clear();
 
