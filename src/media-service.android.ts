@@ -149,7 +149,11 @@ export namespace dk {
                 trace.write(`MediaDescriptionAdapter.NotificationListener(${notificationId}, ${dismissedByUser})`, notaAudioCategory);
               }
 
-              this.stopForeground(notificationId);
+              if (android.os.Build.VERSION.SDK_INT < 24) {
+                this.stopForeground(false);
+              } else {
+                this.stopForeground(notificationId);
+              }
 
               this.stopSelf();
             },
@@ -313,6 +317,8 @@ export namespace dk {
           this._mediaSession = null;
         }
         clearInterval(this.timeChangeInterval);
+
+        this._owner = null;
         super.onDestroy();
       }
 
@@ -610,7 +616,7 @@ export namespace dk {
         }
 
         public getService() {
-          return this.owner?.get() || null;
+          return this.owner?.get();
         }
       }
     }

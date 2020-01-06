@@ -69,6 +69,19 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
 
       const mediaService = binder.getService();
+      if (!mediaService) {
+        // TODO: How do we handle this case?
+        trace.write(
+          `${this.cls}.onServiceConnected(${componentName.toString()}, ${binder}) - couldn't get mediaservice`,
+          notaAudioCategory,
+          trace.messageType.error,
+        );
+
+        this.mediaServiceReject(new Error('MediaService not created'));
+
+        return;
+      }
+
       mediaService.setOwner(this);
 
       this._mediaService = mediaService;
