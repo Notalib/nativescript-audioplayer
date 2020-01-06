@@ -28,15 +28,15 @@ export namespace dk {
         return global.__native(this);
       }
 
-      private _binder: MediaService.LocalBinder;
-      public exoPlayer: com.google.android.exoplayer2.ExoPlayer | null;
-      private _mediaSession: android.support.v4.media.session.MediaSessionCompat | null;
-      private _pmWakeLock: android.os.PowerManager.WakeLock | null;
-      private _wifiLock: android.net.wifi.WifiManager.WifiLock | null;
-      private _playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager | null;
-      private playlist: Playlist | null;
+      private _binder?: MediaService.LocalBinder;
+      public exoPlayer?: com.google.android.exoplayer2.ExoPlayer;
+      private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
+      private _pmWakeLock?: android.os.PowerManager.WakeLock;
+      private _wifiLock?: android.net.wifi.WifiManager.WifiLock;
+      private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
+      private playlist?: Playlist;
 
-      private _owner: WeakRef<TNSAudioPlayer>;
+      private _owner?: WeakRef<TNSAudioPlayer>;
       private get owner() {
         return this._owner?.get() ?? null;
       }
@@ -66,7 +66,7 @@ export namespace dk {
         this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
 
         // Do not let MediaButtons restart the player when the app is not visible.
-        this._mediaSession.setMediaButtonReceiver(null);
+        this._mediaSession.setMediaButtonReceiver(null as any);
         this._mediaSession.setActive(true);
 
         this._playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
@@ -96,7 +96,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track) {
-                return null;
+                return null as any;
               }
 
               return track.album;
@@ -109,7 +109,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track) {
-                return null;
+                return null as any;
               }
 
               return track.title;
@@ -122,7 +122,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track || !track.albumArtUrl) {
-                return null;
+                return null as any;
               }
 
               this.loadAlbumArt(track, callback);
@@ -137,7 +137,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track) {
-                return null;
+                return null as any;
               }
 
               return track.artist;
@@ -293,32 +293,32 @@ export namespace dk {
           trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
         }
 
-        this._binder = null;
+        this._binder = undefined;
 
         this.stopForeground(true);
 
         this.releaseWakeLock();
 
-        this._pmWakeLock = null;
-        this._wifiLock = null;
+        this._pmWakeLock = undefined;
+        this._wifiLock = undefined;
         if (this._playerNotificationManager) {
-          this._playerNotificationManager.setPlayer(null);
-          this._playerNotificationManager.setNotificationListener(null);
-          this._playerNotificationManager = null;
+          this._playerNotificationManager.setPlayer(null as any);
+          this._playerNotificationManager.setNotificationListener(null as any);
+          this._playerNotificationManager = undefined;
         }
 
         if (this.exoPlayer) {
           this.exoPlayer.release();
-          this.exoPlayer = null;
+          this.exoPlayer = undefined;
         }
 
         if (this._mediaSession) {
           this._mediaSession.release();
-          this._mediaSession = null;
+          this._mediaSession = undefined;
         }
         clearInterval(this.timeChangeInterval);
 
-        this._owner = null;
+        this._owner = undefined;
         super.onDestroy();
       }
 
@@ -327,7 +327,7 @@ export namespace dk {
           trace.write(`${this.cls}.onBind(${param})`, notaAudioCategory);
         }
 
-        return this._binder;
+        return this._binder as android.os.IBinder;
       }
 
       public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
@@ -370,12 +370,12 @@ export namespace dk {
 
         if (this._pmWakeLock?.isHeld()) {
           this._pmWakeLock.release();
-          this._pmWakeLock = null;
+          this._pmWakeLock = undefined;
         }
 
         if (this._wifiLock?.isHeld()) {
           this._wifiLock.release();
-          this._wifiLock = null;
+          this._wifiLock = undefined;
         }
       }
 
@@ -564,7 +564,7 @@ export namespace dk {
         this.exoPlayer.stop();
         this._albumArts.clear();
 
-        this.playlist = null;
+        this.playlist = undefined;
         this.releaseWakeLock();
       }
 
@@ -588,7 +588,7 @@ export namespace dk {
         const start = Date.now();
         try {
           const image = await this.makeAlbumArtImageSource(track.albumArtUrl);
-          if (image.android) {
+          if (image?.android) {
             callback.onBitmap(image.android);
             if (trace.isEnabled()) {
               trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
@@ -691,6 +691,8 @@ function ensureNativeClasses() {
         reason = arguments[2];
       } else if (arguments.length === 2) {
         reason = arguments[1];
+      } else {
+        reason = -1;
       }
 
       switch (reason) {
@@ -864,7 +866,7 @@ function ensureNativeClasses() {
         trace.write(`${this.cls}.onPlayerError(...)`, notaAudioCategory);
       }
 
-      let errorType: string;
+      let errorType: string = 'UNKNOWN';
       let errorMessage = '';
       switch (exoPlaybackException.type) {
         case com.google.android.exoplayer2.ExoPlaybackException.TYPE_UNEXPECTED: {
