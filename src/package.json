@@ -1,12 +1,12 @@
 {
   "name": "@nota/nativescript-audioplayer",
-  "version": "6.2.0-alpha.4",
+  "version": "6.3.0-alpha.0",
   "license": "LGPL-3.0",
   "description": "Fully featured AudioPlayer for NativeScript. Supports gap-less audio playlist playback with variable playback speed and native remote controls",
   "nativescript": {
     "platforms": {
-      "android": "6.2.0",
-      "ios": "6.2.0"
+      "android": "6.3.0",
+      "ios": "6.3.0"
     }
   },
   "main": "index",
