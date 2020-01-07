@@ -1,6 +1,7 @@
 /// <reference path="./native-definitions/android.d.ts" />
 
 import { ImageSource } from '@nativescript/core/image-source';
+import * as nsApp from '@nativescript/core/application';
 import * as trace from '@nativescript/core/trace';
 import { TNSAudioPlayer } from './audioplayer';
 import { MediaTrack, notaAudioCategory, PlaybackSuspend, Playlist } from './audioplayer.types';
@@ -84,7 +85,7 @@ export namespace dk {
               return android.app.PendingIntent.getActivity(
                 this,
                 0,
-                new android.content.Intent(this, dk.nota.MediaService.class),
+                new android.content.Intent(this, nsApp.android.startActivity?.getClass() ?? dk.nota.MediaService.class),
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT,
               );
             },
