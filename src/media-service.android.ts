@@ -46,7 +46,7 @@ export namespace dk {
 
       private _albumArts: Map<string, Promise<ImageSource>>;
 
-      public onCreate(): void {
+      public onCreate() {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
         }
@@ -645,8 +645,8 @@ function ensureNativeClasses() {
     private readonly cls = `TNSPlayerEventImpl<${++TNSPlayerEventImpl.instanceNo}>`;
     private _owner: WeakRef<dk.nota.MediaService>;
 
-    private get owner() {
-      return this._owner?.get() ?? null;
+    private get owner(): dk.nota.MediaService | null {
+      return this._owner?.get();
     }
 
     constructor(owner: dk.nota.MediaService) {
@@ -795,13 +795,13 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
           }
 
+          // TODO: onIsPlayingChanged also sets this value.
           if (playWhenReady) {
             this.owner?._onPlaying();
           } else {
             this.owner?._onPaused();
           }
 
-          // TODO: onIsPlayingChanged also sets this value.
           break;
         }
         default: {
