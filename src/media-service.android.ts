@@ -127,7 +127,9 @@ export namespace dk {
 
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
-              if (!track || !track.albumArtUrl) {
+              if (!track?.albumArtUrl) {
+                callback.onBitmap(null as any);
+
                 return null as any;
               }
 
@@ -156,6 +158,7 @@ export namespace dk {
               }
 
               if (android.os.Build.VERSION.SDK_INT < 24) {
+                // Prior to SDK 24, stopForeground only took a boolean.
                 this.stopForeground(false);
               } else {
                 this.stopForeground(notificationId);
@@ -171,11 +174,8 @@ export namespace dk {
               this.startForeground(notificationId, notification);
             },
             onNotificationStarted(notificationId: number, notification: android.app.Notification) {
-              if (trace.isEnabled()) {
-                trace.write(`MediaDescriptionAdapter.onNotificationStarted(${notificationId}, ${notification})`, notaAudioCategory);
-              }
-
               // Deprecated
+              trace.write(`MediaDescriptionAdapter.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`, notaAudioCategory, trace.messageType.warn);
             },
           }),
         );
@@ -597,6 +597,15 @@ export namespace dk {
       }
 
       private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
+        if (!track?.albumArtUrl) {
+          trace.write(`${this.cls}.loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, trace.messageType.error);
+
+          // Artwork not loaded set null as image
+          callback.onBitmap(null as any);
+
+          return;
+        }
+
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.loadAlbumArt(...)`, notaAudioCategory);
         }
@@ -629,11 +638,21 @@ export namespace dk {
        * Use this function to check, if a URL is allowed.
        */
       private checkUrlAllowed(url: string) {
+        if (android.os.Build.VERSION.SDK_INT < 23) {
+          return true;
+        }
+
+        if (android.os.Build.VERSION.SDK_INT === 23) {
+          // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted()
+          return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
+        }
+
         const clearTextHostname = url.match(/^http:\/\/([^\/]+)/)?.[1];
         if (!clearTextHostname) {
           return true;
         }
 
+        // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted(java.lang.String)
         return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted(clearTextHostname);
       }
     }
