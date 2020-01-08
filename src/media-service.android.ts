@@ -3,6 +3,7 @@
 import { ImageSource } from '@nativescript/core/image-source';
 import * as nsApp from '@nativescript/core/application';
 import * as trace from '@nativescript/core/trace';
+import * as nsUtils from '@nativescript/core/utils/utils';
 import { TNSAudioPlayer } from './audioplayer';
 import { MediaTrack, notaAudioCategory, PlaybackSuspend, Playlist } from './audioplayer.types';
 
@@ -43,6 +44,7 @@ export namespace dk {
       }
       private _rate = 1;
       private _seekIntervalSeconds = 15;
+      private _intentReqCode = 1337;
       private timeChangeInterval: number;
 
       private _albumArts: Map<string, Promise<ImageSource>>;
@@ -69,13 +71,16 @@ export namespace dk {
         // Do not let MediaButtons restart the player when the app is not visible.
         this._mediaSession.setMediaButtonReceiver(null as any);
         this._mediaSession.setActive(true);
+        // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
+        const notificationTitle = nsUtils.ad.resources.getStringId("tns_audioplayer_notification_title") || (android.R as any).string.unknownName;
+        const notificationDesc = nsUtils.ad.resources.getStringId("tns_audioplayer_notification_desc") || (android.R as any).string.unknownName;
 
         this._playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
           this,
           MEDIA_SERVICE_NAME,
-          (android.R as any).string.unknownName, // TODO: Find a better way to get the channel name reference...
-          (android.R as any).string.unknownName, // TODO: Find a better way to get the channel description reference...
-          1337, // TODO: How should this be defined?
+          notificationTitle,
+          notificationDesc,
+          this._intentReqCode,
           new com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter({
             createCurrentContentIntent: (player: com.google.android.exoplayer2.Player) => {
               if (trace.isEnabled()) {
