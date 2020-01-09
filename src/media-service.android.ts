@@ -452,6 +452,10 @@ export namespace dk {
         this._playerNotificationManager.setUsePlayPauseActions(true);
         this._playerNotificationManager.setUseNavigationActions(false);
         this._playerNotificationManager.setUseStopAction(false);
+        const notificationIcon = nsUtils.ad.resources.getDrawableId('tns_audioplayer_small_icon') || nsUtils.ad.resources.getDrawableId('icon');
+        if (notificationIcon) {
+          this._playerNotificationManager.setSmallIcon(notificationIcon);
+        }
 
         this.playlist = playlist;
 

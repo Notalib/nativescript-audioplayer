@@ -5,6 +5,10 @@
 This plugin is prepared to allow you to test and try it out via the `demo` folder.
 Additionally it provides a proper `.gitignore` to keep GitHub tidy as well as `.npmignore` to ensure everyone is happy when you publish your plugin via npm.
 
+### Android Notification
+
+The Android foreground notification channel can be customized via the string resource keys: `tns_audioplayer_notification_title` and `tns_audioplayer_notification_desc`. See the demo [strings.xml](demo/App_Resources/Android/src/main/res/values/strings.xml) for an example.
+The notification icon can be set by having a drawable named `tns_audioplayer_small_icon` or `icon` (checks in that order) in your `App_Resources/Android/src/main/res`.
 
 ## Development:
 
