@@ -48,6 +48,7 @@ export namespace dk {
       private _rate = 1;
       private _seekIntervalSeconds = 15;
       private _intentReqCode = 1337;
+      private _noisyBroadcastReceiverRegistered = false;
       private timeChangeInterval: number;
 
       private _albumArts: Map<string, Promise<ImageSource>>;
@@ -246,6 +247,7 @@ export namespace dk {
         }, 100);
 
         this._mediaSession?.setActive(true);
+        this.registerNoisyBroadcastReceiver();
 
         this.owner?._onPlaying();
       }
@@ -255,6 +257,8 @@ export namespace dk {
           trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
         }
         clearInterval(this.timeChangeInterval);
+
+        this.unregisterNoisyBroadcastReceiver();
 
         this.owner?._onPaused();
       }
@@ -692,6 +696,26 @@ export namespace dk {
 
         // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted(java.lang.String)
         return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted(clearTextHostname);
+      }
+
+      private registerNoisyBroadcastReceiver() {
+        if (this._noisyBroadcastReceiverRegistered) {
+          return;
+        }
+        // Listen to and pause on ACTION_AUDIO_BECOMING_NOISY broadcast (e.g. unplugging headphones).
+        // See https://developer.android.com/guide/topics/media-apps/volume-and-earphones.html#becoming-noisy
+        nsApp.android.registerBroadcastReceiver(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY, () => {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}._onAudioBecomingNoisy()`, notaAudioCategory);
+          }
+          this.pause();
+        });
+        this._noisyBroadcastReceiverRegistered = true;
+      }
+
+      private unregisterNoisyBroadcastReceiver() {
+        nsApp.android.unregisterBroadcastReceiver(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        this._noisyBroadcastReceiverRegistered = false;
       }
     }
 
