@@ -5,9 +5,16 @@
         "**/*.map": true,
         "*.js": true,
         "*.d.ts": true,
+        "demo/platforms": true,
         "**/*.js": {
             "when": "$(basename).ts"
         }
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "demo/platforms": true
     },
     "editor.tabSize": 2,
     "editor.insertSpaces": true,

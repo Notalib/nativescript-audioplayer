@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Audioplayer Demo</string>
+  <string name="title_activity_kimera">Demo</string>
+  <string name="tns_audioplayer_notification_title">Lydafspilning</string>
+  <string name="tns_audioplayer_notification_desc">Notifikation og kontrol for afspilning af lydbøger</string>
+</resources>

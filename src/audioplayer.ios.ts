@@ -135,13 +135,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async play() {
     try {
-      if (this.player.state === AudioPlayerState.Paused) {
+      if (this.player?.state === AudioPlayerState.Paused) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.play() - resume`, notaAudioCategory);
         }
 
         this.player.resume();
-      } else if (this.player.state === AudioPlayerState.Stopped) {
+      } else if (this.player?.state === AudioPlayerState.Stopped) {
         this.player.playWithItemsStartAtIndex(this._iosPlaylist, 0);
 
         if (trace.isEnabled()) {
@@ -205,7 +205,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async getRate(): Promise<number> {
     if (trace.isEnabled()) {
-      trace.write(`${this.cls}.getRate(...) => ${this.player.timePitchAlgorithm}`, notaAudioCategory);
+      trace.write(`${this.cls}.getRate(...) => ${this.player?.timePitchAlgorithm}`, notaAudioCategory);
     }
 
     return this.player ? this.player.rate : 0;
@@ -236,7 +236,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     if (result !== NSNotFound) {
       return result;
     } else {
-      return null;
+      return -1;
     }
   }
 
@@ -275,9 +275,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.stop();
-    this.player = null;
-    this.delegate = null;
-    this._iosPlaylist = null;
+    delete this.player;
+    delete this.delegate;
+    delete this._iosPlaylist;
 
     super.destroy();
   }
@@ -294,7 +294,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           trace.write(`${this.cls} - time-update skipped, we're seeking`, notaAudioCategory);
         }
       } else {
-        this._onTimeChanged(timeMilliseconds, this._getDuration(), this._getCurrentPlaylistIndex());
+        this._onTimeChanged(timeMilliseconds, this._getDuration(), this._getCurrentPlaylistIndex() as number);
       }
     };
     this.delegate.onBufferingUpdate = (item, earliest, latest) => {
@@ -313,7 +313,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
 
       if (item.artwork == null) {
-        if (this._cachedCover && this._cachedCover.url === this.getMediaTrackForItem(item).albumArtUrl) {
+        if (this._cachedCover && this._cachedCover.url === this.getMediaTrackForItem(item)?.albumArtUrl) {
           if (trace.isEnabled()) {
             trace.write(`${this.cls} got artwork from cache for '${item.title}'`, notaAudioCategory);
           }
@@ -427,7 +427,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         if (this._queuedSeekTo) {
           // TODO: Queued seek may not use a completion-handler, that only works on "safe" seeks.
           this._iosSeekTo(this._queuedSeekTo, false, kCMTimeZero, kCMTimeZero);
-          this._queuedSeekTo = null;
+          this._queuedSeekTo = undefined;
         }
         break;
       }
@@ -453,7 +453,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
-  private makeAudioItemForMediaTrack(track: MediaTrack): AudioItem {
+  private makeAudioItemForMediaTrack(track: MediaTrack): AudioItem | void {
     try {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.makeAudioItemForMediaTrack(${JSON.stringify(track)})`, notaAudioCategory);
@@ -465,7 +465,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         trace.write(`${this.cls}.makeAudioItemForMediaTrack(track) - URL: ${url}`, notaAudioCategory);
       }
 
-      let audioItem = new AudioItem({ highQualitySoundURL: null, mediumQualitySoundURL: url, lowQualitySoundURL: null });
+      let audioItem = new AudioItem({
+        highQualitySoundURL: null as any,
+        mediumQualitySoundURL: url,
+        lowQualitySoundURL: null as any,
+      });
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.makeAudioItemForMediaTrack(track) - AudioItem: ${JSON.stringify(audioItem)}`, notaAudioCategory);
       }
@@ -482,23 +486,23 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         trace.messageType.error,
       );
 
-      return null;
+      return;
     }
   }
 
-  private getMediaTrackForItem(item: AudioItem): MediaTrack {
-    return this.playlist.tracks[this.getIndexForItem(item)];
+  private getMediaTrackForItem(item: AudioItem): MediaTrack | null {
+    return this.playlist?.tracks?.[this.getIndexForItem(item)] ?? null;
   }
 
-  private getCurrentMediaTrack(): MediaTrack {
+  private getCurrentMediaTrack(): MediaTrack | null {
     return this.getMediaTrackForItem(this.player.currentItem);
   }
 
   private _isRetrievingArtwork = false;
-  private _cachedCover: { url: string; artwork: MPMediaItemArtwork } = null;
+  private _cachedCover?: { url: string; artwork: MPMediaItemArtwork };
 
   private async loadRemoteControlAlbumArtworkAsync(item: AudioItem) {
-    const artworkUrl = this.playlist.tracks[this.getIndexForItem(item)].albumArtUrl;
+    const artworkUrl = this.playlist?.tracks?.[this.getIndexForItem(item)].albumArtUrl;
     if (artworkUrl == null) {
       return;
     }
@@ -507,7 +511,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       const image = isFileOrResourcePath(artworkUrl) ? ImageSource.fromFileOrResourceSync(artworkUrl) : await ImageSource.fromUrl(artworkUrl);
-      if (this.getCurrentMediaTrack().albumArtUrl === artworkUrl) {
+      if (this.getCurrentMediaTrack()?.albumArtUrl === artworkUrl) {
         const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
         this._cachedCover = { url: artworkUrl, artwork };
         item.artwork = artwork;

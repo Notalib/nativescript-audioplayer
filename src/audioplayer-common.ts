@@ -42,9 +42,9 @@ export class CommonAudioPlayer extends Observable {
 
   public android: any;
   public ios: any;
-  public playlist: Playlist;
+  public playlist?: Playlist;
 
-  protected _queuedSeekTo: number = null;
+  protected _queuedSeekTo?: number;
   private _listener: PlaybackEventListener;
   protected seekIntervalSeconds = 15;
   protected playbackRate = 1;
@@ -139,14 +139,14 @@ export class CommonAudioPlayer extends Observable {
   /**
    * Get the current playlist index
    */
-  public getCurrentPlaylistIndex(): Promise<number> {
+  public getCurrentPlaylistIndex(): Promise<number | null> {
     throw new Error('Not implemented');
   }
 
   /**
    * Seek to offset in current track
    */
-  public seekTo(offset: number) {
+  public async seekTo(offset: number) {
     throw new Error('Not implemented');
   }
 
@@ -217,7 +217,7 @@ export class CommonAudioPlayer extends Observable {
     this._onSleepTimerChanged();
   }
 
-  protected _sleepTimer: number;
+  protected _sleepTimer: number | null;
   protected _sleepTimerPaused = false;
   protected _sleepTimerMillisecondsLeft = 0;
 
@@ -269,7 +269,7 @@ export class CommonAudioPlayer extends Observable {
    */
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
     if ((await this.getCurrentPlaylistIndex()) === playlistIndex) {
-      this.seekTo(offset);
+      await this.seekTo(offset);
 
       return;
     }
@@ -302,7 +302,7 @@ export class CommonAudioPlayer extends Observable {
     this._listener = listener;
   }
 
-  public getCurrentPlaylistUID(): string {
+  public getCurrentPlaylistUID() {
     return this.playlist?.UID ?? null;
   }
 
