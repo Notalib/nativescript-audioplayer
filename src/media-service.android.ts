@@ -15,6 +15,8 @@ export namespace dk {
 
     @JavaProxy('dk.nota.MediaService')
     export class MediaService extends android.app.Service {
+
+      private static _lastMediaSession?: android.support.v4.media.session.MediaSessionCompat;
       private _cls: string;
       private get cls() {
         if (!this._cls) {
@@ -36,6 +38,7 @@ export namespace dk {
       private _pmWakeLock?: android.os.PowerManager.WakeLock;
       private _wifiLock?: android.net.wifi.WifiManager.WifiLock;
       private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
+      private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
       private playlist?: Playlist;
 
       private _owner?: WeakRef<TNSAudioPlayer>;
@@ -53,8 +56,14 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
         }
+        super.onCreate();
 
         ensureNativeClasses();
+
+        if (MediaService._lastMediaSession) {
+          MediaService._lastMediaSession.release();
+          MediaService._lastMediaSession = undefined;
+        }
 
         this._rate = 1;
         this._seekIntervalSeconds = 15;
@@ -67,10 +76,18 @@ export namespace dk {
         const playerListener = new TNSPlayerEvent(this);
 
         this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
-
         // Do not let MediaButtons restart the player when the app is not visible.
         this._mediaSession.setMediaButtonReceiver(null as any);
         this._mediaSession.setActive(true);
+
+        // Use MediaSessionConnector extension to handle external media control actions (like headset pause/play).
+        this._mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(this._mediaSession)
+        this._mediaSessionConnector.setEnabledPlaybackActions(
+          android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY |
+          android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
+          android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE
+        );
+
         // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
         const notificationTitle = nsUtils.ad.resources.getStringId('tns_audioplayer_notification_title') || (android.R as any).string.unknownName;
         const notificationDesc = nsUtils.ad.resources.getStringId('tns_audioplayer_notification_desc') || (android.R as any).string.unknownName;
@@ -183,6 +200,7 @@ export namespace dk {
         this.exoPlayer = com.google.android.exoplayer2.ExoPlayerFactory.newSimpleInstance(this, renderersFactory, trackSelector, loadControl);
         this.exoPlayer.addListener(playerListener);
         this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
+        this._mediaSessionConnector?.setPlayer(this.exoPlayer);
 
         this._albumArts = new Map<string, Promise<ImageSource>>();
 
@@ -227,6 +245,8 @@ export namespace dk {
           }
         }, 100);
 
+        this._mediaSession?.setActive(true);
+
         this.owner?._onPlaying();
       }
 
@@ -235,6 +255,7 @@ export namespace dk {
           trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
         }
         clearInterval(this.timeChangeInterval);
+
         this.owner?._onPaused();
       }
 
@@ -244,6 +265,10 @@ export namespace dk {
         }
 
         clearInterval(this.timeChangeInterval);
+
+        this._mediaSession?.setActive(false);
+        this._mediaSessionConnector?.setPlayer(null as any);
+
         this.owner?._onStopped();
       }
 
@@ -313,14 +338,23 @@ export namespace dk {
           this._playerNotificationManager = undefined;
         }
 
-        if (this.exoPlayer) {
-          this.exoPlayer.release();
-          this.exoPlayer = undefined;
+        if (this._mediaSessionConnector) {
+          this._mediaSessionConnector.setPlayer(null as any);
+          this._mediaSessionConnector = undefined;
         }
 
         if (this._mediaSession) {
-          this._mediaSession.release();
+          this._mediaSession.setActive(false);
+          // Releasing the mediasession and then using a headset button leads to:
+          // > IllegalStateException: Could not find any Service that handles android.intent.action.MEDIA_BUTTON
+          // Therefore we save it to a static variable and release it on next "onCreate".
+          MediaService._lastMediaSession = this._mediaSession;
           this._mediaSession = undefined;
+        }
+
+        if (this.exoPlayer) {
+          this.exoPlayer.release();
+          this.exoPlayer = undefined;
         }
         clearInterval(this.timeChangeInterval);
 
@@ -341,9 +375,10 @@ export namespace dk {
           trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
         }
 
-        super.onStartCommand(intent, flags, startId);
-
-        return android.app.Service.START_STICKY;
+        if (android.os.Build.VERSION.SDK_INT >= 24 && this._mediaSession) {
+          androidx.media.session.MediaButtonReceiver.handleIntent(this._mediaSession, intent);
+        }
+        return super.onStartCommand(intent, flags, startId);
       }
 
       private acquireWakeLock() {
@@ -389,7 +424,6 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onStart(${intent}, ${startId})`, notaAudioCategory);
         }
-
         super.onStart(intent, startId);
       }
 
@@ -461,6 +495,7 @@ export namespace dk {
 
         this.setRate(this._rate);
         this.setSeekIntervalSeconds(this._seekIntervalSeconds);
+        this._mediaSessionConnector?.setPlayer(this.exoPlayer);
         this.exoPlayer.prepare(concatenatedSource);
       }
 
@@ -606,7 +641,6 @@ export namespace dk {
 
           // Artwork not loaded set null as image
           callback.onBitmap(null as any);
-
           return;
         }
 

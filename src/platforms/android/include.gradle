@@ -4,4 +4,5 @@ dependencies {
   // implementation 'com.google.android.exoplayer:exoplayer-dash:2.10.+'
   implementation 'com.google.android.exoplayer:exoplayer-ui:2.10.+'
   implementation 'com.google.android.exoplayer:extension-cast:2.10.+'
+  implementation 'com.google.android.exoplayer:extension-mediasession:2.10.+'
 }
