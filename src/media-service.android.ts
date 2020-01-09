@@ -642,14 +642,14 @@ export namespace dk {
           return true;
         }
 
-        if (android.os.Build.VERSION.SDK_INT === 23) {
-          // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted()
-          return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
-        }
-
         const clearTextHostname = url.match(/^http:\/\/([^\/]+)/)?.[1];
         if (!clearTextHostname) {
           return true;
+        }
+
+        if (android.os.Build.VERSION.SDK_INT === 23) {
+          // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted()
+          return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
         }
 
         // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted(java.lang.String)
