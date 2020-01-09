@@ -146,7 +146,7 @@ export class CommonAudioPlayer extends Observable {
   /**
    * Seek to offset in current track
    */
-  public seekTo(offset: number) {
+  public async seekTo(offset: number) {
     throw new Error('Not implemented');
   }
 
@@ -269,7 +269,7 @@ export class CommonAudioPlayer extends Observable {
    */
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number): Promise<void> {
     if ((await this.getCurrentPlaylistIndex()) === playlistIndex) {
-      this.seekTo(offset);
+      await this.seekTo(offset);
 
       return;
     }
