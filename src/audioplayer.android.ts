@@ -186,7 +186,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       this._mediaService.stop();
-      this.stopMediaService();
     } catch (err) {
       trace.write(`${this.cls}.stop() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
