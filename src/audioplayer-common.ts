@@ -46,8 +46,8 @@ export class CommonAudioPlayer extends Observable {
 
   protected _queuedSeekTo?: number;
   private _listener: PlaybackEventListener;
-  protected seekIntervalSeconds = 15;
-  protected playbackRate = 1;
+  protected _seekIntervalSeconds = 15;
+  protected _playbackRate = 1;
 
   constructor() {
     super();
@@ -157,7 +157,7 @@ export class CommonAudioPlayer extends Observable {
     throw new Error('Not implemented');
   }
   public getSeekIntervalSeconds() {
-    return this.seekIntervalSeconds;
+    return this._seekIntervalSeconds;
   }
 
   /**

@@ -39,12 +39,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           (mediaService) => {
             this._mediaServicePromise = undefined;
 
-            const seekIntervalSeconds = this.seekIntervalSeconds;
+            const seekIntervalSeconds = this._seekIntervalSeconds;
             if (typeof seekIntervalSeconds === 'number' && !Number.isNaN(seekIntervalSeconds)) {
               mediaService.setSeekIntervalSeconds(seekIntervalSeconds);
             }
 
-            const rate = this.playbackRate;
+            const rate = this._playbackRate;
             if (typeof rate === 'number' && !Number.isNaN(rate)) {
               mediaService.setRate(rate);
             }
@@ -295,11 +295,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async setRate(rate: number) {
     if (typeof rate === 'number' && !Number.isNaN(rate)) {
-      this.playbackRate = rate;
+      this._playbackRate = rate;
     } else {
       rate = 1;
 
-      this.playbackRate = rate;
+      this._playbackRate = rate;
     }
 
     if (!this._mediaService) {
@@ -319,7 +319,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     if (!this._mediaService) {
       trace.write(`${this.cls}.getRate() - no media service.`, notaAudioCategory, trace.messageType.error);
 
-      return this.playbackRate || 1;
+      return this._playbackRate || 1;
     }
 
     try {
@@ -329,7 +329,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     } catch (err) {
       trace.write(`${this.cls}.getRate() - ${err}`, notaAudioCategory, trace.messageType.error);
 
-      return this.playbackRate || 1;
+      return this._playbackRate || 1;
     }
   }
 
@@ -374,7 +374,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
     }
 
-    this.seekIntervalSeconds = seconds;
+    this._seekIntervalSeconds = seconds;
 
     if (!this._mediaService) {
       return;

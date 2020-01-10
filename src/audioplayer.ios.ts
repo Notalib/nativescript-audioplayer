@@ -70,8 +70,8 @@ class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
 export class TNSAudioPlayer extends CommonAudioPlayer {
   protected readonly cls = `TNSAudioPlayer.ios<${++CommonAudioPlayer.instanceNo}>`;
 
-  private player: AudioPlayer;
-  private delegate: AudioPlayerDelegateImpl;
+  private _player: AudioPlayer;
+  private _delegate: AudioPlayerDelegateImpl;
 
   private _isSeeking = false;
   private _iosPlaylist: NSArray<AudioItem>;
@@ -82,7 +82,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.playlist = playlist;
-    if (!this.player) {
+    if (!this._player) {
       this.setupAudioPlayer();
     } else {
       this.stop();
@@ -105,44 +105,44 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.setupDelegate();
-    this.player = AudioPlayer.new();
-    this.player.delegate = this.delegate;
-    this.player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
-    this.player.preferredBufferDurationBeforePlayback = 5;
+    this._player = AudioPlayer.new();
+    this._player.delegate = this._delegate;
+    this._player.bufferingStrategy = AudioPlayerBufferingStrategy.PlayWhenPreferredBufferDurationFull;
+    this._player.preferredBufferDurationBeforePlayback = 5;
     // this.player.preferredForwardBufferDuration = 600;
-    this.player.timePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
-    this.player.sessionCategory = AVAudioSessionCategoryPlayback;
+    this._player.timePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
+    this._player.sessionCategory = AVAudioSessionCategoryPlayback;
     // Set AVAudioSession mode to SpokenAudio if it's defined (iOS 9+)
     // this ensures better audio mix with Navigation, Siri etc.
     if (AVAudioSessionModeSpokenAudio) {
       trace.write(`${this.cls}.setupAudioPlayer() - AVAudioSessionMode = ${AVAudioSessionModeSpokenAudio}`, notaAudioCategory);
-      this.player.sessionMode = AVAudioSessionModeSpokenAudio;
+      this._player.sessionMode = AVAudioSessionModeSpokenAudio;
     }
-    this.player.allowExternalPlayback = true;
-    this.player.remoteControlSkipIntervals = NSArrayFromItems([this.seekIntervalSeconds]);
-    this.player.remoteCommandsEnabled = NSArrayFromItems([
+    this._player.allowExternalPlayback = true;
+    this._player.remoteControlSkipIntervals = NSArrayFromItems([this._seekIntervalSeconds]);
+    this._player.remoteCommandsEnabled = NSArrayFromItems([
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackPosition),
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.ChangePlaybackRate),
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipBackward),
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.PlayPause),
       NSNumber.numberWithInt(AudioPlayerRemoteCommand.SkipForward),
     ]);
-    this.ios = this.player;
-    trace.write(`${this.cls}.setupAudioPlayer() - Player: ${this.player}`, notaAudioCategory);
-    trace.write(`${this.cls}.setupAudioPlayer() - Delegate: ${this.delegate}`, notaAudioCategory);
-    trace.write(`${this.cls}.setupAudioPlayer() - TimePitch Algorithm: ${this.player.timePitchAlgorithm}`, notaAudioCategory);
+    this.ios = this._player;
+    trace.write(`${this.cls}.setupAudioPlayer() - Player: ${this._player}`, notaAudioCategory);
+    trace.write(`${this.cls}.setupAudioPlayer() - Delegate: ${this._delegate}`, notaAudioCategory);
+    trace.write(`${this.cls}.setupAudioPlayer() - TimePitch Algorithm: ${this._player.timePitchAlgorithm}`, notaAudioCategory);
   }
 
   public async play() {
     try {
-      if (this.player?.state === AudioPlayerState.Paused) {
+      if (this._player?.state === AudioPlayerState.Paused) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.play() - resume`, notaAudioCategory);
         }
 
-        this.player.resume();
-      } else if (this.player?.state === AudioPlayerState.Stopped) {
-        this.player.playWithItemsStartAtIndex(this._iosPlaylist, 0);
+        this._player.resume();
+      } else if (this._player?.state === AudioPlayerState.Stopped) {
+        this._player.playWithItemsStartAtIndex(this._iosPlaylist, 0);
 
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.play() - from start`, notaAudioCategory);
@@ -160,8 +160,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.pause()`, notaAudioCategory);
     }
 
-    if (this.player) {
-      this.player.pause();
+    if (this._player) {
+      this._player.pause();
     }
   }
 
@@ -170,50 +170,50 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.stop()`, notaAudioCategory);
     }
 
-    if (this.player) {
-      this.player.stop();
+    if (this._player) {
+      this._player.stop();
     }
   }
 
   public async isPlaying(): Promise<boolean> {
-    return this.player?.state === AudioPlayerState.Playing;
+    return this._player?.state === AudioPlayerState.Playing;
   }
 
   public async skipToNext() {
-    if (this.player) {
-      this.player.nextOrStop();
+    if (this._player) {
+      this._player.nextOrStop();
     }
   }
 
   public async skipToPrevious() {
-    if (this.player) {
-      this.player.previous();
+    if (this._player) {
+      this._player.previous();
     }
   }
 
   public async skipToPlaylistIndex(playlistIndex: number) {
-    if (this.player) {
-      this.player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
+    if (this._player) {
+      this._player.playWithItemsStartAtIndex(this._iosPlaylist, playlistIndex);
     }
   }
 
   public async setRate(rate: number) {
-    if (this.player) {
-      this.player.rate = rate;
+    if (this._player) {
+      this._player.rate = rate;
     }
   }
 
   public async getRate(): Promise<number> {
     if (trace.isEnabled()) {
-      trace.write(`${this.cls}.getRate(...) => ${this.player?.timePitchAlgorithm}`, notaAudioCategory);
+      trace.write(`${this.cls}.getRate(...) => ${this._player?.timePitchAlgorithm}`, notaAudioCategory);
     }
 
-    return this.player ? this.player.rate : 0;
+    return this._player ? this._player.rate : 0;
   }
 
   private _getDuration() {
-    if (this.player?.currentItem && this.player?.currentItemDuration) {
-      return Math.floor(this.player.currentItemDuration * 1000);
+    if (this._player?.currentItem && this._player?.currentItemDuration) {
+      return Math.floor(this._player.currentItemDuration * 1000);
     }
 
     return -1;
@@ -224,15 +224,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getCurrentTime(): Promise<number> {
-    if (this.player?.currentItem && this.player?.currentItemProgression) {
-      return Math.max(0, Math.floor(this.player.currentItemProgression * 1000));
+    if (this._player?.currentItem && this._player?.currentItemProgression) {
+      return Math.max(0, Math.floor(this._player.currentItemProgression * 1000));
     }
 
     return 0;
   }
 
   private getIndexForItem(item: AudioItem) {
-    const result = this._iosPlaylist.indexOfObject(this.player.currentItem);
+    const result = this._iosPlaylist.indexOfObject(this._player.currentItem);
     if (result !== NSNotFound) {
       return result;
     } else {
@@ -241,8 +241,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public _getCurrentPlaylistIndex() {
-    if (this._iosPlaylist && this.player?.currentItem) {
-      return this.getIndexForItem(this.player.currentItem);
+    if (this._iosPlaylist && this._player?.currentItem) {
+      return this.getIndexForItem(this._player.currentItem);
     }
 
     return null;
@@ -253,7 +253,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async seekTo(milliseconds: number) {
-    if (this.player) {
+    if (this._player) {
       this._iosSeekTo(milliseconds);
     }
   }
@@ -263,9 +263,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
     }
 
-    this.seekIntervalSeconds = seconds;
-    if (this.player) {
-      this.player.remoteControlSkipIntervals = NSArray.arrayWithObject(seconds);
+    this._seekIntervalSeconds = seconds;
+    if (this._player) {
+      this._player.remoteControlSkipIntervals = NSArray.arrayWithObject(seconds);
     }
   }
 
@@ -275,8 +275,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     this.stop();
-    delete this.player;
-    delete this.delegate;
+
+    delete this._player;
+    delete this._delegate;
     delete this._iosPlaylist;
 
     super.destroy();
@@ -285,8 +286,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   /** PRIVATE HELPERS **/
 
   private setupDelegate() {
-    this.delegate = AudioPlayerDelegateImpl.new();
-    this.delegate.onTimeUpdate = (seconds) => {
+    this._delegate = AudioPlayerDelegateImpl.new();
+    this._delegate.onTimeUpdate = (seconds) => {
       // this._log(`- timeUpdate: ${seconds}s`);
       const timeMilliseconds = Math.floor(seconds * 1000);
       if (this._isSeeking) {
@@ -297,17 +298,17 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         this._onTimeChanged(timeMilliseconds, this._getDuration(), this._getCurrentPlaylistIndex() as number);
       }
     };
-    this.delegate.onBufferingUpdate = (item, earliest, latest) => {
+    this._delegate.onBufferingUpdate = (item, earliest, latest) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls} bufferingUpdate  '${item.title}' now has buffered: ${earliest}s - ${latest}s`, notaAudioCategory);
       }
     };
-    this.delegate.onFoundDuration = (item, duration) => {
+    this._delegate.onFoundDuration = (item, duration) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls} found duration for '${item.title}': ${duration}s`, notaAudioCategory);
       }
     };
-    this.delegate.onWillStartPlayingItem = (item) => {
+    this._delegate.onWillStartPlayingItem = (item) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls} will start playing '${item.title}'`, notaAudioCategory);
       }
@@ -324,7 +325,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         }
       }
     };
-    this.delegate.onFinishedPlayingItem = (item) => {
+    this._delegate.onFinishedPlayingItem = (item) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls} finished playing '${item.title}'`, notaAudioCategory);
       }
@@ -335,7 +336,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         this._onEndOfPlaylistReached();
       }
     };
-    this.delegate.onStateChanged = (from, to) => {
+    this._delegate.onStateChanged = (from, to) => {
       this._iosPlayerStateChanged(from, to);
     };
     // this.delegate.onMetadataReceived = (item, data) => this._iosMetadataReceived(item, data);
@@ -344,23 +345,23 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   protected _onSleepTimerExpired() {
     const fadeTickMilliseconds = 250.0;
     const sleepTimerFadeDuration = 5000.0;
-    const previousVolume = this.player.volume;
+    const previousVolume = this._player.volume;
     const fadeInterval = setInterval(() => {
       const decreaseBy = fadeTickMilliseconds / sleepTimerFadeDuration;
-      const newVolume = Math.max(this.player.volume - decreaseBy, 0);
-      this.player.volume = newVolume;
+      const newVolume = Math.max(this._player.volume - decreaseBy, 0);
+      this._player.volume = newVolume;
       if (newVolume === 0) {
         if (trace.isEnabled()) {
           trace.write(`${this.cls} - Volume faded out!`, notaAudioCategory);
         }
 
-        if (this.player.state !== AudioPlayerState.Paused) {
+        if (this._player.state !== AudioPlayerState.Paused) {
           if (trace.isEnabled()) {
             trace.write(`${this.cls} - Volume faded out! - pausing`, notaAudioCategory);
           }
-          this.player.pause();
+          this._player.pause();
         }
-        this.player.volume = previousVolume;
+        this._player.volume = previousVolume;
         clearInterval(fadeInterval);
 
         super._onSleepTimerExpired();
@@ -386,7 +387,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._isSeeking = true;
 
     const seekToSeconds = milliseconds / 1000.0;
-    this.player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
+    this._player.seekToByAdaptingTimeToFitSeekableRangesToleranceBeforeToleranceAfterCompletionHandler(
       seekToSeconds,
       adaptToSeekableRanges,
       beforeTolerance,
@@ -444,7 +445,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         break;
       }
       case AudioPlayerState.Failed: {
-        this._onPlaybackError(this.player.failedError);
+        this._onPlaybackError(this._player.failedError);
         break;
       }
       default: {
@@ -495,7 +496,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private getCurrentMediaTrack(): MediaTrack | null {
-    return this.getMediaTrackForItem(this.player.currentItem);
+    return this.getMediaTrackForItem(this._player.currentItem);
   }
 
   private _isRetrievingArtwork = false;
