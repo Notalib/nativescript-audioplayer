@@ -13,9 +13,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return utils.ad.getApplicationContext() as android.content.Context;
   }
 
-  private mediaServicePromise?: Promise<dk.nota.MediaService>;
-  private mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
-  private mediaServiceReject: (error: any) => void;
+  private _mediaServicePromise?: Promise<dk.nota.MediaService>;
+  private _mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
+  private _mediaServiceReject: (error: any) => void;
 
   private _mediaService?: dk.nota.MediaService;
 
@@ -24,20 +24,20 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       return Promise.resolve(this._mediaService);
     }
 
-    if (!this.mediaServicePromise) {
-      this.mediaServicePromise = new Promise<dk.nota.MediaService>((resolve, reject) => {
-        this.mediaServiceResolve = resolve;
-        this.mediaServiceReject = reject;
+    if (!this._mediaServicePromise) {
+      this._mediaServicePromise = new Promise<dk.nota.MediaService>((resolve, reject) => {
+        this._mediaServiceResolve = resolve;
+        this._mediaServiceReject = reject;
 
         this.startMediaService();
       });
 
       const noop = () => {};
 
-      this.mediaServicePromise
+      this._mediaServicePromise
         .then(
           (mediaService) => {
-            this.mediaServicePromise = undefined;
+            this._mediaServicePromise = undefined;
 
             const seekIntervalSeconds = this.seekIntervalSeconds;
             if (typeof seekIntervalSeconds === 'number' && !Number.isNaN(seekIntervalSeconds)) {
@@ -54,12 +54,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           },
         )
         .then(() => {
-          this.mediaServiceResolve = noop;
-          this.mediaServiceReject = noop;
+          this._mediaServiceResolve = noop;
+          this._mediaServiceReject = noop;
         });
     }
 
-    return this.mediaServicePromise;
+    return this._mediaServicePromise;
   }
 
   private _serviceConnection = new android.content.ServiceConnection({
@@ -77,7 +77,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           trace.messageType.error,
         );
 
-        this.mediaServiceReject(new Error('MediaService not created'));
+        this._mediaServiceReject(new Error('MediaService not created'));
 
         return;
       }
@@ -86,28 +86,28 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       this._mediaService = mediaService;
 
-      this.mediaServiceResolve(mediaService);
+      this._mediaServiceResolve(mediaService);
     },
     onBindingDied: (componentName) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
       }
 
-      this.mediaServiceReject(new Error('Died'));
+      this._mediaServiceReject(new Error('Died'));
     },
     onNullBinding: (componentName) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
       }
 
-      this.mediaServiceReject(new Error('Null binding'));
+      this._mediaServiceReject(new Error('Null binding'));
     },
     onServiceDisconnected: (componentName) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
       }
 
-      this.mediaServicePromise = undefined;
+      this._mediaServicePromise = undefined;
       this._mediaService = undefined;
     },
   });
@@ -186,7 +186,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       this._mediaService.stop();
-      this.stopMediaService();
     } catch (err) {
       trace.write(`${this.cls}.stop() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
@@ -423,7 +422,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.stopMediaService()`, notaAudioCategory);
     }
 
-    this.mediaServicePromise = undefined;
+    this._mediaServicePromise = undefined;
 
     if (!this._mediaService) {
       if (trace.isEnabled()) {

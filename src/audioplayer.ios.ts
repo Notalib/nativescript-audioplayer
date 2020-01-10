@@ -466,9 +466,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       }
 
       let audioItem = new AudioItem({
-        highQualitySoundURL: null as any,
+        highQualitySoundURL: null!,
         mediumQualitySoundURL: url,
-        lowQualitySoundURL: null as any,
+        lowQualitySoundURL: null!,
       });
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.makeAudioItemForMediaTrack(track) - AudioItem: ${JSON.stringify(audioItem)}`, notaAudioCategory);

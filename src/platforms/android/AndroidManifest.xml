@@ -5,10 +5,11 @@
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <application>
     <service android:name="dk.nota.MediaService"
-                        android:enabled="true"
-                        android:exported="false" />
+             android:enabled="true"
+             android:exported="false">
+    </service>
     <!-- Needed for older androids: https://stackoverflow.com/a/44757777/441556 -->
-    <receiver android:name="android.support.v4.media.session.MediaButtonReceiver" >
+    <receiver android:name="androidx.media.session.MediaButtonReceiver" >
       <intent-filter>
         <action android:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>
