@@ -15,7 +15,6 @@ export namespace dk {
 
     @JavaProxy('dk.nota.MediaService')
     export class MediaService extends android.app.Service {
-
       private static _lastMediaSession?: android.support.v4.media.session.MediaSessionCompat;
       private _cls: string;
       private get cls() {
@@ -39,7 +38,7 @@ export namespace dk {
       private _wifiLock?: android.net.wifi.WifiManager.WifiLock;
       private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
       private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
-      private playlist?: Playlist;
+      private _playlist?: Playlist;
 
       private _owner?: WeakRef<TNSAudioPlayer>;
       private get owner() {
@@ -49,7 +48,7 @@ export namespace dk {
       private _seekIntervalSeconds = 15;
       private _intentReqCode = 1337;
       private _noisyBroadcastReceiverRegistered = false;
-      private timeChangeInterval: number;
+      private _timeChangeInterval: number;
 
       private _albumArts: Map<string, Promise<ImageSource>>;
 
@@ -78,15 +77,15 @@ export namespace dk {
 
         this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
         // Do not let MediaButtons restart the player when the app is not visible.
-        this._mediaSession.setMediaButtonReceiver(null as any);
+        this._mediaSession.setMediaButtonReceiver(null!);
         this._mediaSession.setActive(true);
 
         // Use MediaSessionConnector extension to handle external media control actions (like headset pause/play).
-        this._mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(this._mediaSession)
+        this._mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(this._mediaSession);
         this._mediaSessionConnector.setEnabledPlaybackActions(
           android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY |
-          android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
-          android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE
+            android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
+            android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE,
         );
 
         // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
@@ -120,7 +119,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track) {
-                return null as any;
+                return null!;
               }
 
               return track.album;
@@ -133,7 +132,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track) {
-                return null as any;
+                return null!;
               }
 
               return track.title;
@@ -146,14 +145,14 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track?.albumArtUrl) {
-                callback.onBitmap(null as any);
+                callback.onBitmap(null!);
 
-                return null as any;
+                return null!;
               }
 
               this.loadAlbumArt(track, callback);
 
-              return null;
+              return null!;
             },
             getCurrentSubText: (player) => {
               if (trace.isEnabled()) {
@@ -163,7 +162,7 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track) {
-                return null as any;
+                return null!;
               }
 
               return track.artist;
@@ -193,7 +192,11 @@ export namespace dk {
             },
             onNotificationStarted(notificationId: number, notification: android.app.Notification) {
               // Deprecated
-              trace.write(`MediaDescriptionAdapter.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`, notaAudioCategory, trace.messageType.warn);
+              trace.write(
+                `MediaDescriptionAdapter.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
+                notaAudioCategory,
+                trace.messageType.warn,
+              );
             },
           }),
         );
@@ -214,22 +217,22 @@ export namespace dk {
         this.exoPlayer.getAudioComponent().setAudioAttributes(audioAttributes, true);
       }
 
-      public getTrackInfo(index: number) {
-        return this.playlist?.tracks?.[index] ?? null;
+      private getTrackInfo(index: number) {
+        return this._playlist?.tracks?.[index];
       }
 
       public _onPlaying() {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}._onPlaying()`, notaAudioCategory);
         }
-        clearInterval(this.timeChangeInterval);
+        clearInterval(this._timeChangeInterval);
 
         let lastCurrentTime: number;
         let lastPlaylistIndex: number;
-        this.timeChangeInterval = setInterval(() => {
+        this._timeChangeInterval = setInterval(() => {
           const exoPlayer = this.exoPlayer;
           if (!exoPlayer) {
-            clearInterval(this.timeChangeInterval);
+            clearInterval(this._timeChangeInterval);
 
             return;
           }
@@ -256,7 +259,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
         }
-        clearInterval(this.timeChangeInterval);
+        clearInterval(this._timeChangeInterval);
 
         this.unregisterNoisyBroadcastReceiver();
 
@@ -268,10 +271,10 @@ export namespace dk {
           trace.write(`${this.cls}._onStopped()`, notaAudioCategory);
         }
 
-        clearInterval(this.timeChangeInterval);
+        clearInterval(this._timeChangeInterval);
 
         this._mediaSession?.setActive(false);
-        this._mediaSessionConnector?.setPlayer(null as any);
+        this._mediaSessionConnector?.setPlayer(null!);
 
         this.owner?._onStopped();
       }
@@ -337,13 +340,13 @@ export namespace dk {
         this._pmWakeLock = undefined;
         this._wifiLock = undefined;
         if (this._playerNotificationManager) {
-          this._playerNotificationManager.setPlayer(null as any);
-          this._playerNotificationManager.setNotificationListener(null as any);
+          this._playerNotificationManager.setPlayer(null!);
+          this._playerNotificationManager.setNotificationListener(null!);
           this._playerNotificationManager = undefined;
         }
 
         if (this._mediaSessionConnector) {
-          this._mediaSessionConnector.setPlayer(null as any);
+          this._mediaSessionConnector.setPlayer(null!);
           this._mediaSessionConnector = undefined;
         }
 
@@ -360,7 +363,7 @@ export namespace dk {
           this.exoPlayer.release();
           this.exoPlayer = undefined;
         }
-        clearInterval(this.timeChangeInterval);
+        clearInterval(this._timeChangeInterval);
 
         this._owner = undefined;
         super.onDestroy();
@@ -382,6 +385,7 @@ export namespace dk {
         if (android.os.Build.VERSION.SDK_INT >= 24 && this._mediaSession) {
           androidx.media.session.MediaButtonReceiver.handleIntent(this._mediaSession, intent);
         }
+
         return super.onStartCommand(intent, flags, startId);
       }
 
@@ -495,7 +499,7 @@ export namespace dk {
           this._playerNotificationManager.setSmallIcon(notificationIcon);
         }
 
-        this.playlist = playlist;
+        this._playlist = playlist;
 
         this.setRate(this._rate);
         this.setSeekIntervalSeconds(this._seekIntervalSeconds);
@@ -617,7 +621,7 @@ export namespace dk {
         this.exoPlayer.stop();
         this._albumArts.clear();
 
-        this.playlist = undefined;
+        this._playlist = undefined;
         this.releaseWakeLock();
       }
 
@@ -644,7 +648,8 @@ export namespace dk {
           trace.write(`${this.cls}.loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, trace.messageType.error);
 
           // Artwork not loaded set null as image
-          callback.onBitmap(null as any);
+          callback.onBitmap(null!);
+
           return;
         }
 
@@ -672,7 +677,7 @@ export namespace dk {
         }
 
         // Artwork not loaded set null as image
-        callback.onBitmap(null as any);
+        callback.onBitmap(null!);
       }
 
       /**
