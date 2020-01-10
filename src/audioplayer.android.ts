@@ -174,7 +174,6 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async stop() {
     this.playlist = undefined;
-    this._onStopped();
 
     if (!this._mediaService) {
       if (trace.isEnabled()) {
