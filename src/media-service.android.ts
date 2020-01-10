@@ -319,7 +319,7 @@ export namespace dk {
       }
 
       public _onPlaybackSuspend(reason: PlaybackSuspend) {
-        this.owner?._onPlaybackError(reason);
+        this.owner?._onPlaybackSuspended(reason);
       }
 
       public onDestroy() {
