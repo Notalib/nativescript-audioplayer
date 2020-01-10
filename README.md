@@ -24,7 +24,7 @@ Those `demo` tasks are just general helpers. You may want to have more granular 
 cd demo
 
 // when developing, to ensure the latest code is built into the demo, it's a gaurantee to remove the plugin and add it back
-tns plugin remove nativescript-audioplayer-plugin
+tns plugin remove @nota/nativescript-audioplayer
 tns plugin add ..
 
 // manual platform adds
