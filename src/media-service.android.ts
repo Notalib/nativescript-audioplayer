@@ -779,8 +779,6 @@ function ensureNativeClasses() {
 
     /**
      * Called when the value of Player.isPlaying() changes.
-     *
-     * TODO: onPlayerStateChanged also updates playing state.
      */
     public onIsPlayingChanged(isPlaying: boolean) {
       if (trace.isEnabled()) {
@@ -789,7 +787,8 @@ function ensureNativeClasses() {
 
       if (isPlaying) {
         this.owner?._onPlaying();
-      } else {
+      } else if (this.owner?.exoPlayer?.getPlaybackState() === com.google.android.exoplayer2.Player.STATE_READY) {
+        // This check makes sure we do not emit pause state when stopped.
         this.owner?._onPaused();
       }
     }
@@ -915,13 +914,7 @@ function ensureNativeClasses() {
             trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
           }
 
-          // TODO: onIsPlayingChanged also sets this value.
-          if (playWhenReady) {
-            this.owner?._onPlaying();
-          } else {
-            this.owner?._onPaused();
-          }
-
+          // NOTE: onIsPlayingChanged sets playing/paused state more precisely than doing it here.
           break;
         }
         default: {
