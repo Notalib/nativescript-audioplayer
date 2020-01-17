@@ -185,7 +185,7 @@ export namespace dk {
                     trace.write(`MediaDescriptionAdapter.stopForeground`, notaAudioCategory);
                     this.stopForeground(notificationId);
                   }
-                } catch(err) {
+                } catch (err) {
                   trace.write(`MediaDescriptionAdapter.stopForeground failed!`, notaAudioCategory, trace.messageType.error);
                 }
               }
