@@ -51,6 +51,7 @@ export namespace dk {
       private _timeChangeInterval: number;
 
       private _albumArts: Map<string, Promise<ImageSource>>;
+      private _lastLoadedAlbumArt: { url: string, bitmap: android.graphics.Bitmap };
 
       public onCreate() {
         if (trace.isEnabled()) {
@@ -145,9 +146,12 @@ export namespace dk {
               const window = player.getCurrentWindowIndex();
               const track = this.getTrackInfo(window);
               if (!track?.albumArtUrl) {
-                callback.onBitmap(null!);
-
                 return null!;
+              }
+
+              if (this._lastLoadedAlbumArt && this._lastLoadedAlbumArt.url === track.albumArtUrl) {
+                trace.write(`MediaDescriptionAdapter.getCurrentLargeIcon(${player}) - using lastLoadedAlbumArt`, notaAudioCategory);
+                return this._lastLoadedAlbumArt.bitmap;
               }
 
               this.loadAlbumArt(track, callback);
@@ -648,7 +652,7 @@ export namespace dk {
         this.releaseWakeLock();
       }
 
-      private makeAlbumArtImageSource(url: string) {
+      private makeAlbumArtImageSource(url: string): Promise<ImageSource> {
         if (!this.checkUrlAllowed(url)) {
           trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text trafic not allowed - "${url}"`, notaAudioCategory);
 
@@ -663,7 +667,7 @@ export namespace dk {
           this._albumArts.set(url, ImageSource.fromUrl(url));
         }
 
-        return this._albumArts.get(url);
+        return this._albumArts.get(url)!;
       }
 
       private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
@@ -672,7 +676,6 @@ export namespace dk {
 
           // Artwork not loaded set null as image
           callback.onBitmap(null!);
-
           return;
         }
 
@@ -687,6 +690,10 @@ export namespace dk {
             callback.onBitmap(image.android);
             if (trace.isEnabled()) {
               trace.write(`${this.cls}.loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
+            }
+            this._lastLoadedAlbumArt = {
+              url: track.albumArtUrl,
+              bitmap: image.android,
             }
 
             return;
