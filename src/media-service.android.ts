@@ -174,15 +174,12 @@ export namespace dk {
                 trace.write(`MediaDescriptionAdapter.NotificationListener(id=${notificationId}, dismissedByUser=${dismissedByUser})`, notaAudioCategory);
               }
 
-              if (dismissedByUser) {
-                trace.write(`MediaDescriptionAdapter.NotificationListener() - DISMISSED BY USER - stopForeground!`, notaAudioCategory);
+              if (this.isInForeground()) {
                 try {
                   if (android.os.Build.VERSION.SDK_INT < 24) {
                     // Prior to SDK 24, stopForeground only took a boolean.
-                    trace.write(`MediaDescriptionAdapter.stopForeground (< 24)`, notaAudioCategory);
                     this.stopForeground(false);
                   } else {
-                    trace.write(`MediaDescriptionAdapter.stopForeground`, notaAudioCategory);
                     this.stopForeground(notificationId);
                   }
                 } catch (err) {
@@ -224,6 +221,23 @@ export namespace dk {
           .build();
 
         this.exoPlayer.getAudioComponent().setAudioAttributes(audioAttributes, true);
+      }
+
+      private isInForeground() {
+        try {
+          const manager: android.app.ActivityManager = this.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+          const services = manager.getRunningServices(9999);
+          for (let i = 0; i < services.size(); i++) {
+            const service: android.app.ActivityManager.RunningServiceInfo = services.get(i);
+            if (service.service.getClassName() === this.getClass().getName()) {
+              return !!service.foreground;
+            }
+          }
+          return false;
+        } catch (err) {
+          trace.write(`MediaDescriptionAdapter.isServiceRunningInForeground failed: ${err}`, notaAudioCategory, trace.messageType.warn);
+          return false;
+        }
       }
 
       private getTrackInfo(index: number) {
