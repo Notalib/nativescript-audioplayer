@@ -1,20 +1,20 @@
 {
     "files.exclude": {
-        "**/.git": true,
-        "**/.DS_Store": true,
-        "**/*.map": true,
-        "*.js": true,
         "*.d.ts": true,
-        "demo/platforms": true,
+        "*.js": true,
+        "**/.DS_Store": true,
+        "**/.git": true,
         "**/*.js": {
             "when": "$(basename).ts"
-        }
+        },
+        "**/*.map": true,
+        "demo/platforms/**": true
     },
     "search.exclude": {
-        "**/node_modules": true,
-        "**/bower_components": true,
         "**/*.code-search": true,
-        "demo/platforms": true
+        "**/bower_components": true,
+        "**/node_modules": true,
+        "demo/platforms/**": true
     },
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
@@ -35,5 +35,8 @@
         "trackselection",
         "wifi"
     ],
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "files.watcherExclude": {
+        "demo/platforms/**": true
+    }
 }
