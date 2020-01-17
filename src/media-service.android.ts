@@ -51,7 +51,7 @@ export namespace dk {
       private _timeChangeInterval: number;
 
       private _albumArts: Map<string, Promise<ImageSource>>;
-      private _lastLoadedAlbumArt: { url: string, bitmap: android.graphics.Bitmap };
+      private _lastLoadedAlbumArt: { url: string; bitmap: android.graphics.Bitmap };
 
       public onCreate() {
         if (trace.isEnabled()) {
@@ -694,7 +694,7 @@ export namespace dk {
             this._lastLoadedAlbumArt = {
               url: track.albumArtUrl,
               bitmap: image.android,
-            }
+            };
 
             return;
           } else {
