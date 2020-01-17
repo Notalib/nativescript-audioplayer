@@ -171,14 +171,23 @@ export namespace dk {
           new com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener({
             onNotificationCancelled: (notificationId: number, dismissedByUser?: boolean) => {
               if (trace.isEnabled()) {
-                trace.write(`MediaDescriptionAdapter.NotificationListener(${notificationId}, ${dismissedByUser})`, notaAudioCategory);
+                trace.write(`MediaDescriptionAdapter.NotificationListener(id=${notificationId}, dismissedByUser=${dismissedByUser})`, notaAudioCategory);
               }
 
-              if (android.os.Build.VERSION.SDK_INT < 24) {
-                // Prior to SDK 24, stopForeground only took a boolean.
-                this.stopForeground(false);
-              } else {
-                this.stopForeground(notificationId);
+              if (dismissedByUser) {
+                trace.write(`MediaDescriptionAdapter.NotificationListener() - DISMISSED BY USER - stopForeground!`, notaAudioCategory);
+                try {
+                  if (android.os.Build.VERSION.SDK_INT < 24) {
+                    // Prior to SDK 24, stopForeground only took a boolean.
+                    trace.write(`MediaDescriptionAdapter.stopForeground (< 24)`, notaAudioCategory);
+                    this.stopForeground(false);
+                  } else {
+                    trace.write(`MediaDescriptionAdapter.stopForeground`, notaAudioCategory);
+                    this.stopForeground(notificationId);
+                  }
+                } catch(err) {
+                  trace.write(`MediaDescriptionAdapter.stopForeground failed!`, notaAudioCategory, trace.messageType.error);
+                }
               }
 
               this.stopSelf();
