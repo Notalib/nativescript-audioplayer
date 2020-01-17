@@ -151,6 +151,7 @@ export namespace dk {
 
               if (this._lastLoadedAlbumArt && this._lastLoadedAlbumArt.url === track.albumArtUrl) {
                 trace.write(`MediaDescriptionAdapter.getCurrentLargeIcon(${player}) - using lastLoadedAlbumArt`, notaAudioCategory);
+
                 return this._lastLoadedAlbumArt.bitmap;
               }
 
@@ -237,9 +238,11 @@ export namespace dk {
               return !!service.foreground;
             }
           }
+
           return false;
         } catch (err) {
           trace.write(`MediaDescriptionAdapter.isServiceRunningInForeground failed: ${err}`, notaAudioCategory, trace.messageType.warn);
+
           return false;
         }
       }
@@ -673,9 +676,9 @@ export namespace dk {
       private async loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
         if (!track?.albumArtUrl) {
           trace.write(`${this.cls}.loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, trace.messageType.error);
-
           // Artwork not loaded set null as image
           callback.onBitmap(null!);
+
           return;
         }
 
