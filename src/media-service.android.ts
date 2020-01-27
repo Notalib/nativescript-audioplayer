@@ -201,13 +201,17 @@ export namespace dk {
 
               this.startForeground(notificationId, notification);
             },
-            onNotificationStarted(notificationId: number, notification: android.app.Notification) {
+            onNotificationStarted: (notificationId: number, notification: android.app.Notification) => {
               // Deprecated
-              trace.write(
-                `MediaDescriptionAdapter.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
-                notaAudioCategory,
-                trace.messageType.warn,
-              );
+              if (trace.isEnabled()) {
+                trace.write(
+                  `MediaDescriptionAdapter.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
+                  notaAudioCategory,
+                  trace.messageType.warn,
+                );
+              }
+
+              this.startForeground(notificationId, notification);
             },
           }),
         );

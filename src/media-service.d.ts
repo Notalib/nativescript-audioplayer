@@ -3,7 +3,7 @@ declare namespace dk {
     class MediaService extends android.app.Service {
       public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
 
-      public preparePlaylist(playlist: any): void;
+      public preparePlaylist(playlist: any): Promise<void>;
       public setSeekIntervalSeconds(seconds: number): void;
       public setRate(rate: number): void;
       public getRate(): number;

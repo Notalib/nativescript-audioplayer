@@ -119,8 +119,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   public async preparePlaylist(playlist: Playlist) {
     try {
       const mediaService = await this.mediaService;
-
-      mediaService.preparePlaylist(playlist);
+      await mediaService.preparePlaylist(playlist);
     } catch (err) {
       trace.write(`${this.cls}.preparePlaylist() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
