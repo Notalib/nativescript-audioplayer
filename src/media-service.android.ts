@@ -224,7 +224,7 @@ export namespace dk {
           const endedTrackIndex = this.exoPlayer.getCurrentWindowIndex();
           this.owner?._onEndOfTrackReached(endedTrackIndex);
         } else {
-          trace.write(`${this.cls}._onEndOfTrackReached() - exoplayer not inited`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}._onEndOfTrackReached() - exoplayer not initialized`, notaAudioCategory, trace.messageType.error);
         }
       }
 
@@ -359,7 +359,7 @@ export namespace dk {
 
       public async preparePlaylist(playlist: Playlist) {
         if (!this.exoPlayer || !this._playerNotificationManager) {
-          trace.write(`${this.cls}.preparePlaylist() - exoplayer not inited`, notaAudioCategory);
+          trace.write(`${this.cls}.preparePlaylist() - exoplayer not initialized`, notaAudioCategory);
 
           return;
         }
@@ -379,7 +379,7 @@ export namespace dk {
 
         for (const track of playlist.tracks) {
           if (!this._checkUrlAllowed(track.url)) {
-            trace.write(`${this.cls}.preparePlaylist() - clear text trafic is not allowed - "${track.url}"`, notaAudioCategory, trace.messageType.error);
+            trace.write(`${this.cls}.preparePlaylist() - clear text traffic is not allowed - "${track.url}"`, notaAudioCategory, trace.messageType.error);
           }
 
           const mediaSource = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
@@ -393,7 +393,7 @@ export namespace dk {
           }
         }
 
-        // Wait for all album arts to be loadeed.
+        // Wait for all album arts to be loaded.
         if (this._albumArts?.size > 0) {
           try {
             await Promise.all([...this._albumArts.values()]);
@@ -463,7 +463,7 @@ export namespace dk {
 
       public getRate() {
         if (!this.exoPlayer) {
-          trace.write(`${this.cls}.getRate() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}.getRate() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
 
           return this._rate;
         }
@@ -477,7 +477,7 @@ export namespace dk {
 
       public isPlaying() {
         if (!this.exoPlayer) {
-          trace.write(`${this.cls}.isPlaying() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}.isPlaying() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
 
           return false;
         }
@@ -491,7 +491,7 @@ export namespace dk {
 
       public play() {
         if (!this.exoPlayer) {
-          trace.write(`${this.cls}.play() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}.play() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
 
           return;
         }
@@ -505,7 +505,7 @@ export namespace dk {
 
       public pause() {
         if (!this.exoPlayer) {
-          trace.write(`${this.cls}.pause() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
 
           return;
         }
@@ -519,7 +519,7 @@ export namespace dk {
 
       public stop() {
         if (!this.exoPlayer) {
-          trace.write(`${this.cls}.pause() - exoPlayer not inited`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
 
           return;
         }
@@ -542,7 +542,7 @@ export namespace dk {
 
       private _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
         if (!this._checkUrlAllowed(url)) {
-          trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text trafic not allowed - "${url}"`, notaAudioCategory);
+          trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text traffic not allowed - "${url}"`, notaAudioCategory);
 
           return Promise.reject();
         }
@@ -603,7 +603,7 @@ export namespace dk {
       }
 
       /**
-       * Android 8+ doesn't allow plain HTTP trafic by default.
+       * Android 8+ doesn't allow plain HTTP traffic by default.
        * Use this function to check, if a URL is allowed.
        */
       private _checkUrlAllowed(url: string) {
