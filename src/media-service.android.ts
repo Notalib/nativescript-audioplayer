@@ -8,6 +8,9 @@ import { TNSAudioPlayer } from './audioplayer';
 import { MediaTrack, notaAudioCategory, PlaybackSuspend, Playlist } from './audioplayer.types';
 
 const MEDIA_SERVICE_NAME = 'TNS-MediaService-1';
+const DEFAULT_PLAYBACK_RATE = 1;
+const DEFAULT_INTENT_CODE = 1337;
+const DEFAULT_SEEK_LENGTH = 15;
 
 export namespace dk {
   export namespace nota {
@@ -32,22 +35,24 @@ export namespace dk {
       }
 
       private _binder?: MediaService.LocalBinder;
-      public exoPlayer?: com.google.android.exoplayer2.ExoPlayer;
+      public exoPlayer?: com.google.android.exoplayer2.SimpleExoPlayer;
       private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
-      private _pmWakeLock?: android.os.PowerManager.WakeLock;
-      private _wifiLock?: android.net.wifi.WifiManager.WifiLock;
+      private get _sessionToken() {
+        return this._mediaSession?.getSessionToken();
+      }
       private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
       private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
       private _playlist?: Playlist;
+
+      private _isForegroundService: boolean;
 
       private _owner?: WeakRef<TNSAudioPlayer>;
       private get owner() {
         return this._owner?.get() ?? null;
       }
-      private _rate = 1;
-      private _seekIntervalSeconds = 15;
-      private _intentReqCode = 1337;
-      private _noisyBroadcastReceiverRegistered = false;
+      private _rate = DEFAULT_PLAYBACK_RATE;
+      private _seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
+      private _intentReqCode = DEFAULT_INTENT_CODE;
       private _timeChangeInterval: number;
 
       private _albumArts: Map<string, Promise<ImageSource>>;
@@ -61,22 +66,32 @@ export namespace dk {
 
         ensureNativeClasses();
 
+        const sessionIntent = this.getPackageManager()?.getLaunchIntentForPackage(this.getPackageName());
+        let sessionActivityPendingIntent: android.app.PendingIntent | null = null;
+        if (sessionIntent) {
+          sessionActivityPendingIntent = android.app.PendingIntent.getActivity(this, 0, sessionIntent, 0);
+        }
+
         if (MediaService._lastMediaSession) {
           MediaService._lastMediaSession.release();
           MediaService._lastMediaSession = undefined;
         }
 
-        this._rate = 1;
-        this._seekIntervalSeconds = 15;
+        this._rate = DEFAULT_PLAYBACK_RATE;
+        this._seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
+        this._intentReqCode = DEFAULT_INTENT_CODE;
+        this._isForegroundService = false;
 
         this._binder = new MediaService.LocalBinder(this);
 
         const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector();
         const loadControl = new com.google.android.exoplayer2.DefaultLoadControl();
-        const renderersFactory = new com.google.android.exoplayer2.DefaultRenderersFactory(this);
         const playerListener = new TNSPlayerEvent(this);
 
         this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
+        if (sessionActivityPendingIntent) {
+          this._mediaSession.setSessionActivity(sessionActivityPendingIntent);
+        }
         // Do not let MediaButtons restart the player when the app is not visible.
         this._mediaSession.setMediaButtonReceiver(null!);
         this._mediaSession.setActive(true);
@@ -179,7 +194,7 @@ export namespace dk {
                 trace.write(`MediaDescriptionAdapter.NotificationListener(id=${notificationId}, dismissedByUser=${dismissedByUser})`, notaAudioCategory);
               }
 
-              if (this.isInForeground()) {
+              if (this._isForegroundService) {
                 try {
                   if (android.os.Build.VERSION.SDK_INT < 24) {
                     // Prior to SDK 24, stopForeground only took a boolean.
@@ -216,9 +231,15 @@ export namespace dk {
           }),
         );
 
-        this.exoPlayer = com.google.android.exoplayer2.ExoPlayerFactory.newSimpleInstance(this, renderersFactory, trackSelector, loadControl);
+        const builder = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(this.getApplicationContext())
+          .setTrackSelector(trackSelector)
+          .setLoadControl(loadControl);
+        this.exoPlayer = builder.build();
+        this.exoPlayer.setHandleWakeLock(true);
+        this.exoPlayer.setHandleAudioBecomingNoisy(true);
         this.exoPlayer.addListener(playerListener);
-        this._playerNotificationManager.setMediaSessionToken(this._mediaSession.getSessionToken());
+
+        this._playerNotificationManager.setMediaSessionToken(this._sessionToken!);
         this._mediaSessionConnector?.setPlayer(this.exoPlayer);
 
         this._albumArts = new Map<string, Promise<ImageSource>>();
@@ -230,25 +251,6 @@ export namespace dk {
           .build();
 
         this.exoPlayer.getAudioComponent().setAudioAttributes(audioAttributes, true);
-      }
-
-      private isInForeground() {
-        try {
-          const manager: android.app.ActivityManager = this.getSystemService(android.content.Context.ACTIVITY_SERVICE);
-          const services = manager.getRunningServices(9999);
-          for (let i = 0; i < services.size(); i++) {
-            const service: android.app.ActivityManager.RunningServiceInfo = services.get(i);
-            if (service.service.getClassName() === this.getClass().getName()) {
-              return !!service.foreground;
-            }
-          }
-
-          return false;
-        } catch (err) {
-          trace.write(`MediaDescriptionAdapter.isServiceRunningInForeground failed: ${err}`, notaAudioCategory, trace.messageType.warn);
-
-          return false;
-        }
       }
 
       private getTrackInfo(index: number) {
@@ -284,7 +286,6 @@ export namespace dk {
         }, 100);
 
         this._mediaSession?.setActive(true);
-        this.registerNoisyBroadcastReceiver();
 
         this.owner?._onPlaying();
       }
@@ -294,8 +295,6 @@ export namespace dk {
           trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
         }
         clearInterval(this._timeChangeInterval);
-
-        this.unregisterNoisyBroadcastReceiver();
 
         this.owner?._onPaused();
       }
@@ -369,10 +368,6 @@ export namespace dk {
 
         this.stopForeground(true);
 
-        this.releaseWakeLock();
-
-        this._pmWakeLock = undefined;
-        this._wifiLock = undefined;
         if (this._playerNotificationManager) {
           this._playerNotificationManager.setPlayer(null!);
           this._playerNotificationManager.setNotificationListener(null!);
@@ -403,6 +398,45 @@ export namespace dk {
         super.onDestroy();
       }
 
+      public startForeground(notificationId: number, nofitication: android.app.Notification) {
+        if (this._isForegroundService) {
+          return;
+        }
+
+        androidx.core.content.ContextCompat.startForegroundService(
+          this.getApplicationContext(),
+          new android.content.Intent(this, nsApp.android.startActivity?.getClass() ?? dk.nota.MediaService.class),
+        );
+
+        super.startForeground(notificationId, nofitication);
+        this._isForegroundService = true;
+      }
+
+      public stopForeground(notificationId: number | boolean) {
+        if (!this._isForegroundService) {
+          return;
+        }
+
+        try {
+          if (typeof notificationId === 'number') {
+            if (android.os.Build.VERSION.SDK_INT < 24) {
+              // Prior to SDK 24, stopForeground only took a boolean.
+              this.stopForeground(false);
+            } else {
+              this.stopForeground(notificationId);
+            }
+          } else if (typeof notificationId === 'boolean') {
+            this.stopForeground(notificationId);
+          } else {
+            throw new Error('Invalid type');
+          }
+        } catch (err) {
+          trace.write(`MediaDescriptionAdapter.stopForeground failed!`, notaAudioCategory, trace.messageType.error);
+        }
+
+        this._isForegroundService = false;
+      }
+
       public onBind(param: android.content.Intent): android.os.IBinder {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.onBind(${param})`, notaAudioCategory);
@@ -421,45 +455,6 @@ export namespace dk {
         }
 
         return super.onStartCommand(intent, flags, startId);
-      }
-
-      private acquireWakeLock() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.acquireWakeLock()`, notaAudioCategory);
-        }
-        if (!this._pmWakeLock) {
-          const powerManager = this.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager;
-          this._pmWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, 'NotaAudio');
-        }
-
-        if (!this._pmWakeLock.isHeld()) {
-          this._pmWakeLock.acquire();
-        }
-
-        if (!this._wifiLock) {
-          const wifiManager = this.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager;
-          this._wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL, 'NotaAudio');
-        }
-
-        if (!this._wifiLock.isHeld()) {
-          this._wifiLock.acquire();
-        }
-      }
-
-      private releaseWakeLock() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.releaseWakeLock()`, notaAudioCategory);
-        }
-
-        if (this._pmWakeLock?.isHeld()) {
-          this._pmWakeLock.release();
-          this._pmWakeLock = undefined;
-        }
-
-        if (this._wifiLock?.isHeld()) {
-          this._wifiLock.release();
-          this._wifiLock = undefined;
-        }
       }
 
       public onStart(intent: android.content.Intent, startId: number) {
@@ -551,7 +546,7 @@ export namespace dk {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
         }
-        this._seekIntervalSeconds = Math.max(seconds || 15, 15);
+        this._seekIntervalSeconds = Math.max(seconds || DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
 
         const seekMs = this._seekIntervalSeconds * 1000;
         this._playerNotificationManager.setFastForwardIncrementMs(seekMs);
@@ -592,7 +587,7 @@ export namespace dk {
           trace.write(`${this.cls}.getRate()`, notaAudioCategory);
         }
 
-        return this.exoPlayer.getPlaybackParameters()?.speed ?? this._rate ?? 1;
+        return this.exoPlayer.getPlaybackParameters()?.speed ?? this._rate ?? DEFAULT_PLAYBACK_RATE;
       }
 
       public isPlaying() {
@@ -621,8 +616,6 @@ export namespace dk {
         }
 
         this.exoPlayer.setPlayWhenReady(true);
-
-        this.acquireWakeLock();
       }
 
       public pause() {
@@ -637,8 +630,6 @@ export namespace dk {
         }
 
         this.exoPlayer.setPlayWhenReady(false);
-
-        this.releaseWakeLock();
       }
 
       public stop() {
@@ -656,7 +647,12 @@ export namespace dk {
         this._albumArts.clear();
 
         this._playlist = undefined;
-        this.releaseWakeLock();
+      }
+
+      public onTaskRemoved(rootIntent) {
+        super.onTaskRemoved(rootIntent);
+
+        this.exoPlayer?.stop(true);
       }
 
       private makeAlbumArtImageSource(url: string): Promise<ImageSource> {
@@ -739,26 +735,6 @@ export namespace dk {
         // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted(java.lang.String)
         return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted(clearTextHostname);
       }
-
-      private registerNoisyBroadcastReceiver() {
-        if (this._noisyBroadcastReceiverRegistered) {
-          return;
-        }
-        // Listen to and pause on ACTION_AUDIO_BECOMING_NOISY broadcast (e.g. unplugging headphones).
-        // See https://developer.android.com/guide/topics/media-apps/volume-and-earphones.html#becoming-noisy
-        nsApp.android.registerBroadcastReceiver(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY, () => {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}._onAudioBecomingNoisy()`, notaAudioCategory);
-          }
-          this.pause();
-        });
-        this._noisyBroadcastReceiverRegistered = true;
-      }
-
-      private unregisterNoisyBroadcastReceiver() {
-        nsApp.android.unregisterBroadcastReceiver(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-        this._noisyBroadcastReceiverRegistered = false;
-      }
     }
 
     export namespace MediaService {
@@ -838,18 +814,10 @@ function ensureNativeClasses() {
      * This will not be reported via a separate call to onPositionDiscontinuity(int).
      *
      * @param timeline The latest timeline. Never null, but may be empty
-     * @param manifest The latest manifest. May be null
      * @param reason The Player.TimelineChangeReason responsible for this timeline change
      */
-    public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any) {
-      let reason: number;
-      if (arguments.length === 3) {
-        reason = arguments[2];
-      } else if (arguments.length === 2) {
-        reason = arguments[1];
-      } else {
-        reason = -1;
-      }
+    public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, reason: number) {
+      const manifest = this.owner?.exoPlayer?.getCurrentManifest();
 
       switch (reason) {
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_PREPARED: {
