@@ -42,6 +42,7 @@ export namespace dk {
       }
       private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
       private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+      private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
       private _playlist?: Playlist;
 
       public _isForegroundService: boolean;
@@ -103,6 +104,18 @@ export namespace dk {
             android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
             android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE,
         );
+        // Use a custom MediaSessionMetadataProvider to add a couple of missing metadata fields
+        // FIX: Prevents "Unknown" title and artist on Samsung lock screens.
+        this._mediaSessionMetadataProvider = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider({
+          getMetadata: () => {
+            const builder = new android.support.v4.media.MediaMetadataCompat.Builder();
+            const info = this.getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
+            builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown');
+            builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown');
+            return builder.build();
+          },
+        });
+        this._mediaSessionConnector.setMediaMetadataProvider(this._mediaSessionMetadataProvider);
 
         // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
         const notificationTitle = nsUtils.ad.resources.getStringId('tns_audioplayer_notification_title') ?? (android.R as any).string.unknownName;
@@ -276,7 +289,12 @@ export namespace dk {
 
         if (this._mediaSessionConnector) {
           this._mediaSessionConnector.setPlayer(null!);
+          this._mediaSessionConnector.setMediaMetadataProvider(null!);
           this._mediaSessionConnector = undefined;
+        }
+
+        if (this._mediaSessionMetadataProvider) {
+          this._mediaSessionMetadataProvider = undefined;
         }
 
         if (this._mediaSession) {
