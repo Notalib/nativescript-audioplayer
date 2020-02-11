@@ -9,14 +9,14 @@
     }
   },
   "dependencies": {
-    "@nativescript/theme": "^2.2.0",
+    "@nativescript/theme": "^2.2.1",
     "@nota/nativescript-audioplayer": "file:../src",
-    "tns-core-modules": "~6.3.0"
+    "tns-core-modules": "~6.3.2"
   },
   "devDependencies": {
-    "nativescript-dev-webpack": "~1.4.0",
-    "tslint": "~5.20.0",
-    "typescript": "^3.7.2"
+    "nativescript-dev-webpack": "~1.4.1",
+    "tslint": "~6.0.0",
+    "typescript": "^3.7.5"
   },
   "scripts": {
     "ci.tslint": "npm i && tslint --config '../tslint.json' 'app/**/*.ts' --exclude '**/node_modules/**'"

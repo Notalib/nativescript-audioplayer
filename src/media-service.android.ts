@@ -404,10 +404,7 @@ export namespace dk {
          * notes that "calling this method does *not* put the service in the started
          * state itself, even though the name sounds like it."
          */
-        androidx.core.content.ContextCompat.startForegroundService(
-          this.getApplicationContext(),
-          new android.content.Intent(this, dk.nota.MediaService.class),
-        );
+        androidx.core.content.ContextCompat.startForegroundService(this.getApplicationContext(), new android.content.Intent(this, dk.nota.MediaService.class));
 
         this.startForeground(notificationId, nofitication);
         this._isForegroundService = true;
