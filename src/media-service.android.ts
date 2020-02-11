@@ -117,12 +117,13 @@ export namespace dk {
             android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
             android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE,
         );
-        // Use a custom MediaSessionMetadataProvider to add a couple of missing metadata fields
-        // FIX: Prevents "Unknown" title and artist on Samsung lock screens.
+
+        // FIX: This prevents "Unknown" title and artist on Samsung lock screens.
+        // Use a MediaSessionMetadataProvider to add missing metadata fields, that ExoPlayer does not copy in by default.
         this._mediaSessionMetadataProvider = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider({
           getMetadata: () => {
             const builder = new android.support.v4.media.MediaMetadataCompat.Builder();
-            const info = this.getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
+            const info = this._getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
             builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown');
             builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown');
             return builder.build();
@@ -405,6 +406,9 @@ export namespace dk {
         );
 
         const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
+        const mediaSourceFactory = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
+          new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(this, userAgent),
+        );
 
         this._albumArts.clear();
 
@@ -413,10 +417,7 @@ export namespace dk {
             trace.write(`${this.cls}.preparePlaylist() - clear text trafic is not allowed - "${track.url}"`, notaAudioCategory, trace.messageType.error);
           }
 
-          const mediaSource = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
-            new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(this, userAgent),
-          ).createMediaSource(android.net.Uri.parse(track.url));
-
+          const mediaSource = mediaSourceFactory.createMediaSource(android.net.Uri.parse(track.url));
           concatenatedSource.addMediaSource(mediaSource);
 
           if (track.albumArtUrl != null) {
