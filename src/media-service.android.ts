@@ -85,7 +85,7 @@ export namespace dk {
 
         this._binder = new MediaService.LocalBinder(this);
 
-        const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector();
+        const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector(this);
         /**
          * Increase buffer sizes to support a smoother playback experience in spotty network conditions:
          *  - max buffer size from 1 to 10 minutes
@@ -95,10 +95,11 @@ export namespace dk {
          */
         const loadControl = new com.google.android.exoplayer2.DefaultLoadControl.Builder()
           .setBufferDurationsMs(
-            /* Buffer min */      1000 * 60,
-            /* Buffer max */      1000 * 60 * 10,
+            /* Buffer min */ 1000 * 60,
+            /* Buffer max */ 1000 * 60 * 10,
             /* Buffer playback */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-            /* Buffer rebuffer */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+            /* Buffer rebuffer */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+          )
           .createDefaultLoadControl();
         const playerListener = new TNSPlayerEvent(this);
 
@@ -122,11 +123,12 @@ export namespace dk {
         // Use a MediaSessionMetadataProvider to add missing metadata fields, that ExoPlayer does not copy in by default.
         this._mediaSessionMetadataProvider = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider({
           getMetadata: () => {
-            const builder = new android.support.v4.media.MediaMetadataCompat.Builder();
             const info = this._getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
-            builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown');
-            builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown');
-            return builder.build();
+
+            return new android.support.v4.media.MediaMetadataCompat.Builder()
+              .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown')
+              .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown')
+              .build();
           },
         });
         this._mediaSessionConnector.setMediaMetadataProvider(this._mediaSessionMetadataProvider);
@@ -297,7 +299,6 @@ export namespace dk {
 
         if (this._playerNotificationManager) {
           this._playerNotificationManager.setPlayer(null!);
-          this._playerNotificationManager.setNotificationListener(null!);
           this._playerNotificationManager = undefined;
         }
 
