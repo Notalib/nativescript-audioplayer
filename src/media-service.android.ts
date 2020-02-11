@@ -42,6 +42,7 @@ export namespace dk {
       }
       private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
       private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+      private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
       private _playlist?: Playlist;
 
       public _isForegroundService: boolean;
@@ -85,7 +86,20 @@ export namespace dk {
         this._binder = new MediaService.LocalBinder(this);
 
         const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector();
-        const loadControl = new com.google.android.exoplayer2.DefaultLoadControl();
+        /**
+         * Increase buffer sizes to support a smoother playback experience in spotty network conditions:
+         *  - max buffer size from 1 to 10 minutes
+         *  - min buffer size from 15 to 60 seconds (only controls when to start pre-buffering again).
+         * See defaults here:
+         * https://github.com/google/ExoPlayer/blob/release-v2/library/core/src/main/java/com/google/android/exoplayer2/DefaultLoadControl.java
+         */
+        const loadControl = new com.google.android.exoplayer2.DefaultLoadControl.Builder()
+          .setBufferDurationsMs(
+            /* Buffer min */      1000 * 60,
+            /* Buffer max */      1000 * 60 * 10,
+            /* Buffer playback */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+            /* Buffer rebuffer */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+          .createDefaultLoadControl();
         const playerListener = new TNSPlayerEvent(this);
 
         this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
@@ -103,6 +117,19 @@ export namespace dk {
             android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
             android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE,
         );
+
+        // FIX: This prevents "Unknown" title and artist on Samsung lock screens.
+        // Use a MediaSessionMetadataProvider to add missing metadata fields, that ExoPlayer does not copy in by default.
+        this._mediaSessionMetadataProvider = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider({
+          getMetadata: () => {
+            const builder = new android.support.v4.media.MediaMetadataCompat.Builder();
+            const info = this._getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
+            builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown');
+            builder.putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown');
+            return builder.build();
+          },
+        });
+        this._mediaSessionConnector.setMediaMetadataProvider(this._mediaSessionMetadataProvider);
 
         // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
         const notificationTitle = nsUtils.ad.resources.getStringId('tns_audioplayer_notification_title') ?? (android.R as any).string.unknownName;
@@ -276,7 +303,12 @@ export namespace dk {
 
         if (this._mediaSessionConnector) {
           this._mediaSessionConnector.setPlayer(null!);
+          this._mediaSessionConnector.setMediaMetadataProvider(null!);
           this._mediaSessionConnector = undefined;
+        }
+
+        if (this._mediaSessionMetadataProvider) {
+          this._mediaSessionMetadataProvider = undefined;
         }
 
         if (this._mediaSession) {
@@ -374,6 +406,9 @@ export namespace dk {
         );
 
         const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
+        const mediaSourceFactory = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
+          new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(this, userAgent),
+        );
 
         this._albumArts.clear();
 
@@ -382,10 +417,7 @@ export namespace dk {
             trace.write(`${this.cls}.preparePlaylist() - clear text traffic is not allowed - "${track.url}"`, notaAudioCategory, trace.messageType.error);
           }
 
-          const mediaSource = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
-            new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(this, userAgent),
-          ).createMediaSource(android.net.Uri.parse(track.url));
-
+          const mediaSource = mediaSourceFactory.createMediaSource(android.net.Uri.parse(track.url));
           concatenatedSource.addMediaSource(mediaSource);
 
           if (track.albumArtUrl != null) {
