@@ -841,7 +841,7 @@ function ensureNativeClasses() {
      * @param manifest The latest manifest. May be null
      * @param reason The Player.TimelineChangeReason responsible for this timeline change
      */
-    public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, _reason: number) {
+    public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any) {
       let reason: number;
       if (arguments.length === 3) {
         reason = arguments[2];
