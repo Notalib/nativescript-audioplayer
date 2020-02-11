@@ -196,12 +196,8 @@ export namespace dk {
 
               if (this._isForegroundService) {
                 try {
-                  if (android.os.Build.VERSION.SDK_INT < 24) {
-                    // Prior to SDK 24, stopForeground only took a boolean.
-                    this.stopForeground(false);
-                  } else {
-                    this.stopForeground(notificationId);
-                  }
+                  this.stopForeground(false);
+                  this._isForegroundService = false;
                 } catch (err) {
                   trace.write(`MediaDescriptionAdapter.stopForeground failed!`, notaAudioCategory, trace.messageType.error);
                 }
@@ -214,7 +210,7 @@ export namespace dk {
                 trace.write(`MediaDescriptionAdapter.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
               }
 
-              this.startForeground(notificationId, notification);
+              this.notificationPosted(notificationId, notification);
             },
             onNotificationStarted: (notificationId: number, notification: android.app.Notification) => {
               // Deprecated
@@ -226,7 +222,7 @@ export namespace dk {
                 );
               }
 
-              this.startForeground(notificationId, notification);
+              this.notificationPosted(notificationId, notification);
             },
           }),
         );
@@ -398,7 +394,7 @@ export namespace dk {
         super.onDestroy();
       }
 
-      public startForeground(notificationId: number, nofitication: android.app.Notification) {
+      private notificationPosted(notificationId: number, nofitication: android.app.Notification) {
         if (this._isForegroundService) {
           return;
         }
@@ -408,33 +404,8 @@ export namespace dk {
           new android.content.Intent(this, nsApp.android.startActivity?.getClass() ?? dk.nota.MediaService.class),
         );
 
-        super.startForeground(notificationId, nofitication);
+        this.startForeground(notificationId, nofitication);
         this._isForegroundService = true;
-      }
-
-      public stopForeground(notificationId: number | boolean) {
-        if (!this._isForegroundService) {
-          return;
-        }
-
-        try {
-          if (typeof notificationId === 'number') {
-            if (android.os.Build.VERSION.SDK_INT < 24) {
-              // Prior to SDK 24, stopForeground only took a boolean.
-              this.stopForeground(false);
-            } else {
-              this.stopForeground(notificationId);
-            }
-          } else if (typeof notificationId === 'boolean') {
-            this.stopForeground(notificationId);
-          } else {
-            throw new Error('Invalid type');
-          }
-        } catch (err) {
-          trace.write(`MediaDescriptionAdapter.stopForeground failed!`, notaAudioCategory, trace.messageType.error);
-        }
-
-        this._isForegroundService = false;
       }
 
       public onBind(param: android.content.Intent): android.os.IBinder {
