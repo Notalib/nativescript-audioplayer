@@ -86,7 +86,20 @@ export namespace dk {
         this._binder = new MediaService.LocalBinder(this);
 
         const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector();
-        const loadControl = new com.google.android.exoplayer2.DefaultLoadControl();
+        /**
+         * Increase buffer sizes to support a smoother playback experience in spotty network conditions:
+         *  - max buffer size from 1 to 10 minutes
+         *  - min buffer size from 15 to 60 seconds (only controls when to start pre-buffering again).
+         * See defaults here:
+         * https://github.com/google/ExoPlayer/blob/release-v2/library/core/src/main/java/com/google/android/exoplayer2/DefaultLoadControl.java
+         */
+        const loadControl = new com.google.android.exoplayer2.DefaultLoadControl.Builder()
+          .setBufferDurationsMs(
+            /* Buffer min */      1000 * 60,
+            /* Buffer max */      1000 * 60 * 10,
+            /* Buffer playback */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+            /* Buffer rebuffer */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+          .createDefaultLoadControl();
         const playerListener = new TNSPlayerEvent(this);
 
         this._mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
