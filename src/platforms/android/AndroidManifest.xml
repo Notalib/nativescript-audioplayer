@@ -6,7 +6,9 @@
   <application>
     <service android:name="dk.nota.MediaService"
              android:enabled="true"
-             android:exported="false">
+             android:exported="false"
+             android:foregroundServiceType="mediaPlayback"
+             >
     </service>
     <!-- Needed for older androids: https://stackoverflow.com/a/44757777/441556 -->
     <receiver android:name="androidx.media.session.MediaButtonReceiver" >
