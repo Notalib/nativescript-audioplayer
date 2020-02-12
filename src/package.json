@@ -39,7 +39,7 @@
   "readmeFilename": "README.md",
   "scripts": {
     "format:check": "prettier -c --config $(git rev-parse --show-toplevel)/.prettierrc.json './**/*.ts'",
-    "tslint": "tslint './**/*.ts' --config $(git rev-parse --show-toplevel)/tslint.json --exclude \"**/node_modules/**\"",
+    "tslint": "tslint './**/*.ts' --config $(git rev-parse --show-toplevel)/tslint.json -p tsconfig.json --exclude \"**/node_modules/**\"",
     "lint": "npm-run-all format:check tslint",
     "build": "tsc"
   },
