@@ -157,6 +157,7 @@ export namespace dk {
         exoPlayer.addListener(playerListener);
 
         this._playerNotificationManager.setMediaSessionToken(this._sessionToken!);
+        this._playerNotificationManager.setUseChronometer(true);
         this._mediaSessionConnector?.setPlayer(exoPlayer);
 
         this._albumArts = new Map<string, Promise<ImageSource>>();
@@ -358,6 +359,8 @@ export namespace dk {
 
         this.startForeground(notificationId, notification);
         this._isForegroundService = true;
+
+        this.exoPlayer?.setForegroundMode(true);
       }
 
       public onBind(param: android.content.Intent): android.os.IBinder {
@@ -1179,12 +1182,27 @@ function ensureNativeClasses() {
         try {
           this.owner.stopForeground(false);
           this.owner._isForegroundService = false;
+
+          this.owner.exoPlayer?.setForegroundMode(false);
         } catch (err) {
           trace.write(`${this.cls}.stopForeground failed!`, notaAudioCategory, trace.messageType.error);
         }
       }
 
       this.owner?.stopSelf();
+    }
+
+    public onNotificationStarted(notificationId: number, notification: android.app.Notification) {
+      // Deprecated
+      if (trace.isEnabled()) {
+        trace.write(
+          `${this.cls}.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
+          notaAudioCategory,
+          trace.messageType.warn,
+        );
+      }
+
+      this.owner?._handleNotificationPosted(notificationId, notification);
     }
   }
 
