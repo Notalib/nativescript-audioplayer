@@ -1,4 +1,5 @@
 {
+  "private": true,
   "nativescript": {
     "id": "org.nativescript.demo",
     "tns-ios": {
