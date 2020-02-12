@@ -1,9 +1,10 @@
 /// <reference path="./native-definitions/ios.d.ts" />
 
-import { ImageSource, isFileOrResourcePath } from '@nativescript/core/image-source';
+import { ImageSource } from '@nativescript/core/image-source';
 import * as trace from '@nativescript/core/trace';
+import * as utils from '@nativescript/core/utils/utils';
 import { CommonAudioPlayer } from './audioplayer-common';
-import { MediaTrack, notaAudioCategory, PlaybackEvent, Playlist } from './audioplayer.types';
+import { MediaTrack, notaAudioCategory, Playlist } from './audioplayer.types';
 
 class AudioPlayerDelegateImpl extends NSObject implements AudioPlayerDelegate {
   public static ObjCProtocols = [AudioPlayerDelegate];
@@ -511,7 +512,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     this._isRetrievingArtwork = true;
 
     try {
-      const image = isFileOrResourcePath(artworkUrl) ? ImageSource.fromFileOrResourceSync(artworkUrl) : await ImageSource.fromUrl(artworkUrl);
+      const image = utils.isFileOrResourcePath(artworkUrl) ? ImageSource.fromFileOrResourceSync(artworkUrl) : await ImageSource.fromUrl(artworkUrl);
       if (this.getCurrentMediaTrack()?.albumArtUrl === artworkUrl) {
         const artwork = MPMediaItemArtwork.alloc().initWithImage(image.ios);
         this._cachedCover = { url: artworkUrl, artwork };

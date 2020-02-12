@@ -17,7 +17,7 @@
     "lint": "npm-run-all format:check tslint",
     "test.android": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build android && tns test android --justlaunch",
     "test.ios": "(cd src && npm i && npx tsc) && npm run tslint && cd demo && tns build ios && tns test ios --justlaunch",
-    "tslint": "tslint 'src/**/*.ts' 'demo/src/**/*.ts' --config tslint.json --exclude \"**/node_modules/**\"",
+    "tslint": "(cd src && npm run tslint) && (cd demo && npm run tslint)",
     "postinstall": "cd src && ([ \"$npm_config_refer\" = \"ci\" ] && npm ci || npm i)"
   },
   "repository": {
@@ -51,7 +51,6 @@
     "prettier": "^1.19.1",
     "rimraf": "^3.0.2",
     "tns-platform-declarations": "^6.3.2",
-    "tslint": "^6.0.0",
     "typescript": "^3.7.5"
   },
   "dependencies": {}

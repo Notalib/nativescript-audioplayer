@@ -176,40 +176,45 @@ export namespace dk {
         return this._playlist?.tracks?.[index];
       }
 
+      private lastPosition: number;
+      private lastWindowIndex: number;
+      private _handleTimeChange() {
+        const player = this.exoPlayer;
+        if (!player) {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}._onPlaying() - no player stop timeChangeInterval`, notaAudioCategory);
+          }
+
+          clearInterval(this._timeChangeInterval);
+
+          return;
+        }
+
+        const windowIndex = player.getCurrentWindowIndex();
+        let position = player.getCurrentPosition();
+        const duration = player.getDuration();
+
+        if (this.lastPosition !== position || this.lastWindowIndex !== windowIndex) {
+          this.owner?._onTimeChanged(position, duration, windowIndex);
+
+          this.lastPosition = position;
+          this.lastWindowIndex = windowIndex;
+        }
+      }
+
       public _onPlaying() {
         if (trace.isEnabled()) {
           trace.write(`${this.cls}._onPlaying()`, notaAudioCategory);
         }
         clearInterval(this._timeChangeInterval);
 
-        let lastCurrentTime: number;
-        let lastPlaylistIndex: number;
         this._timeChangeInterval = setInterval(() => {
-          const exoPlayer = this.exoPlayer;
-          if (!exoPlayer) {
-            if (trace.isEnabled()) {
-              trace.write(`${this.cls}._onPlaying() - no player stop timeChangeInterval`, notaAudioCategory);
-            }
-
-            clearInterval(this._timeChangeInterval);
-
-            return;
-          }
-
-          const currentPlaylistIndex = exoPlayer.getCurrentWindowIndex();
-          const currentTime = exoPlayer.getCurrentPosition();
-          const duration = exoPlayer.getDuration();
-
-          if (lastCurrentTime !== currentTime || lastPlaylistIndex !== currentPlaylistIndex) {
-            this.owner?._onTimeChanged(currentTime, duration, currentPlaylistIndex);
-
-            lastCurrentTime = currentTime;
-            lastPlaylistIndex = currentPlaylistIndex;
-          }
+          this._handleTimeChange();
         }, 100);
 
         this._mediaSession?.setActive(true);
 
+        this._handleTimeChange();
         this.owner?._onPlaying();
       }
 
@@ -368,18 +373,11 @@ export namespace dk {
           trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
         }
 
-        if (android.os.Build.VERSION.SDK_INT >= 24 && this._mediaSession) {
+        if (this._mediaSession) {
           androidx.media.session.MediaButtonReceiver.handleIntent(this._mediaSession, intent);
         }
 
         return super.onStartCommand(intent, flags, startId);
-      }
-
-      public onStart(intent: android.content.Intent, startId: number) {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onStart(${intent}, ${startId})`, notaAudioCategory);
-        }
-        super.onStart(intent, startId);
       }
 
       public setOwner(owner: TNSAudioPlayer) {
@@ -1164,6 +1162,14 @@ function ensureNativeClasses() {
       return global.__native(this);
     }
 
+    public onNotificationPosted(notificationId: number, notification: android.app.Notification, ongoing?: boolean) {
+      if (trace.isEnabled()) {
+        trace.write(`${this.cls}.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
+      }
+
+      this.owner?._handleNotificationPosted(notificationId, notification);
+    }
+
     public onNotificationCancelled(notificationId: number, dismissedByUser?: boolean) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.NotificationListener(id=${notificationId}, dismissedByUser=${dismissedByUser})`, notaAudioCategory);
@@ -1179,26 +1185,6 @@ function ensureNativeClasses() {
       }
 
       this.owner?.stopSelf();
-    }
-    public onNotificationPosted(notificationId: number, notification: android.app.Notification, ongoing?: boolean) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
-      }
-
-      this.owner?._handleNotificationPosted(notificationId, notification);
-    }
-
-    public onNotificationStarted(notificationId: number, notification: android.app.Notification) {
-      // Deprecated
-      if (trace.isEnabled()) {
-        trace.write(
-          `${this.cls}.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
-          notaAudioCategory,
-          trace.messageType.warn,
-        );
-      }
-
-      this.owner?._handleNotificationPosted(notificationId, notification);
     }
   }
 
