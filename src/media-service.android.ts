@@ -18,7 +18,7 @@ export namespace dk {
 
     @JavaProxy('dk.nota.MediaService')
     export class MediaService extends android.app.Service {
-      private static _lastMediaSession?: android.support.v4.media.session.MediaSessionCompat;
+      private static _lastMediaSession?: WeakRef<android.support.v4.media.session.MediaSessionCompat>;
       private _cls: string;
       private get cls() {
         if (!this._cls) {
@@ -73,9 +73,13 @@ export namespace dk {
           sessionActivityPendingIntent = android.app.PendingIntent.getActivity(this, 0, sessionIntent, 0);
         }
 
-        if (MediaService._lastMediaSession) {
-          MediaService._lastMediaSession.release();
-          MediaService._lastMediaSession = undefined;
+        let lastMediaSession = MediaService._lastMediaSession?.get();
+        if (lastMediaSession) {
+          lastMediaSession.release();
+          MediaService._lastMediaSession?.clear();
+          delete MediaService._lastMediaSession;
+
+          lastMediaSession = undefined;
         }
 
         this._rate = DEFAULT_PLAYBACK_RATE;
@@ -320,10 +324,10 @@ export namespace dk {
 
         if (this._mediaSession) {
           this._mediaSession.setActive(false);
-          // Releasing the mediasession and then using a headset button leads to:
+          // Releasing the mediasession when using a headset button leads to:
           // > IllegalStateException: Could not find any Service that handles android.intent.action.MEDIA_BUTTON
           // Therefore we save it to a static variable and release it on next "onCreate".
-          MediaService._lastMediaSession = this._mediaSession;
+          MediaService._lastMediaSession = new WeakRef(this._mediaSession);
           this._mediaSession = undefined;
         }
 
