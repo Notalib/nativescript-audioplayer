@@ -17,8 +17,7 @@ export namespace dk {
     let instance = 0;
 
     @JavaProxy('dk.nota.MediaService')
-    export class MediaService extends android.app.Service {
-      private static _lastMediaSession?: WeakRef<android.support.v4.media.session.MediaSessionCompat>;
+    export class MediaService extends androidx.media.MediaBrowserServiceCompat {
       private _cls: string;
       private get cls() {
         if (!this._cls) {
@@ -75,15 +74,6 @@ export namespace dk {
           sessionActivityPendingIntent = android.app.PendingIntent.getActivity(this, 0, sessionIntent, 0);
         }
 
-        let lastMediaSession = MediaService._lastMediaSession?.get();
-        if (lastMediaSession) {
-          lastMediaSession.release();
-          MediaService._lastMediaSession?.clear();
-          delete MediaService._lastMediaSession;
-
-          lastMediaSession = undefined;
-        }
-
         this._rate = DEFAULT_PLAYBACK_RATE;
         this._seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
         this._intentReqCode = DEFAULT_INTENT_CODE;
@@ -125,7 +115,6 @@ export namespace dk {
           this._mediaSession.setCallback(new TNSMediaSessionCompatCallback(this));
           const mediaButtonIntent = new android.content.Intent(android.content.Intent.ACTION_MEDIA_BUTTON);
           mediaButtonIntent.setClass(appContext, TNSMediaButtonReceiver.class);
-          console.log(TNSMediaButtonReceiver.class, mediaButtonIntent);
           this._mediaSession.setMediaButtonReceiver(android.app.PendingIntent.getBroadcast(appContext, 0, mediaButtonIntent, 0));
         } else {
           // Do not let MediaButtons restart the player when the app is not visible.
@@ -217,13 +206,6 @@ export namespace dk {
         const duration = player.getDuration();
 
         if (this.lastPosition !== position || this.lastWindowIndex !== windowIndex) {
-          console.log(
-            JSON.stringify({
-              position,
-              duration,
-              windowIndex,
-            }),
-          );
           this.owner?._onTimeChanged(position, duration, windowIndex);
 
           this.lastPosition = position;
@@ -348,10 +330,7 @@ export namespace dk {
 
         if (this._mediaSession) {
           this._mediaSession.setActive(false);
-          // Releasing the mediasession when using a headset button leads to:
-          // > IllegalStateException: Could not find any Service that handles android.intent.action.MEDIA_BUTTON
-          // Therefore we save it to a static variable and release it on next "onCreate".
-          MediaService._lastMediaSession = new WeakRef(this._mediaSession);
+          this._mediaSession.release();
           this._mediaSession = undefined;
         }
 
@@ -392,11 +371,17 @@ export namespace dk {
       }
 
       public onBind(param: android.content.Intent): android.os.IBinder {
+        const action = `${param.getAction()}`;
+
         if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onBind(${param})`, notaAudioCategory);
+          trace.write(`${this.cls}.onBind(${param}) action: ${action}`, notaAudioCategory);
         }
 
-        return this._binder as android.os.IBinder;
+        if (action === 'android.media.browse.MediaBrowserService') {
+          return null!;
+        }
+
+        return this._binder!;
       }
 
       public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
@@ -690,12 +675,6 @@ export namespace dk {
 
     @JavaProxy('dk.nota.TNSMediaButtonReceiver')
     export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
-      constructor() {
-        super();
-
-        return global.__native(this);
-      }
-
       public onReceive(context: android.content.Context, intent: android.content.Intent) {
         if (trace.isEnabled()) {
           trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
