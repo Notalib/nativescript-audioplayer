@@ -65,6 +65,8 @@ export namespace dk {
         }
         super.onCreate();
 
+        const appContext = this.getApplicationContext();
+
         ensureNativeClasses();
 
         const sessionIntent = this.getPackageManager()?.getLaunchIntentForPackage(this.getPackageName());
@@ -111,9 +113,24 @@ export namespace dk {
         if (sessionActivityPendingIntent) {
           this._mediaSession.setSessionActivity(sessionActivityPendingIntent);
         }
-        // Do not let MediaButtons restart the player when the app is not visible.
-        this._mediaSession.setMediaButtonReceiver(null!);
+
         this._mediaSession.setActive(true);
+
+        if (android.os.Build.VERSION.SDK_INT < 23) {
+          this._mediaSession.setFlags(
+            android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+              android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+          );
+
+          this._mediaSession.setCallback(new TNSMediaSessionCompatCallback(this));
+          const mediaButtonIntent = new android.content.Intent(android.content.Intent.ACTION_MEDIA_BUTTON);
+          mediaButtonIntent.setClass(appContext, TNSMediaButtonReceiver.class);
+          console.log(TNSMediaButtonReceiver.class, mediaButtonIntent);
+          this._mediaSession.setMediaButtonReceiver(android.app.PendingIntent.getBroadcast(appContext, 0, mediaButtonIntent, 0));
+        } else {
+          // Do not let MediaButtons restart the player when the app is not visible.
+          this._mediaSession.setMediaButtonReceiver(null!);
+        }
 
         // Use MediaSessionConnector extension to handle external media control actions (like headset pause/play).
         this._mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(this._mediaSession);
@@ -151,7 +168,7 @@ export namespace dk {
           new TNSNotificationListener(this),
         );
 
-        const exoPlayer = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(this.getApplicationContext())
+        const exoPlayer = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(appContext)
           .setTrackSelector(trackSelector)
           .setLoadControl(loadControl)
           .build();
@@ -200,6 +217,13 @@ export namespace dk {
         const duration = player.getDuration();
 
         if (this.lastPosition !== position || this.lastWindowIndex !== windowIndex) {
+          console.log(
+            JSON.stringify({
+              position,
+              duration,
+              windowIndex,
+            }),
+          );
           this.owner?._onTimeChanged(position, duration, windowIndex);
 
           this.lastPosition = position;
@@ -664,6 +688,29 @@ export namespace dk {
       }
     }
 
+    @JavaProxy('dk.nota.TNSMediaButtonReceiver')
+    export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
+      constructor() {
+        super();
+
+        return global.__native(this);
+      }
+
+      public onReceive(context: android.content.Context, intent: android.content.Intent) {
+        if (trace.isEnabled()) {
+          trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
+        }
+
+        try {
+          super.onReceive(context, intent);
+        } catch (e) {
+          if (trace.isEnabled()) {
+            trace.write(`TNSMediaButtonReceiver.onReceive() - error - ${e}`, notaAudioCategory, trace.messageType.warn);
+          }
+        }
+      }
+    }
+
     export namespace MediaService {
       export class LocalBinder extends android.os.Binder {
         private owner: WeakRef<MediaService>;
@@ -690,6 +737,8 @@ let TNSMediaDescriptionAdapter: new (owner: dk.nota.MediaService) => com.google.
 type TNSMediaDescriptionAdapter = com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter;
 let TNSNotificationListener: new (owner: dk.nota.MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener;
 type TNSNotificationListener = com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener;
+let TNSMediaSessionCompatCallback: new (owner: dk.nota.MediaService) => android.support.v4.media.session.MediaSessionCompat.Callback;
+type TNSMediaSessionCompatCallback = android.support.v4.media.session.MediaSessionCompat.Callback;
 
 export class ExoPlaybackError extends Error {
   constructor(public errorType: string, public errorMessage: string, public nativeException: com.google.android.exoplayer2.ExoPlaybackException) {
@@ -1211,4 +1260,42 @@ function ensureNativeClasses() {
   }
 
   TNSNotificationListener = TNSNotificationListenerImpl;
+
+  class TNSMediaSessionCompatCallbackImpl extends android.support.v4.media.session.MediaSessionCompat.Callback {
+    private static instanceNo = 0;
+    private readonly cls = `TNSMediaSessionCompatCallbackImpl<${++TNSMediaSessionCompatCallbackImpl.instanceNo}>`;
+    private _owner: WeakRef<dk.nota.MediaService>;
+
+    private get owner(): dk.nota.MediaService | null {
+      return this._owner?.get();
+    }
+
+    constructor(owner: dk.nota.MediaService) {
+      super();
+
+      this._owner = new WeakRef(owner);
+
+      return global.__native(this);
+    }
+
+    public onPlay() {
+      this.owner?._onPlaying();
+    }
+
+    public onPause() {
+      this.owner?._onPaused();
+    }
+
+    public onStop() {
+      this.owner?._onStopped();
+    }
+
+    public onMediaButtonEvent(mediaButtonEvent: android.content.Intent) {
+      console.log(mediaButtonEvent);
+
+      return true;
+    }
+  }
+
+  TNSMediaSessionCompatCallback = TNSMediaSessionCompatCallbackImpl;
 }

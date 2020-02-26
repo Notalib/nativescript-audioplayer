@@ -11,7 +11,7 @@
              >
     </service>
     <!-- Needed for older androids: https://stackoverflow.com/a/44757777/441556 -->
-    <receiver android:name="androidx.media.session.MediaButtonReceiver" >
+    <receiver android:name="dk.nota.TNSMediaButtonReceiver" >
       <intent-filter>
         <action android:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>
