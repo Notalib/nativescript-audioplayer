@@ -352,28 +352,67 @@ export namespace dk {
       }
 
       public _handleNotificationPosted(notificationId: number, notification: android.app.Notification) {
-        if (this._isForegroundService) {
+        if (!this.exoPlayer) {
           if (trace.isEnabled()) {
-            trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - already in the foreground`, notaAudioCategory);
+            trace.write(
+              `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - missing exoplayer`,
+              notaAudioCategory,
+              trace.messageType.error,
+            );
           }
 
           return;
         }
 
+        const playerState = this.exoPlayer.getPlaybackState();
+
+        const shouldBeInForeground = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING || !!this.exoPlayer.isPlaying();
+
         if (trace.isEnabled()) {
-          trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - put in the foreground`, notaAudioCategory);
+          trace.write(
+            `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - should be in:${shouldBeInForeground}. is in foreground:${this._isForegroundService}`,
+            notaAudioCategory,
+          );
         }
 
-        /**
-         * This may look strange, but the documentation for [Service.startForeground]
-         * notes that "calling this method does *not* put the service in the started
-         * state itself, even though the name sounds like it."
-         */
-        androidx.core.content.ContextCompat.startForegroundService(this.getApplicationContext(), new android.content.Intent(this, dk.nota.MediaService.class));
-        this.startForeground(notificationId, notification);
-        this._isForegroundService = true;
+        if (shouldBeInForeground === this._isForegroundService) {
+          return;
+        }
 
-        this.exoPlayer?.setForegroundMode(true);
+        if (shouldBeInForeground) {
+          /**
+           * This may look strange, but the documentation for [Service.startForeground]
+           * notes that "calling this method does *not* put the service in the started
+           * state itself, even though the name sounds like it."
+           */
+          androidx.core.content.ContextCompat.startForegroundService(
+            this.getApplicationContext(),
+            new android.content.Intent(this, dk.nota.MediaService.class),
+          );
+          this.startForeground(notificationId, notification);
+          this._isForegroundService = true;
+
+          this.exoPlayer.setForegroundMode(true);
+
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
+          }
+        } else {
+          this.stopForeground(false);
+          this._isForegroundService = false;
+
+          const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING;
+          if (shouldStopSelf) {
+            this.stopSelf();
+          }
+
+          if (trace.isEnabled()) {
+            trace.write(
+              `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${shouldStopSelf}`,
+              notaAudioCategory,
+            );
+          }
+        }
       }
 
       public onBind(intent: android.content.Intent): android.os.IBinder {
