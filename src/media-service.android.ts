@@ -17,7 +17,7 @@ export namespace dk {
     let instance = 0;
 
     @JavaProxy('dk.nota.MediaService')
-    export class MediaService extends androidx.media.MediaBrowserServiceCompat {
+    export class MediaService extends android.app.Service {
       private _cls: string;
       private get cls() {
         if (!this._cls) {
@@ -106,20 +106,13 @@ export namespace dk {
 
         this._mediaSession.setActive(true);
 
-        if (android.os.Build.VERSION.SDK_INT < 23) {
-          this._mediaSession.setFlags(
-            android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-              android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
-          );
+        this._mediaSession.setFlags(
+          android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+            android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+        );
 
-          this._mediaSession.setCallback(new TNSMediaSessionCompatCallback(this));
-          const mediaButtonIntent = new android.content.Intent(android.content.Intent.ACTION_MEDIA_BUTTON);
-          mediaButtonIntent.setClass(appContext, TNSMediaButtonReceiver.class);
-          this._mediaSession.setMediaButtonReceiver(android.app.PendingIntent.getBroadcast(appContext, 0, mediaButtonIntent, 0));
-        } else {
-          // Do not let MediaButtons restart the player when the app is not visible.
-          this._mediaSession.setMediaButtonReceiver(null!);
-        }
+        // Do not let MediaButtons restart the player when the app is not visible.
+        this._mediaSession.setMediaButtonReceiver(null!);
 
         // Use MediaSessionConnector extension to handle external media control actions (like headset pause/play).
         this._mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(this._mediaSession);
@@ -370,15 +363,11 @@ export namespace dk {
         this.exoPlayer?.setForegroundMode(true);
       }
 
-      public onBind(param: android.content.Intent): android.os.IBinder {
-        const action = `${param.getAction()}`;
+      public onBind(intent: android.content.Intent): android.os.IBinder {
+        const action = `${intent.getAction()}`;
 
         if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onBind(${param}) action: ${action}`, notaAudioCategory);
-        }
-
-        if (action === 'android.media.browse.MediaBrowserService') {
-          return null!;
+          trace.write(`${this.cls}.onBind(${intent}) action: ${action}`, notaAudioCategory);
         }
 
         return this._binder!;
@@ -386,11 +375,11 @@ export namespace dk {
 
       public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
         if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
+          trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId}) - ${this._mediaSession}`, notaAudioCategory);
         }
 
         if (this._mediaSession) {
-          androidx.media.session.MediaButtonReceiver.handleIntent(this._mediaSession, intent);
+          TNSMediaButtonReceiver.handleIntent(this._mediaSession, intent);
         }
 
         return super.onStartCommand(intent, flags, startId);

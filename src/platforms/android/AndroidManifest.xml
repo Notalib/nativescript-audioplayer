@@ -9,7 +9,7 @@
              android:exported="false"
              android:foregroundServiceType="mediaPlayback">
       <intent-filter>
-        <action android:name="android.media.browse.MediaBrowserService" />
+        <action android:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>
     </service>
     <!-- Needed for older androids: https://stackoverflow.com/a/44757777/441556 -->
