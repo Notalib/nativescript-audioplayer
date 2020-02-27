@@ -435,9 +435,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     context.unbindService(this._serviceConnection);
     context.stopService(foregroundNotificationIntent);
 
+    this._mediaService.setOwner(null);
     this._mediaService.stopForeground(true);
     this._mediaService.stopSelf();
-    this._mediaService = undefined;
+
+    delete this._mediaService;
   }
 
   protected _exitHandler(args: nsApp.ApplicationEventData) {

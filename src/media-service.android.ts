@@ -403,7 +403,11 @@ export namespace dk {
           trace.write(`${this.cls}.setOwner()`, notaAudioCategory);
         }
 
-        this._owner = new WeakRef(owner);
+        if (owner) {
+          this._owner = new WeakRef(owner);
+        } else {
+          this._owner = undefined;
+        }
       }
 
       public async preparePlaylist(playlist: Playlist) {
