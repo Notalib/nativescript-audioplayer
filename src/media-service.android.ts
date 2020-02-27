@@ -1209,7 +1209,7 @@ function ensureNativeClasses() {
       this.owner?._handleNotificationPosted(notificationId, notification);
     }
 
-    public onNotificationCancelled(notificationId: number, dismissedByUser?: boolean) {
+    public onNotificationCancelled(notificationId: number, dismissedByUser = false) {
       const cls = trace.isEnabled() && `${this.cls}.onNotificationCancelled(id=${notificationId}, dismissedByUser=${dismissedByUser}) - ${this.owner}`;
       if (trace.isEnabled()) {
         trace.write(`${cls}`, notaAudioCategory);
