@@ -310,7 +310,6 @@ export namespace dk {
         this.stopForeground(true);
         if (this._isForegroundService) {
           this._isForegroundService = false;
-          this.exoPlayer?.setForegroundMode(false);
         }
 
         if (this.isPlaying()) {
@@ -333,7 +332,6 @@ export namespace dk {
         this._mediaSession?.release();
         delete this._mediaSession;
 
-        this.exoPlayer?.setForegroundMode(false);
         this.exoPlayer?.release();
         delete this.exoPlayer;
         clearInterval(this._timeChangeInterval);
@@ -386,32 +384,29 @@ export namespace dk {
             this.getApplicationContext(),
             new android.content.Intent(this, dk.nota.MediaService.class),
           );
+
           this.startForeground(notificationId, notification);
           this._isForegroundService = true;
-
-          this.exoPlayer.setForegroundMode(true);
 
           if (trace.isEnabled()) {
             trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
           }
+        } else {
+          // If playback has ended, also stop the service.
+          const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
 
-          return;
-        }
+          this.stopForeground(shouldStopSelf);
+          this._isForegroundService = false;
+          if (shouldStopSelf) {
+            this.stopSelf();
+          }
 
-        this.stopForeground(false);
-        this._isForegroundService = false;
-
-        // If playback has ended, also stop the service.
-        const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
-        if (shouldStopSelf) {
-          this.stopSelf();
-        }
-
-        if (trace.isEnabled()) {
-          trace.write(
-            `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
-            notaAudioCategory,
-          );
+          if (trace.isEnabled()) {
+            trace.write(
+              `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
+              notaAudioCategory,
+            );
+          }
         }
       }
 
@@ -1264,8 +1259,6 @@ function ensureNativeClasses() {
         try {
           this.owner.stopForeground(false);
           this.owner._isForegroundService = false;
-
-          this.owner.exoPlayer?.setForegroundMode(false);
         } catch (err) {
           trace.write(`${cls} stopForeground failed! - ${err}`, notaAudioCategory, trace.messageType.error);
         }
