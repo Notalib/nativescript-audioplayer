@@ -611,7 +611,7 @@ export namespace dk {
 
       public stop() {
         if (!this.exoPlayer) {
-          trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}.stop() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
 
           return;
         }
@@ -892,6 +892,12 @@ function ensureNativeClasses() {
           }
 
           this.owner?._onBuffering();
+
+          if (!playWhenReady) {
+            // Makes sure that player is paused when Player.pause() is called while player is in buffering state
+            this.owner?._onPaused();
+          }
+
           break;
         }
         // The player does not have any media to play.
