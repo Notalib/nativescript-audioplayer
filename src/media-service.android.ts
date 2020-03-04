@@ -33,7 +33,6 @@ export namespace dk {
         return global.__native(this);
       }
 
-      private _binder?: MediaService.LocalBinder;
       public exoPlayer?: com.google.android.exoplayer2.SimpleExoPlayer;
       private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
       private get _sessionToken() {
@@ -86,8 +85,6 @@ export namespace dk {
         this._seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
         this._intentReqCode = DEFAULT_INTENT_CODE;
         this._isForegroundService = false;
-
-        this._binder = new MediaService.LocalBinder(this);
 
         const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector(this);
         /**
@@ -270,7 +267,7 @@ export namespace dk {
           const endedTrackIndex = this.exoPlayer.getCurrentWindowIndex();
           this.owner?._onEndOfTrackReached(endedTrackIndex);
         } else {
-          trace.write(`${this.cls}._onEndOfTrackReached() - exoplayer not initialized`, notaAudioCategory, trace.messageType.error);
+          trace.write(`${this.cls}._onEndOfTrackReached() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
         }
       }
 
@@ -316,7 +313,7 @@ export namespace dk {
           this.exoPlayer?.setForegroundMode(false);
         }
 
-        if (this.exoPlayer?.isPlaying()) {
+        if (this.isPlaying()) {
           this.exoPlayer?.stop();
         }
 
@@ -341,7 +338,6 @@ export namespace dk {
         delete this.exoPlayer;
         clearInterval(this._timeChangeInterval);
 
-        delete this._binder;
         delete this._owner;
         this._albumArts?.clear();
         delete this._albumArts;
@@ -365,8 +361,9 @@ export namespace dk {
         }
 
         const playerState = this.exoPlayer.getPlaybackState();
+        const isBuffering = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING;
 
-        const shouldBeInForeground = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING || !!this.exoPlayer.isPlaying();
+        const shouldBeInForeground = isBuffering || this.isPlaying();
 
         if (trace.isEnabled()) {
           trace.write(
@@ -397,21 +394,24 @@ export namespace dk {
           if (trace.isEnabled()) {
             trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
           }
-        } else {
-          this.stopForeground(false);
-          this._isForegroundService = false;
 
-          const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING;
-          if (shouldStopSelf) {
-            this.stopSelf();
-          }
+          return;
+        }
 
-          if (trace.isEnabled()) {
-            trace.write(
-              `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${shouldStopSelf}`,
-              notaAudioCategory,
-            );
-          }
+        this.stopForeground(false);
+        this._isForegroundService = false;
+
+        // If playback has ended, also stop the service.
+        const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
+        if (shouldStopSelf) {
+          this.stopSelf();
+        }
+
+        if (trace.isEnabled()) {
+          trace.write(
+            `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
+            notaAudioCategory,
+          );
         }
       }
 
@@ -422,7 +422,7 @@ export namespace dk {
           trace.write(`${this.cls}.onBind(${intent}) action: ${action}`, notaAudioCategory);
         }
 
-        return this._binder!;
+        return new MediaService.LocalBinder(this);
       }
 
       public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
@@ -451,7 +451,7 @@ export namespace dk {
 
       public async preparePlaylist(playlist: Playlist) {
         if (!this.exoPlayer || !this._playerNotificationManager) {
-          trace.write(`${this.cls}.preparePlaylist() - exoplayer not initialized`, notaAudioCategory);
+          trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory);
 
           return;
         }
