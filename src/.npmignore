@@ -7,3 +7,4 @@ references.d.ts
 tsconfig.json
 *.tgz
 *.tsbuildinfo
+nativescript_audioplayer.aar
