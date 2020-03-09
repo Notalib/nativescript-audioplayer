@@ -462,7 +462,15 @@ export namespace dk {
 
         const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
         const mediaSourceFactory = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
-          new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(this, userAgent),
+          new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(
+            this,
+            new com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory(
+              userAgent,
+              com.google.android.exoplayer2.upstream.DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+              30 * 1000,
+              true,
+            ),
+          ),
         );
 
         this.albumArts.clear();
