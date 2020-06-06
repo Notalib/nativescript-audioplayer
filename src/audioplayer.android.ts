@@ -291,6 +291,22 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
   }
 
+  public async setUseNavigationActions(value:boolean){
+    (await this.mediaService).setUseNavigationActions(value);
+  }
+
+  public async setUseNavigationActionsInCompactView(value:boolean){
+    (await this.mediaService).setUseNavigationActionsInCompactView(value);
+  }
+
+  public async setUsePlayPauseActions(value:boolean){
+    (await this.mediaService).setUsePlayPauseActions(value);
+  }
+
+  public async setUseStopAction(value:boolean){
+    (await this.mediaService).setUseStopAction(value);
+  }
+
   public async setRate(rate: number) {
     if (typeof rate === 'number' && !Number.isNaN(rate)) {
       this._playbackRate = rate;

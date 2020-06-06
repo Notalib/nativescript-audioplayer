@@ -8,6 +8,10 @@ declare namespace dk {
       public setRate(rate: number): void;
       public getRate(): number;
       public setOwner(owner: any): void;
+      public setUseNavigationActions(value:boolean);
+      public setUseNavigationActionsInCompactView(value:boolean);
+      public setUsePlayPauseActions(value:boolean);
+      public setUseStopAction(value:boolean);
 
       public isPlaying(): boolean;
       public play(): void;
