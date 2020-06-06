@@ -59,10 +59,10 @@ export namespace dk {
       private _intentReqCode = DEFAULT_INTENT_CODE;
       private _timeChangeInterval: number;
 
-      private _useNavigationActions: boolean = DEFAULT_USE_NAVIGATION_ACTIONS;
-      private _useNavigationActionsInCompactView: boolean = DEFAULT_USE_NAVIGATION_ACTIONS_IN_COMPACT_VIEW;
-      private _usePlayPauseActions: boolean = DEFAULT_USE_PLAY_PAUSE_ACTIONS;
-      private _useStopAction: boolean = DEFAULT_USE_STOP_ACTION;
+      private _useNavigationActions: boolean;
+      private _useNavigationActionsInCompactView: boolean;
+      private _usePlayPauseActions: boolean;
+      private _useStopAction: boolean;
 
       private _albumArts?: Map<string, Promise<ImageSource>>;
       private get albumArts() {
