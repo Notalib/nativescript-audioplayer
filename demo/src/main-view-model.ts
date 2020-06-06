@@ -24,6 +24,9 @@ export class HelloWorldModel extends Observable implements PlaybackEventListener
 
   public async loadAndSetupPlaylist() {
     const playlistUID = 'UID_12345';
+
+    this.player.setUseNavigationActions(true);
+
     if (this.player.getCurrentPlaylistUID() === playlistUID) {
       console.log(`Player already has playlist: ${this.player.getCurrentPlaylistUID()}`);
 

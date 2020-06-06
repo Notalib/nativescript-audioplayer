@@ -108,6 +108,22 @@ export class CommonAudioPlayer extends Observable {
     throw new Error('Not implemented');
   }
 
+  public async setUseNavigationActions(value:boolean){
+    throw new Error('Not implemented');
+  }
+
+  public async setUseNavigationActionsInCompactView(value:boolean){
+    throw new Error('Not implemented');
+  }
+
+  public async setUsePlayPauseActions(value:boolean){
+    throw new Error('Not implemented');
+  }
+
+  public async setUseStopAction(value:boolean){
+    throw new Error('Not implemented');
+  }
+
   /**
    * Set playbackRate
    */

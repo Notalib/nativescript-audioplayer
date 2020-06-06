@@ -11,6 +11,10 @@ const MEDIA_SERVICE_NAME = 'TNS-MediaService-1';
 const DEFAULT_PLAYBACK_RATE = 1;
 const DEFAULT_INTENT_CODE = 1337;
 const DEFAULT_SEEK_LENGTH = 15;
+const DEFAULT_USE_NAVIGATION_ACTIONS = false;
+const DEFAULT_USE_NAVIGATION_ACTIONS_IN_COMPACT_VIEW = true;
+const DEFAULT_USE_PLAY_PAUSE_ACTIONS = true;
+const DEFAULT_USE_STOP_ACTION = false;
 
 export namespace dk {
   export namespace nota {
@@ -19,6 +23,7 @@ export namespace dk {
     @JavaProxy('dk.nota.MediaService')
     export class MediaService extends android.app.Service {
       private _cls: string;
+      
       private get cls() {
         if (!this._cls) {
           this._cls = `MediaService<${++instance}>`;
@@ -53,6 +58,11 @@ export namespace dk {
       private _seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
       private _intentReqCode = DEFAULT_INTENT_CODE;
       private _timeChangeInterval: number;
+
+      private _useNavigationActions: boolean;
+      private _useNavigationActionsInCompactView: boolean;
+      private _usePlayPauseActions: boolean;
+      private _useStopAction: boolean;
 
       private _albumArts?: Map<string, Promise<ImageSource>>;
       private get albumArts() {
@@ -499,10 +509,6 @@ export namespace dk {
 
         this._playerNotificationManager.setPlayer(this.exoPlayer);
         this._playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
-        this._playerNotificationManager.setUseNavigationActionsInCompactView(true);
-        this._playerNotificationManager.setUsePlayPauseActions(true);
-        this._playerNotificationManager.setUseNavigationActions(false);
-        this._playerNotificationManager.setUseStopAction(false);
         const notificationIcon = nsUtils.ad.resources.getDrawableId('tns_audioplayer_small_icon');
         if (notificationIcon) {
           this._playerNotificationManager.setSmallIcon(notificationIcon);
@@ -512,6 +518,12 @@ export namespace dk {
 
         this.setRate(this._rate);
         this.setSeekIntervalSeconds(this._seekIntervalSeconds);
+
+        this._playerNotificationManager.setUseNavigationActionsInCompactView(this._useNavigationActionsInCompactView??DEFAULT_USE_NAVIGATION_ACTIONS_IN_COMPACT_VIEW);
+        this._playerNotificationManager.setUsePlayPauseActions(this._usePlayPauseActions??DEFAULT_USE_PLAY_PAUSE_ACTIONS);
+        this._playerNotificationManager.setUseNavigationActions(this._useNavigationActions??DEFAULT_USE_NAVIGATION_ACTIONS);
+        this._playerNotificationManager.setUseStopAction(this._useStopAction??DEFAULT_USE_STOP_ACTION);
+
         this._mediaSessionConnector?.setPlayer(this.exoPlayer);
         this.exoPlayer.prepare(concatenatedSource);
       }
@@ -531,6 +543,22 @@ export namespace dk {
         const seekMs = this._seekIntervalSeconds * 1000;
         this._playerNotificationManager.setFastForwardIncrementMs(seekMs);
         this._playerNotificationManager.setRewindIncrementMs(seekMs);
+      }
+
+      public setUseNavigationActions(value:boolean){
+        this._useNavigationActions = value;
+      }
+
+      public setUseNavigationActionsInCompactView(value:boolean){
+        this._useNavigationActionsInCompactView = value;
+      }
+
+      public setUsePlayPauseActions(value:boolean){
+        this._usePlayPauseActions = value;
+      }
+
+      public setUseStopAction(value:boolean){
+        this._useStopAction = value;
       }
 
       public setRate(rate: number) {
