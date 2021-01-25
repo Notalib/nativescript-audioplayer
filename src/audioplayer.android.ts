@@ -17,11 +17,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
   private _mediaServiceReject: (error: any) => void;
 
-  private _mediaService?: dk.nota.MediaService;
-
-  private get mediaService() {
-    if (this._mediaService) {
-      return Promise.resolve(this._mediaService);
+  private _mediaService?: WeakRef<dk.nota.MediaService>;
+  private get mediaService(): Promise<dk.nota.MediaService> {
+    let mediaService = this._mediaService?.get();
+    if (mediaService) {
+      return Promise.resolve(mediaService);
     }
 
     if (!this._mediaServicePromise) {

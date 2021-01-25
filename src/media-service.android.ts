@@ -33,14 +33,14 @@ export namespace dk {
         return global.__native(this);
       }
 
-      public exoPlayer?: com.google.android.exoplayer2.SimpleExoPlayer;
-      private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
+      public exoPlayer?: WeakRef<com.google.android.exoplayer2.SimpleExoPlayer>;
+      private _mediaSession?: WeakRef<android.support.v4.media.session.MediaSessionCompat>;
       private get _sessionToken() {
-        return this._mediaSession?.getSessionToken();
+        return this._mediaSession?.get()?.getSessionToken();
       }
-      private _playerNotificationManager?: com.google.android.exoplayer2.ui.PlayerNotificationManager;
-      private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
-      private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
+      private _playerNotificationManager?: WeakRef<com.google.android.exoplayer2.ui.PlayerNotificationManager>;
+      private _mediaSessionConnector?: WeakRef<com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector>;
+      private _mediaSessionMetadataProvider?: WeakRef<com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider>;
       private _playlist?: Playlist;
 
       public _isForegroundService: boolean;
