@@ -17,11 +17,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
   private _mediaServiceReject: (error: any) => void;
 
-  private _mediaService?: dk.nota.MediaService;
-
-  private get mediaService() {
-    if (this._mediaService) {
-      return Promise.resolve(this._mediaService);
+  private _mediaService?: WeakRef<dk.nota.MediaService>;
+  private get mediaService(): Promise<dk.nota.MediaService> {
+    let mediaService = this._mediaService?.get();
+    if (mediaService) {
+      return Promise.resolve(mediaService);
     }
 
     if (!this._mediaServicePromise) {
@@ -62,7 +62,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._mediaServicePromise;
   }
 
-  private _serviceConnection = new android.content.ServiceConnection({
+  private get exoPlayer() {
+    return this.mediaService.then((ms) => ms.exoPlayer?.get());
+  }
+
+  private _serviceConnection? = new android.content.ServiceConnection({
     onServiceConnected: (componentName, binder: dk.nota.MediaService.LocalBinder) => {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.onServiceConnected(${componentName.toString()}, ${binder})`, notaAudioCategory);
@@ -84,7 +88,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       mediaService.setOwner(this);
 
-      this._mediaService = mediaService;
+      this._mediaService = new WeakRef(mediaService);
 
       this._mediaServiceResolve(mediaService);
     },
@@ -116,6 +120,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._mediaService;
   }
 
+  private isDestroyed = false;
+
   public async preparePlaylist(playlist: Playlist) {
     try {
       const mediaService = await this.mediaService;
@@ -133,9 +139,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
+      const exoPlayer = await this.exoPlayer;
+      if (!exoPlayer) {
+        return -1;
+      }
 
-      return mediaService.exoPlayer.getCurrentWindowIndex();
+      return exoPlayer.getCurrentWindowIndex();
     } catch (err) {
       trace.write(`${this.cls}.getCurrentPlaylistIndex() - ${err}`, notaAudioCategory, trace.messageType.error);
 
@@ -174,7 +183,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   public async stop() {
     this.playlist = undefined;
 
-    if (!this._mediaService) {
+    const mediaService = this._mediaService?.get();
+    if (!mediaService) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.stop() - no media service - nothing to stop`, notaAudioCategory);
       }
@@ -183,7 +193,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      this._mediaService.stop();
+      mediaService.stop();
     } catch (err) {
       trace.write(`${this.cls}.stop() - ${err}`, notaAudioCategory, trace.messageType.error);
     }
@@ -217,9 +227,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-
-      mediaService.exoPlayer.seekTo(offset);
+      const exoPlayer = await this.exoPlayer;
+      if (exoPlayer) {
+        exoPlayer.seekTo(offset);
+      }
     } catch (err) {
       trace.write(`${this.cls}.seekTo(${offset}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
@@ -233,9 +244,10 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-
-      mediaService.exoPlayer.seekTo(playlistIndex, offset);
+      const exoPlayer = await this.exoPlayer;
+      if (exoPlayer) {
+        exoPlayer.seekTo(playlistIndex, offset);
+      }
     } catch (err) {
       trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
@@ -249,9 +261,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-      if (mediaService.exoPlayer.hasPrevious()) {
-        mediaService.exoPlayer.previous();
+      const exoPlayer = await this.exoPlayer;
+      if (exoPlayer?.hasPrevious()) {
+        exoPlayer.previous();
       }
     } catch (err) {
       trace.write(`${this.cls}.skipToPrevious() - ${err}`, notaAudioCategory, trace.messageType.error);
@@ -266,9 +278,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-      if (mediaService.exoPlayer.hasNext()) {
-        mediaService.exoPlayer.next();
+      const exoPlayer = await this.exoPlayer;
+      if (exoPlayer?.hasNext()) {
+        exoPlayer.next();
       }
     } catch (err) {
       trace.write(`${this.cls}.skipToNext() - ${err}`, notaAudioCategory, trace.messageType.error);
@@ -283,9 +295,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-
-      mediaService.exoPlayer.seekTo(playlistIndex, 0);
+      const exoPlayer = await this.exoPlayer;
+      exoPlayer?.seekTo(playlistIndex, 0);
     } catch (err) {
       trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - ${err}`, notaAudioCategory, trace.messageType.error);
     }
@@ -339,9 +350,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-
-      return mediaService.exoPlayer.getDuration();
+      const exoPlayer = await this.exoPlayer;
+      return exoPlayer?.getDuration() ?? 0;
     } catch (err) {
       trace.write(`${this.cls}.getDuration() - ${err}`, notaAudioCategory, trace.messageType.error);
 
@@ -357,9 +367,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     try {
-      const mediaService = await this.mediaService;
-
-      return mediaService.exoPlayer.getCurrentPosition();
+      const exoPlayer = await this.exoPlayer;
+      return exoPlayer?.getCurrentPosition() ?? -1;
     } catch (err) {
       trace.write(`${this.cls}.getCurrentTime() - ${err}`, notaAudioCategory, trace.messageType.error);
 
@@ -388,12 +397,21 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public destroy() {
+    if (this.isDestroyed) {
+      return;
+    }
+
     if (trace.isEnabled()) {
       trace.write(`${this.cls}.destroy()`, notaAudioCategory);
     }
 
+    this.isDestroyed = true;
+
     this.stopMediaService();
 
+    nsApp.off(nsApp.exitEvent, this._exitHandler, this);
+
+    delete this._serviceConnection;
     super.destroy();
   }
 
@@ -412,7 +430,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     const foregroundNotificationIntent = new android.content.Intent(context, dk.nota.MediaService.class);
     context.startService(foregroundNotificationIntent);
 
-    context.bindService(foregroundNotificationIntent, this._serviceConnection, android.content.Context.BIND_AUTO_CREATE);
+    context.bindService(foregroundNotificationIntent, this._serviceConnection!, android.content.Context.BIND_AUTO_CREATE);
   }
 
   private stopMediaService() {
@@ -420,9 +438,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.stopMediaService()`, notaAudioCategory);
     }
 
-    this._mediaServicePromise = undefined;
-
-    if (!this._mediaService) {
+    delete this._mediaServicePromise;
+    const mediaService = this._mediaService?.get();
+    if (!mediaService) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.stopMediaService() - no media service`, notaAudioCategory);
       }
@@ -432,12 +450,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     const context = this.context;
     const foregroundNotificationIntent = new android.content.Intent(context, dk.nota.MediaService.class);
-    context.unbindService(this._serviceConnection);
+    context.unbindService(this._serviceConnection!);
     context.stopService(foregroundNotificationIntent);
 
-    this._mediaService.setOwner(null);
-    this._mediaService.stopForeground(true);
-    this._mediaService.stopSelf();
+    mediaService.setOwner(null);
+    mediaService.stopForeground(true);
+    mediaService.stopSelf();
 
     delete this._mediaService;
   }

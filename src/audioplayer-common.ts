@@ -40,7 +40,11 @@ export class CommonAudioPlayer extends Observable {
 
   protected readonly cls = `TNSAudioPlayer<${++CommonAudioPlayer.instanceNo}>`;
 
-  public android: any;
+  public get android() {
+    // workaround to annoying typescript warning about replacing property with getter.
+    return null as any;
+  }
+
   public ios: any;
   public playlist?: Playlist;
 

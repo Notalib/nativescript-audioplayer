@@ -277,9 +277,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     this.stop();
 
-    delete this._player;
-    delete this._delegate;
-    delete this._iosPlaylist;
+    for (const key of ['_player', '_delegate', '_iosPlaylist']) {
+      delete this[key];
+    }
 
     super.destroy();
   }

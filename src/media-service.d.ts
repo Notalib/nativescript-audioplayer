@@ -1,7 +1,7 @@
 declare namespace dk {
   namespace nota {
     class MediaService extends android.app.Service {
-      public exoPlayer: com.google.android.exoplayer2.ExoPlayer;
+      public exoPlayer?: WeakRef<com.google.android.exoplayer2.ExoPlayer>;
 
       public preparePlaylist(playlist: any): Promise<void>;
       public setSeekIntervalSeconds(seconds: number): void;
