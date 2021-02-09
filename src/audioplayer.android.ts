@@ -66,6 +66,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this.mediaService.then((ms) => ms.exoPlayer?.get());
   }
 
+  // tslint:disable-next-line
   private _serviceConnection? = new android.content.ServiceConnection({
     onServiceConnected: (componentName, binder: dk.nota.MediaService.LocalBinder) => {
       if (trace.isEnabled()) {
@@ -351,6 +352,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       const exoPlayer = await this.exoPlayer;
+
       return exoPlayer?.getDuration() ?? 0;
     } catch (err) {
       trace.write(`${this.cls}.getDuration() - ${err}`, notaAudioCategory, trace.messageType.error);
@@ -368,6 +370,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       const exoPlayer = await this.exoPlayer;
+
       return exoPlayer?.getCurrentPosition() ?? -1;
     } catch (err) {
       trace.write(`${this.cls}.getCurrentTime() - ${err}`, notaAudioCategory, trace.messageType.error);
