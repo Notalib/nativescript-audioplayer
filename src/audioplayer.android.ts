@@ -130,8 +130,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       const mediaService = await this.mediaService;
       await mediaService.preparePlaylist(playlist);
 
-    // This needs to be after call to this.stop() as stop() removes the current playlist.
-    this.playlist = playlist;
+      // This needs to be after call to this.stop() as stop() removes the current playlist.
+      this.playlist = playlist;
     } catch (err) {
       trace.write(`${this.cls}.preparePlaylist() - ${err}`, notaAudioCategory, trace.messageType.error);
     }

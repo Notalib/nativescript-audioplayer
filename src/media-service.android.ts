@@ -684,7 +684,7 @@ export namespace dk {
           this.albumArts.set(url, ImageSource.fromUrl(url));
         }
 
-        return await this.albumArts.get(url)!;
+        return this.albumArts.get(url)!;
       }
 
       public async _loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback): Promise<void> {
