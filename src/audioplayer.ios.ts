@@ -238,7 +238,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private getIndexForItem(item: AudioItem) {
-    const result = this._iosPlaylist.indexOfObject(this._player.currentItem);
+    const result = this._iosPlaylist.indexOfObject(item);
     if (result !== NSNotFound) {
       return result;
     } else {
