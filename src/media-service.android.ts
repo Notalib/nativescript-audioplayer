@@ -331,12 +331,14 @@ export namespace dk {
           playerNotificationManager.setControlDispatcher(null!);
           playerNotificationManager.setPlayer(null!);
         }
+        this._playerNotificationManager?.clear();
         delete this._playerNotificationManager;
         const mediaSessionConnector = this._mediaSessionConnector?.get();
         if (mediaSessionConnector) {
           mediaSessionConnector.setPlayer(null!);
           mediaSessionConnector.setMediaMetadataProvider(null!);
         }
+        this._mediaSessionConnector?.clear();
         delete this._mediaSessionConnector;
 
         delete this._mediaSessionMetadataProvider;
@@ -346,6 +348,7 @@ export namespace dk {
           mediaSession.setActive(false);
           mediaSession.release();
         }
+        this._mediaSession?.clear();
         delete this._mediaSession;
 
         exoPlayer?.release();
@@ -458,13 +461,15 @@ export namespace dk {
         if (owner) {
           this._owner = new WeakRef(owner);
         } else {
+          this._owner?.clear();
           this._owner = undefined;
         }
       }
 
       public async preparePlaylist(playlist: Playlist) {
         const exoPlayer = this.exoPlayer?.get();
-        if (!exoPlayer || !this._playerNotificationManager) {
+        const playerNotificationManager = this._playerNotificationManager?.get();
+        if (!exoPlayer || !playerNotificationManager) {
           trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory);
 
           return;
@@ -516,18 +521,15 @@ export namespace dk {
           }
         }
 
-        const playerNotificationManager = this._playerNotificationManager?.get();
-        if (playerNotificationManager) {
-          playerNotificationManager.setPlayer(exoPlayer);
-          playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
-          playerNotificationManager.setUseNavigationActionsInCompactView(true);
-          playerNotificationManager.setUsePlayPauseActions(true);
-          playerNotificationManager.setUseNavigationActions(false);
-          playerNotificationManager.setUseStopAction(false);
-          const notificationIcon = nsUtils.ad.resources.getDrawableId('tns_audioplayer_small_icon');
-          if (notificationIcon) {
-            playerNotificationManager.setSmallIcon(notificationIcon);
-          }
+        playerNotificationManager.setPlayer(exoPlayer);
+        playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
+        playerNotificationManager.setUseNavigationActionsInCompactView(true);
+        playerNotificationManager.setUsePlayPauseActions(true);
+        playerNotificationManager.setUseNavigationActions(false);
+        playerNotificationManager.setUseStopAction(false);
+        const notificationIcon = nsUtils.ad.resources.getDrawableId('tns_audioplayer_small_icon');
+        if (notificationIcon) {
+          playerNotificationManager.setSmallIcon(notificationIcon);
         }
 
         this._playlist = playlist;
@@ -542,7 +544,8 @@ export namespace dk {
       }
 
       public setSeekIntervalSeconds(seconds: number) {
-        if (!this._playerNotificationManager) {
+        const playerNotificationManager = this._playerNotificationManager?.get();
+        if (!playerNotificationManager) {
           trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, trace.messageType.error);
 
           return;
@@ -554,11 +557,8 @@ export namespace dk {
         this._seekIntervalSeconds = Math.max(seconds ?? DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
 
         const seekMs = this._seekIntervalSeconds * 1000;
-        const playerNotificationManager = this._playerNotificationManager?.get();
-        if (playerNotificationManager) {
-          playerNotificationManager.setFastForwardIncrementMs(seekMs);
-          playerNotificationManager.setRewindIncrementMs(seekMs);
-        }
+        playerNotificationManager.setFastForwardIncrementMs(seekMs);
+        playerNotificationManager.setRewindIncrementMs(seekMs);
       }
 
       public setRate(rate: number) {
@@ -663,17 +663,17 @@ export namespace dk {
         this._playlist = undefined;
       }
 
-      public onTaskRemoved(rootIntent) {
+      public onTaskRemoved(rootIntent: android.content.Intent): void {
         super.onTaskRemoved(rootIntent);
 
         this.exoPlayer?.get()?.stop(true);
       }
 
-      private _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
+      private async _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
         if (!this._checkUrlAllowed(url)) {
           trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text traffic not allowed - "${url}"`, notaAudioCategory);
 
-          return Promise.reject();
+          throw new Error();
         }
 
         if (trace.isEnabled()) {
@@ -684,10 +684,10 @@ export namespace dk {
           this.albumArts.set(url, ImageSource.fromUrl(url));
         }
 
-        return this.albumArts.get(url)!;
+        return await this.albumArts.get(url)!;
       }
 
-      public async _loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback) {
+      public async _loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback): Promise<void> {
         if (!track?.albumArtUrl) {
           trace.write(`${this.cls}._loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, trace.messageType.error);
           // Artwork not loaded set null as image
@@ -735,7 +735,7 @@ export namespace dk {
        * Android 8+ doesn't allow plain HTTP traffic by default.
        * Use this function to check, if a URL is allowed.
        */
-      private _checkUrlAllowed(url: string) {
+      private _checkUrlAllowed(url: string): boolean {
         if (android.os.Build.VERSION.SDK_INT < 23) {
           return true;
         }
@@ -757,7 +757,7 @@ export namespace dk {
 
     @JavaProxy('dk.nota.TNSMediaButtonReceiver')
     export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
-      public onReceive(context: android.content.Context, intent: android.content.Intent) {
+      public onReceive(context: android.content.Context, intent: android.content.Intent): void {
         if (trace.isEnabled()) {
           trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
         }
@@ -783,7 +783,7 @@ export namespace dk {
           return global.__native(this);
         }
 
-        public getService() {
+        public getService(): MediaService {
           return this.owner?.get();
         }
       }
