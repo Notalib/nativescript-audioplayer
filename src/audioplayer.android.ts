@@ -77,7 +77,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       if (!mediaService) {
         // TODO: How do we handle this case?
         trace.write(
-          `${this.cls}.onServiceConnected(${componentName.toString()}, ${binder}) - couldn't get mediaservice`,
+          `${this.cls}.onServiceConnected(${componentName.toString()}, ${binder}) - couldn't get MediaService`,
           notaAudioCategory,
           trace.messageType.error,
         );
@@ -125,8 +125,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async preparePlaylist(playlist: Playlist) {
     try {
+      await this.stop();
+
       const mediaService = await this.mediaService;
       await mediaService.preparePlaylist(playlist);
+
+    // This needs to be after call to this.stop() as stop() removes the current playlist.
+    this.playlist = playlist;
     } catch (err) {
       trace.write(`${this.cls}.preparePlaylist() - ${err}`, notaAudioCategory, trace.messageType.error);
     }

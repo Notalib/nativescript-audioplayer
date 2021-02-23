@@ -82,12 +82,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       trace.write(`${this.cls}.preparePlaylist($)`, notaAudioCategory);
     }
 
-    this.playlist = playlist;
     if (!this._player) {
       this.setupAudioPlayer();
     } else {
-      this.stop();
+      await this.stop();
     }
+
+    // This needs to be after call to this.stop() as stop() removes the current playlist.
+    this.playlist = playlist;
 
     const audioItems = NSMutableArray.alloc<AudioItem>().init();
 
@@ -97,6 +99,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         audioItems.addObject(audioItem);
       }
     }
+
     this._iosPlaylist = audioItems;
   }
 
@@ -174,6 +177,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     if (this._player) {
       this._player.stop();
     }
+
+    this.playlist = undefined;
   }
 
   public async isPlaying(): Promise<boolean> {
@@ -233,7 +238,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private getIndexForItem(item: AudioItem) {
-    const result = this._iosPlaylist.indexOfObject(this._player.currentItem);
+    const result = this._iosPlaylist.indexOfObject(item);
     if (result !== NSNotFound) {
       return result;
     } else {
