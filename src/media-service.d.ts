@@ -1,13 +1,16 @@
 declare namespace dk {
   namespace nota {
-    class MediaService extends android.app.Service {
-      public exoPlayer?: WeakRef<com.google.android.exoplayer2.ExoPlayer>;
+    import type { Playlist } from './audioplayer.types';
+    import type { CommonAudioPlayer } from './audioplayer-common';
 
-      public preparePlaylist(playlist: any): Promise<void>;
+    class MediaService extends android.app.Service {
+      public exoPlayer?: com.google.android.exoplayer2.ExoPlayer;
+
+      public preparePlaylist(playlist: Playlist): Promise<void>;
       public setSeekIntervalSeconds(seconds: number): void;
       public setRate(rate: number): void;
       public getRate(): number;
-      public setOwner(owner: any): void;
+      public setOwner(owner: CommonAudioPlayer): void;
 
       public isPlaying(): boolean;
       public play(): void;

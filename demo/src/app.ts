@@ -6,7 +6,7 @@ import { notaAudioCategory } from '@nota/nativescript-audioplayer';
 trace.setCategories(notaAudioCategory);
 trace.enable();
 
-application.on(application.launchEvent, function(args) {
+application.on(application.launchEvent, function (args) {
   if (args.android) {
     // For Android applications, args.android is an android.content.Intent class.
     console.log(`Launched Android application with the following intent: ${args.android}.`);
@@ -16,7 +16,7 @@ application.on(application.launchEvent, function(args) {
   }
 });
 
-application.on(application.suspendEvent, function(args) {
+application.on(application.suspendEvent, function (args) {
   if (args.android) {
     // For Android applications, args.android is an android activity class.
     console.log(`Suspend Activity: ${args.android}`);
@@ -26,7 +26,7 @@ application.on(application.suspendEvent, function(args) {
   }
 });
 
-application.on(application.resumeEvent, function(args) {
+application.on(application.resumeEvent, function (args) {
   if (args.android) {
     // For Android applications, args.android is an android activity class.
     console.log(`Resume Activity: ${args.android}`);
@@ -36,7 +36,7 @@ application.on(application.resumeEvent, function(args) {
   }
 });
 
-application.on(application.exitEvent, function(args) {
+application.on(application.exitEvent, function (args) {
   if (args.android) {
     // For Android applications, args.android is an android activity class.
     console.log(`Exit Activity: ${args.android}`);
@@ -46,7 +46,7 @@ application.on(application.exitEvent, function(args) {
   }
 });
 
-application.on(application.lowMemoryEvent, function(args) {
+application.on(application.lowMemoryEvent, function (args) {
   if (args.android) {
     // For Android applications, args.android is an android activity class.
     console.log(`LowMemory Activity: ${args.android}`);
@@ -56,7 +56,7 @@ application.on(application.lowMemoryEvent, function(args) {
   }
 });
 
-application.on(application.uncaughtErrorEvent, function(args) {
+application.on(application.uncaughtErrorEvent, function (args) {
   if (args.android) {
     // For Android applications, args.android is an NativeScriptError.
     console.log(`NativeScriptError: ${args.android}`);

@@ -17,9 +17,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   private _mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
   private _mediaServiceReject: (error: Error) => void;
 
-  private _mediaService?: WeakRef<dk.nota.MediaService>;
+  private _mediaService?: dk.nota.MediaService;
   private get mediaService(): Promise<dk.nota.MediaService> {
-    const mediaService = this._mediaService?.get();
+    const mediaService = this._mediaService;
     if (mediaService) {
       return Promise.resolve(mediaService);
     }
@@ -41,7 +41,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this._mediaServicePromise
         .then(
           (mediaService) => {
-            this._mediaService = new WeakRef(mediaService);
+            this._mediaService = mediaService;
 
             this._mediaServicePromise = undefined;
 
@@ -69,9 +69,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private async getExoPlayer(): Promise<com.google.android.exoplayer2.ExoPlayer | undefined> {
-    const mediaService = await this.mediaService;
-
-    return mediaService.exoPlayer?.get();
+    return (await this.mediaService).exoPlayer;
   }
 
   // tslint:disable-next-line
@@ -152,7 +150,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getCurrentPlaylistIndex(): Promise<number> {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return -1;
@@ -183,7 +181,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async pause() {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.pause() - no media service - cannot pause`, notaAudioCategory);
       }
@@ -203,7 +201,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   public async stop() {
     this.playlist = undefined;
 
-    const mediaService = this._mediaService?.get();
+    const mediaService = this._mediaService;
     if (!mediaService) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.stop() - no media service - nothing to stop`, notaAudioCategory);
@@ -220,7 +218,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async isPlaying(): Promise<boolean> {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.isPlaying() - no media service. - is not playing`, notaAudioCategory);
       }
@@ -240,7 +238,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async seekTo(offset: number) {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.seekTo(${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
@@ -257,7 +255,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number) {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
@@ -274,7 +272,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToPrevious() {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.skipToPrevious() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
@@ -291,7 +289,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToNext() {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.skipToNext() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
@@ -308,7 +306,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToPlaylistIndex(playlistIndex: number) {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
@@ -331,7 +329,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this._playbackRate = rate;
     }
 
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       return;
     }
 
@@ -345,7 +343,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getRate() {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.getRate() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return this._playbackRate || 1;
@@ -363,7 +361,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getDuration() {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.getDuration() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return 0;
@@ -381,7 +379,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getCurrentTime(): Promise<number> {
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       trace.write(`${this.cls}.getCurrentTime() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return -1;
@@ -405,7 +403,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     this._seekIntervalSeconds = seconds;
 
-    if (!this._mediaService?.get()) {
+    if (!this._mediaService) {
       return;
     }
 
@@ -461,7 +459,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     }
 
     delete this._mediaServicePromise;
-    const mediaService = this._mediaService?.get();
+    const mediaService = this._mediaService;
     if (!mediaService) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.stopMediaService() - no media service`, notaAudioCategory);
@@ -475,9 +473,9 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     context.unbindService(this.serviceConnection);
     context.stopService(foregroundNotificationIntent);
 
-    mediaService.setOwner(null);
     mediaService.stopForeground(true);
     mediaService.stopSelf();
+    mediaService.setOwner(null);
 
     delete this._mediaService;
   }
