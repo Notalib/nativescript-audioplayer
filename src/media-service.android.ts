@@ -352,6 +352,7 @@ export namespace dk {
         delete this._mediaSession;
 
         exoPlayer?.release();
+        this.exoPlayer?.clear();
         delete this.exoPlayer;
         clearInterval(this._timeChangeInterval);
 
@@ -469,8 +470,14 @@ export namespace dk {
       public async preparePlaylist(playlist: Playlist) {
         const exoPlayer = this.exoPlayer?.get();
         const playerNotificationManager = this._playerNotificationManager?.get();
-        if (!exoPlayer || !playerNotificationManager) {
-          trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory);
+        if (!exoPlayer) {
+          trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+
+          return;
+        }
+
+        if (!playerNotificationManager) {
+          trace.write(`${this.cls}.preparePlaylist() - player notification missing`, notaAudioCategory, trace.messageType.error);
 
           return;
         }

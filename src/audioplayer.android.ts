@@ -15,21 +15,25 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   private _mediaServicePromise?: Promise<dk.nota.MediaService>;
   private _mediaServiceResolve: (mediaService: dk.nota.MediaService) => void;
-  private _mediaServiceReject: (error: any) => void;
+  private _mediaServiceReject: (error: Error) => void;
 
   private _mediaService?: WeakRef<dk.nota.MediaService>;
   private get mediaService(): Promise<dk.nota.MediaService> {
-    let mediaService = this._mediaService?.get();
+    const mediaService = this._mediaService?.get();
     if (mediaService) {
       return Promise.resolve(mediaService);
     }
 
     if (!this._mediaServicePromise) {
       this._mediaServicePromise = new Promise<dk.nota.MediaService>((resolve, reject) => {
-        this._mediaServiceResolve = resolve;
-        this._mediaServiceReject = reject;
+        try {
+          this._mediaServiceResolve = resolve;
+          this._mediaServiceReject = reject;
 
-        this.startMediaService();
+          this.startMediaService();
+        } catch (err) {
+          reject(err);
+        }
       });
 
       const noop = () => {};
@@ -37,6 +41,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this._mediaServicePromise
         .then(
           (mediaService) => {
+            this._mediaService = new WeakRef(mediaService);
+
             this._mediaServicePromise = undefined;
 
             const seekIntervalSeconds = this._seekIntervalSeconds;
@@ -62,60 +68,68 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     return this._mediaServicePromise;
   }
 
-  private get exoPlayer() {
-    return this.mediaService.then((ms) => ms.exoPlayer?.get());
+  private async getExoPlayer(): Promise<com.google.android.exoplayer2.ExoPlayer | undefined> {
+    const mediaService = await this.mediaService;
+
+    return mediaService.exoPlayer?.get();
   }
 
   // tslint:disable-next-line
-  private _serviceConnection? = new android.content.ServiceConnection({
-    onServiceConnected: (componentName, binder: dk.nota.MediaService.LocalBinder) => {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onServiceConnected(${componentName.toString()}, ${binder})`, notaAudioCategory);
-      }
+  private _serviceConnection?: android.content.ServiceConnection;
 
-      const mediaService = binder.getService();
-      if (!mediaService) {
-        // TODO: How do we handle this case?
-        trace.write(
-          `${this.cls}.onServiceConnected(${componentName.toString()}, ${binder}) - couldn't get MediaService`,
-          notaAudioCategory,
-          trace.messageType.error,
-        );
+  private get serviceConnection() {
+    if (!this._serviceConnection) {
+      this._serviceConnection = new android.content.ServiceConnection({
+        onServiceConnected: (componentName, binder: dk.nota.MediaService.LocalBinder) => {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onServiceConnected(${componentName.toString()}, ${binder})`, notaAudioCategory);
+          }
 
-        this._mediaServiceReject(new Error('MediaService not created'));
+          const mediaService = binder.getService();
+          if (!mediaService) {
+            // TODO: How do we handle this case?
+            trace.write(
+              `${this.cls}.onServiceConnected(${componentName.toString()}, ${binder}) - couldn't get MediaService`,
+              notaAudioCategory,
+              trace.messageType.error,
+            );
 
-        return;
-      }
+            this._mediaServiceReject(new Error('MediaService not created'));
 
-      mediaService.setOwner(this);
+            return;
+          }
 
-      this._mediaService = new WeakRef(mediaService);
+          mediaService.setOwner(this);
 
-      this._mediaServiceResolve(mediaService);
-    },
-    onBindingDied: (componentName) => {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
-      }
+          this._mediaServiceResolve(mediaService);
+        },
+        onBindingDied: (componentName) => {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
+          }
 
-      this._mediaServiceReject(new Error('Died'));
-    },
-    onNullBinding: (componentName) => {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
-      }
+          this._mediaServiceReject(new Error('Died'));
+        },
+        onNullBinding: (componentName) => {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
+          }
 
-      this._mediaServiceReject(new Error('Null binding'));
-    },
-    onServiceDisconnected: (componentName) => {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
-      }
+          this._mediaServiceReject(new Error('Null binding'));
+        },
+        onServiceDisconnected: (componentName) => {
+          if (trace.isEnabled()) {
+            trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
+          }
 
-      this._mediaServicePromise = undefined;
-      this._mediaService = undefined;
-    },
-  });
+          this._mediaServicePromise = undefined;
+          this._mediaService = undefined;
+        },
+      });
+    }
+
+    return this._serviceConnection;
+  }
 
   public get android() {
     return this._mediaService;
@@ -138,14 +152,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getCurrentPlaylistIndex(): Promise<number> {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return -1;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
       if (!exoPlayer) {
         return -1;
       }
@@ -169,7 +183,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async pause() {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.pause() - no media service - cannot pause`, notaAudioCategory);
       }
@@ -206,7 +220,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async isPlaying(): Promise<boolean> {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       if (trace.isEnabled()) {
         trace.write(`${this.cls}.isPlaying() - no media service. - is not playing`, notaAudioCategory);
       }
@@ -226,14 +240,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async seekTo(offset: number) {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.seekTo(${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
       if (exoPlayer) {
         exoPlayer.seekTo(offset);
       }
@@ -243,14 +257,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number) {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
       if (exoPlayer) {
         exoPlayer.seekTo(playlistIndex, offset);
       }
@@ -260,14 +274,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToPrevious() {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.skipToPrevious() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
       if (exoPlayer?.hasPrevious()) {
         exoPlayer.previous();
       }
@@ -277,14 +291,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToNext() {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.skipToNext() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
       if (exoPlayer?.hasNext()) {
         exoPlayer.next();
       }
@@ -294,14 +308,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async skipToPlaylistIndex(playlistIndex: number) {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
       exoPlayer?.seekTo(playlistIndex, 0);
     } catch (err) {
       trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - ${err}`, notaAudioCategory, trace.messageType.error);
@@ -317,7 +331,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       this._playbackRate = rate;
     }
 
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       return;
     }
 
@@ -331,7 +345,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getRate() {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.getRate() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return this._playbackRate || 1;
@@ -349,14 +363,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getDuration() {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.getDuration() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return 0;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
 
       return exoPlayer?.getDuration() ?? 0;
     } catch (err) {
@@ -367,14 +381,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   public async getCurrentTime(): Promise<number> {
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       trace.write(`${this.cls}.getCurrentTime() - no media service.`, notaAudioCategory, trace.messageType.error);
 
       return -1;
     }
 
     try {
-      const exoPlayer = await this.exoPlayer;
+      const exoPlayer = await this.getExoPlayer();
 
       return exoPlayer?.getCurrentPosition() ?? -1;
     } catch (err) {
@@ -391,7 +405,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     this._seekIntervalSeconds = seconds;
 
-    if (!this._mediaService) {
+    if (!this._mediaService?.get()) {
       return;
     }
 
@@ -438,7 +452,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     const foregroundNotificationIntent = new android.content.Intent(context, dk.nota.MediaService.class);
     context.startService(foregroundNotificationIntent);
 
-    context.bindService(foregroundNotificationIntent, this._serviceConnection!, android.content.Context.BIND_AUTO_CREATE);
+    context.bindService(foregroundNotificationIntent, this.serviceConnection, android.content.Context.BIND_AUTO_CREATE);
   }
 
   private stopMediaService() {
@@ -458,7 +472,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     const context = this.context;
     const foregroundNotificationIntent = new android.content.Intent(context, dk.nota.MediaService.class);
-    context.unbindService(this._serviceConnection!);
+    context.unbindService(this.serviceConnection);
     context.stopService(foregroundNotificationIntent);
 
     mediaService.setOwner(null);
@@ -470,11 +484,11 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   protected _exitHandler(args: nsApp.ApplicationEventData) {
     const activity = args.android as android.app.Activity;
-    if (activity?.isFinishing()) {
-      // Handle temporary destruction.
-      this.destroy();
-
+    if (!activity?.isFinishing()) {
+      // Not a real exit event, skipping.
       return;
     }
+
+    this.destroy();
   }
 }
