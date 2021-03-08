@@ -457,7 +457,7 @@ export namespace dk {
           playerNotificationManager.setPlayer(null!);
         }
         this.playerNotificationManager = null;
-        
+
         const mediaSessionConnector = this._mediaSessionConnector;
         if (mediaSessionConnector) {
           mediaSessionConnector.setPlayer(null!);
