@@ -1,9 +1,10 @@
 /// <reference path="./native-definitions/android.d.ts" />
 
 import * as nsApp from '@nativescript/core/application';
+import { WeakRef } from '@nativescript/core/debugger/dom-node';
 import { ImageSource } from '@nativescript/core/image-source';
-import * as trace from '@nativescript/core/trace';
-import * as nsUtils from '@nativescript/core/utils/utils';
+import { Trace } from '@nativescript/core/trace';
+import * as nsUtils from '@nativescript/core/utils';
 import { TNSAudioPlayer } from './audioplayer';
 import { MediaTrack, notaAudioCategory, PlaybackSuspend, Playlist } from './audioplayer.types';
 
@@ -17,6 +18,7 @@ export namespace dk {
     let instance = 0;
 
     @JavaProxy('dk.nota.MediaService')
+    @NativeClass()
     export class MediaService extends android.app.Service {
       private _cls: string;
       private get cls() {
@@ -25,12 +27,6 @@ export namespace dk {
         }
 
         return this._cls;
-      }
-
-      constructor() {
-        super();
-
-        return global.__native(this);
       }
 
       public get notificationTitle() {
@@ -125,8 +121,8 @@ export namespace dk {
       };
 
       public onCreate() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
         }
         super.onCreate();
 
@@ -241,8 +237,8 @@ export namespace dk {
       private _handleTimeChange() {
         const owner = this.owner;
         if (!owner) {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}._onPlaying() - no owner - stop timeChangeInterval`, notaAudioCategory, trace.messageType.warn);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}._onPlaying() - no owner - stop timeChangeInterval`, notaAudioCategory, Trace.messageType.warn);
           }
 
           clearInterval(this._timeChangeInterval);
@@ -252,8 +248,8 @@ export namespace dk {
 
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}._onPlaying() - no player stop timeChangeInterval`, notaAudioCategory, trace.messageType.warn);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}._onPlaying() - no player stop timeChangeInterval`, notaAudioCategory, Trace.messageType.warn);
           }
 
           clearInterval(this._timeChangeInterval);
@@ -277,8 +273,8 @@ export namespace dk {
        * Handle playing event from TNSPlayerEvent
        */
       public _onPlaying() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onPlaying()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onPlaying()`, notaAudioCategory);
         }
         clearInterval(this._timeChangeInterval);
 
@@ -302,8 +298,8 @@ export namespace dk {
        * Handle stopped event from TNSPlayerEvent
        */
       public _onPaused() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
         }
 
         clearInterval(this._timeChangeInterval);
@@ -320,8 +316,8 @@ export namespace dk {
        * Handle stop event from TNSPlayerEvent
        */
       public _onStopped() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onStopped()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onStopped()`, notaAudioCategory);
         }
 
         clearInterval(this._timeChangeInterval);
@@ -341,8 +337,8 @@ export namespace dk {
        * Handle end-of-playlist-reached event
        */
       public _onEndOfPlaylistReached() {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onEndOfPlaylistReached()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onEndOfPlaylistReached()`, notaAudioCategory);
         }
 
         const owner = this.owner;
@@ -359,12 +355,13 @@ export namespace dk {
       public _onEndOfTrackReached(): void {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}._onEndOfTrackReached() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}._onEndOfTrackReached() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onEndOfTrackReached()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onEndOfTrackReached()`, notaAudioCategory);
         }
 
         const owner = this.owner;
@@ -380,8 +377,8 @@ export namespace dk {
        * Handle buffer state changed event from TNSPlayerEvent
        */
       public _onBuffering(): void {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onBuffering()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onBuffering()`, notaAudioCategory);
         }
 
         const owner = this.owner;
@@ -396,8 +393,8 @@ export namespace dk {
        * Handle waiting for network event from TNSPlayerEvent
        */
       public _onWaitingForNetwork(): void {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onWaitingForNetwork()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onWaitingForNetwork()`, notaAudioCategory);
         }
 
         const owner = this.owner;
@@ -412,7 +409,7 @@ export namespace dk {
        * Handle playback error event from TNSPlayerEvent
        */
       public _onPlaybackError(errorData: any) {
-        trace.write(`${this.cls}._onPlaybackError(${errorData})`, notaAudioCategory, trace.messageType.error);
+        Trace.write(`${this.cls}._onPlaybackError(${errorData})`, notaAudioCategory, Trace.messageType.error);
 
         const owner = this.owner;
         if (!owner) {
@@ -423,8 +420,8 @@ export namespace dk {
       }
 
       public _onPlaybackSuspend(reason: PlaybackSuspend) {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._onPlaybackSuspend(${reason})`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._onPlaybackSuspend(${reason})`, notaAudioCategory);
         }
 
         const owner = this.owner;
@@ -437,8 +434,8 @@ export namespace dk {
 
       public onDestroy() {
         // end service, reset any variables... etc...
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
         }
 
         this.stopForeground(true);
@@ -509,11 +506,11 @@ export namespace dk {
       public _handleNotificationPosted(notificationId: number, notification: android.app.Notification) {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          if (trace.isEnabled()) {
-            trace.write(
+          if (Trace.isEnabled()) {
+            Trace.write(
               `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - missing exoplayer`,
               notaAudioCategory,
-              trace.messageType.error,
+              Trace.messageType.error,
             );
           }
 
@@ -525,8 +522,8 @@ export namespace dk {
 
         const shouldBeInForeground = isBuffering || this.isPlaying();
 
-        if (trace.isEnabled()) {
-          trace.write(
+        if (Trace.isEnabled()) {
+          Trace.write(
             `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - should be in:${shouldBeInForeground}. is in foreground:${this._isForegroundService}`,
             notaAudioCategory,
           );
@@ -550,8 +547,8 @@ export namespace dk {
           this.startForeground(notificationId, notification);
           this._isForegroundService = true;
 
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
           }
         } else {
           // If playback has ended, also stop the service.
@@ -563,8 +560,8 @@ export namespace dk {
             this.stopSelf();
           }
 
-          if (trace.isEnabled()) {
-            trace.write(
+          if (Trace.isEnabled()) {
+            Trace.write(
               `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
               notaAudioCategory,
             );
@@ -575,16 +572,16 @@ export namespace dk {
       public onBind(intent: android.content.Intent): android.os.IBinder {
         const action = `${intent.getAction()}`;
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onBind(${intent}) action: ${action}`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.onBind(${intent}) action: ${action}`, notaAudioCategory);
         }
 
         return new MediaService.LocalBinder(this);
       }
 
       public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId}) - ${this._mediaSession}`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId}) - ${this._mediaSession}`, notaAudioCategory);
         }
 
         const mediaSession = this._mediaSession;
@@ -596,12 +593,13 @@ export namespace dk {
       }
 
       public setOwner(owner: TNSAudioPlayer) {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.setOwner()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.setOwner()`, notaAudioCategory);
         }
 
         if (owner) {
           this.owner = owner;
+
           return;
         }
 
@@ -612,19 +610,19 @@ export namespace dk {
         const exoPlayer = this.exoPlayer;
         const playerNotificationManager = this.playerNotificationManager;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
 
         if (!playerNotificationManager) {
-          trace.write(`${this.cls}.preparePlaylist() - player notification missing`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.preparePlaylist() - player notification missing`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
         }
         exoPlayer.stop();
 
@@ -649,7 +647,7 @@ export namespace dk {
 
         for (const track of playlist.tracks) {
           if (!this._checkUrlAllowed(track.url)) {
-            trace.write(`${this.cls}.preparePlaylist() - clear text traffic is not allowed - "${track.url}"`, notaAudioCategory, trace.messageType.error);
+            Trace.write(`${this.cls}.preparePlaylist() - clear text traffic is not allowed - "${track.url}"`, notaAudioCategory, Trace.messageType.error);
           }
 
           const mediaSource = mediaSourceFactory.createMediaSource(android.net.Uri.parse(track.url));
@@ -694,13 +692,13 @@ export namespace dk {
       public setSeekIntervalSeconds(seconds: number) {
         const playerNotificationManager = this.playerNotificationManager;
         if (!playerNotificationManager) {
-          trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
         }
         this._seekIntervalSeconds = Math.max(seconds ?? DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
 
@@ -710,12 +708,12 @@ export namespace dk {
       }
 
       public setRate(rate: number) {
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory);
         }
 
         if (typeof rate !== 'number' || Number.isNaN(rate) || rate <= 0) {
-          trace.write(`${this.cls}.setRate(${rate}) - ${JSON.stringify(rate)} isn't a valid value, setting to 1`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.setRate(${rate}) - ${JSON.stringify(rate)} isn't a valid value, setting to 1`, notaAudioCategory, Trace.messageType.error);
 
           rate = 1;
         }
@@ -724,7 +722,7 @@ export namespace dk {
 
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
@@ -736,13 +734,13 @@ export namespace dk {
       public getRate() {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.getRate() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.getRate() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
           return this._rate;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.getRate()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.getRate()`, notaAudioCategory);
         }
 
         return exoPlayer.getPlaybackParameters()?.speed ?? this._rate ?? DEFAULT_PLAYBACK_RATE;
@@ -751,13 +749,13 @@ export namespace dk {
       public isPlaying() {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.isPlaying() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.isPlaying() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
           return false;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.isPlaying()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.isPlaying()`, notaAudioCategory);
         }
 
         return !!exoPlayer.isPlaying();
@@ -766,13 +764,13 @@ export namespace dk {
       public play() {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.play() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.play() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.play()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.play()`, notaAudioCategory);
         }
 
         exoPlayer.setPlayWhenReady(true);
@@ -781,13 +779,13 @@ export namespace dk {
       public pause() {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.pause()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.pause()`, notaAudioCategory);
         }
 
         exoPlayer.setPlayWhenReady(false);
@@ -796,13 +794,13 @@ export namespace dk {
       public stop() {
         const exoPlayer = this.exoPlayer;
         if (!exoPlayer) {
-          trace.write(`${this.cls}.stop() - exoPlayer not initialized`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.stop() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.stop()`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.stop()`, notaAudioCategory);
         }
 
         exoPlayer.stop();
@@ -819,13 +817,13 @@ export namespace dk {
 
       private async _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
         if (!this._checkUrlAllowed(url)) {
-          trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text traffic not allowed - "${url}"`, notaAudioCategory);
+          Trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text traffic not allowed - "${url}"`, notaAudioCategory);
 
           throw new Error();
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}.makeAlbumArtImageSource(${url})`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.makeAlbumArtImageSource(${url})`, notaAudioCategory);
         }
 
         if (!this.albumArts.has(url)) {
@@ -837,15 +835,15 @@ export namespace dk {
 
       public async _loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback): Promise<void> {
         if (!track?.albumArtUrl) {
-          trace.write(`${this.cls}._loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}._loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, Trace.messageType.error);
           // Artwork not loaded set null as image
           callback.onBitmap(null!);
 
           return;
         }
 
-        if (trace.isEnabled()) {
-          trace.write(`${this.cls}._loadAlbumArt(...)`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._loadAlbumArt(...)`, notaAudioCategory);
         }
 
         const start = Date.now();
@@ -853,8 +851,8 @@ export namespace dk {
           const image = await this._makeAlbumArtImageSource(track.albumArtUrl);
           if (image?.android) {
             callback.onBitmap(image.android);
-            if (trace.isEnabled()) {
-              trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
+            if (Trace.isEnabled()) {
+              Trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
             }
             this._lastLoadedAlbumArt = {
               url: track.albumArtUrl,
@@ -863,15 +861,15 @@ export namespace dk {
 
             return;
           } else {
-            if (trace.isEnabled()) {
-              trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - not loaded`, notaAudioCategory);
+            if (Trace.isEnabled()) {
+              Trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - not loaded`, notaAudioCategory);
             }
           }
         } catch (err) {
-          trace.write(
+          Trace.write(
             `${this.cls}._loadAlbumArt(${track.albumArtUrl}) - couldn't be loaded. ${err} ${err.message}`,
             notaAudioCategory,
-            trace.messageType.error,
+            Trace.messageType.error,
           );
         }
 
@@ -906,26 +904,25 @@ export namespace dk {
     @JavaProxy('dk.nota.TNSMediaButtonReceiver')
     export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
       public onReceive(context: android.content.Context, intent: android.content.Intent): void {
-        if (trace.isEnabled()) {
-          trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
+        if (Trace.isEnabled()) {
+          Trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
         }
 
         try {
           super.onReceive(context, intent);
         } catch (e) {
-          if (trace.isEnabled()) {
-            trace.write(`TNSMediaButtonReceiver.onReceive() - error - ${e}`, notaAudioCategory, trace.messageType.warn);
+          if (Trace.isEnabled()) {
+            Trace.write(`TNSMediaButtonReceiver.onReceive() - error - ${e}`, notaAudioCategory, Trace.messageType.warn);
           }
         }
       }
     }
 
     export namespace MediaService {
+      @NativeClass()
       export class LocalBinder extends android.os.Binder {
         constructor(private owner: MediaService) {
           super();
-
-          return global.__native(this);
         }
 
         public getService(): MediaService {
@@ -962,22 +959,21 @@ function ensureNativeClasses() {
   }
 
   @Interfaces([com.google.android.exoplayer2.Player.EventListener])
+  @NativeClass()
   class TNSPlayerEventImpl extends java.lang.Object implements com.google.android.exoplayer2.Player.EventListener {
     private static instanceNo = 0;
     private readonly cls = `TNSPlayerEventImpl<${++TNSPlayerEventImpl.instanceNo}>`;
 
     constructor(public owner: dk.nota.MediaService) {
       super();
-
-      return global.__native(this);
     }
 
     /**
      * Called when the value of Player.isPlaying() changes.
      */
     public onIsPlayingChanged(isPlaying: boolean) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onIsPlayingChanged(${isPlaying})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onIsPlayingChanged(${isPlaying})`, notaAudioCategory);
       }
 
       const owner = this.owner;
@@ -1008,28 +1004,28 @@ function ensureNativeClasses() {
 
       switch (reason) {
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_PREPARED: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onTimelineChanged() - reason = "prepared" manifest:${manifest}`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onTimelineChanged() - reason = "prepared" manifest:${manifest}`, notaAudioCategory);
           }
           break;
         }
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_RESET: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onTimelineChanged() - reason = "reset" manifest:${manifest}`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onTimelineChanged() - reason = "reset" manifest:${manifest}`, notaAudioCategory);
           }
           break;
         }
         case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_DYNAMIC: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onTimelineChanged() - reason = "dynamic" manifest:${manifest}`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onTimelineChanged() - reason = "dynamic" manifest:${manifest}`, notaAudioCategory);
           }
           break;
         }
         default: {
-          trace.write(
+          Trace.write(
             `${this.cls}.onTimelineChanged() - reason = "dynamic" reason:"${reason}" manifest:${manifest}`,
             notaAudioCategory,
-            trace.messageType.error,
+            Trace.messageType.error,
           );
           break;
         }
@@ -1046,8 +1042,8 @@ function ensureNativeClasses() {
       trackGroups: com.google.android.exoplayer2.source.TrackGroupArray,
       trackSelections: com.google.android.exoplayer2.trackselection.TrackSelectionArray,
     ) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onTracksChanged(${trackGroups}, ${trackSelections})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onTracksChanged(${trackGroups}, ${trackSelections})`, notaAudioCategory);
       }
     }
 
@@ -1056,8 +1052,8 @@ function ensureNativeClasses() {
      * @param isLoading Whether the source is currently being loaded
      */
     public onLoadingChanged(isLoading: boolean) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onLoadingChanged(${isLoading})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onLoadingChanged(${isLoading})`, notaAudioCategory);
       }
     }
 
@@ -1076,8 +1072,8 @@ function ensureNativeClasses() {
       switch (playbackState) {
         // The player is not able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_BUFFERING: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'buffering'`, notaAudioCategory);
           }
 
           owner._onBuffering();
@@ -1091,8 +1087,8 @@ function ensureNativeClasses() {
         }
         // The player does not have any media to play.
         case com.google.android.exoplayer2.Player.STATE_IDLE: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'idle'`, notaAudioCategory);
           }
 
           owner._onStopped();
@@ -1100,8 +1096,8 @@ function ensureNativeClasses() {
         }
         // The player has finished playing the media.
         case com.google.android.exoplayer2.Player.STATE_ENDED: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ended'`, notaAudioCategory);
           }
 
           owner._onEndOfTrackReached();
@@ -1113,15 +1109,15 @@ function ensureNativeClasses() {
         }
         // The player is able to immediately play from its current position.
         case com.google.android.exoplayer2.Player.STATE_READY: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State = 'ready'`, notaAudioCategory);
           }
 
           // NOTE: onIsPlayingChanged sets playing/paused state more precisely than doing it here.
           break;
         }
         default: {
-          trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, notaAudioCategory);
+          Trace.write(`${this.cls}.onPlayerStateChanged(${playWhenReady}, ${playbackState}). State is unknown`, notaAudioCategory);
           break;
         }
       }
@@ -1134,28 +1130,28 @@ function ensureNativeClasses() {
     public onRepeatModeChanged(repeatMode: number) {
       switch (repeatMode) {
         case com.google.android.exoplayer2.Player.REPEAT_MODE_ALL: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ALL'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ALL'`, notaAudioCategory);
           }
 
           break;
         }
         case com.google.android.exoplayer2.Player.REPEAT_MODE_OFF: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'OFF'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'OFF'`, notaAudioCategory);
           }
 
           break;
         }
         case com.google.android.exoplayer2.Player.REPEAT_MODE_ONE: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ONE'`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} === 'ONE'`, notaAudioCategory);
           }
 
           break;
         }
         default: {
-          trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} is unknown`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.onRepeatModeChanged() - ${repeatMode} is unknown`, notaAudioCategory, Trace.messageType.error);
           break;
         }
       }
@@ -1166,8 +1162,8 @@ function ensureNativeClasses() {
      * @param shuffleModeEnabled Whether shuffling of windows is enabled
      */
     public onShuffleModeEnabledChanged(shuffleModeEnabled: boolean) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onShuffleModeEnabledChanged() - ${shuffleModeEnabled}`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onShuffleModeEnabledChanged() - ${shuffleModeEnabled}`, notaAudioCategory);
       }
     }
 
@@ -1178,8 +1174,8 @@ function ensureNativeClasses() {
      * @param exoPlaybackException
      */
     public onPlayerError(exoPlaybackException: com.google.android.exoplayer2.ExoPlaybackException) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onPlayerError(...)`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onPlayerError(...)`, notaAudioCategory);
       }
 
       let errorType: string = 'UNKNOWN';
@@ -1213,7 +1209,7 @@ function ensureNativeClasses() {
 
       const error = new ExoPlaybackError(errorType, errorMessage, exoPlaybackException);
 
-      trace.write(`${this.cls}.onPlayerError() - ${error.message}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.onPlayerError() - ${error.message}`, notaAudioCategory, Trace.messageType.error);
 
       const owner = this.owner;
       if (!owner) {
@@ -1243,23 +1239,23 @@ function ensureNativeClasses() {
       switch (reason) {
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_AD_INSERTION: {
           // Discontinuity to or from an ad within one period in the timeline.
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_AD_INSERTION"`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_AD_INSERTION"`, notaAudioCategory);
           }
 
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_INTERNAL: {
           // Discontinuity introduced internally by the source.
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_INTERNAL"`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_INTERNAL"`, notaAudioCategory);
           }
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_PERIOD_TRANSITION: {
           // Automatic playback transition from one period in the timeline to the next.
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_PERIOD_TRANSITION"`, notaAudioCategory);
           }
 
           owner._onEndOfTrackReached();
@@ -1267,22 +1263,22 @@ function ensureNativeClasses() {
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK: {
           // Seek within the current period or to another period.
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK"`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK"`, notaAudioCategory);
           }
 
           break;
         }
         case com.google.android.exoplayer2.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT: {
           // Seek adjustment due to being unable to seek to the requested position or because the seek was permitted to be inexact.
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK_ADJUSTMENT"`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "DISCONTINUITY_REASON_SEEK_ADJUSTMENT"`, notaAudioCategory);
           }
 
           break;
         }
         default: {
-          trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "${reason}" is unknown`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${this.cls}.onPositionDiscontinuity() - reason = "${reason}" is unknown`, notaAudioCategory, Trace.messageType.error);
 
           break;
         }
@@ -1297,8 +1293,8 @@ function ensureNativeClasses() {
      */
     public onPlaybackParametersChanged(playbackParameters: com.google.android.exoplayer2.PlaybackParameters) {
       const { pitch, speed, skipSilence } = playbackParameters;
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onPlaybackParametersChanged() - ${JSON.stringify({ pitch, speed, skipSilence })}`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onPlaybackParametersChanged() - ${JSON.stringify({ pitch, speed, skipSilence })}`, notaAudioCategory);
       }
     }
 
@@ -1307,8 +1303,8 @@ function ensureNativeClasses() {
      * This is guaranteed to happen after any necessary changes to the player state were reported to onPlayerStateChanged(boolean, int).
      */
     public onSeekProcessed() {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onSeekProcessed()`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onSeekProcessed()`, notaAudioCategory);
       }
     }
 
@@ -1320,22 +1316,22 @@ function ensureNativeClasses() {
 
       switch (reason) {
         case com.google.android.exoplayer2.Player.PLAYBACK_SUPPRESSION_REASON_NONE: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - reason = none`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - reason = none`, notaAudioCategory);
           }
           owner._onPlaybackSuspend(PlaybackSuspend.None);
           break;
         }
         case com.google.android.exoplayer2.Player.PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - reason = transient audio focus loss`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - reason = transient audio focus loss`, notaAudioCategory);
           }
           owner._onPlaybackSuspend(PlaybackSuspend.FocusLoss);
           break;
         }
         default: {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - unknown reason`, notaAudioCategory, trace.messageType.error);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onPlaybackSuppressionReasonChanged() - unknown reason`, notaAudioCategory, Trace.messageType.error);
           }
           owner._onPlaybackSuspend(PlaybackSuspend.Unknown);
         }
@@ -1346,19 +1342,18 @@ function ensureNativeClasses() {
   TNSPlayerEvent = TNSPlayerEventImpl;
 
   @Interfaces([com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter])
+  @NativeClass()
   class TNSMediaDescriptionAdapterImpl extends java.lang.Object implements com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter {
     private static instanceNo = 0;
     private readonly cls = `TNSMediaDescriptionAdapterImpl<${++TNSMediaDescriptionAdapterImpl.instanceNo}>`;
 
     constructor(public owner?: dk.nota.MediaService) {
       super();
-
-      return global.__native(this);
     }
 
     public createCurrentContentIntent(player: com.google.android.exoplayer2.Player) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.createCurrentContentIntent(${player})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.createCurrentContentIntent(${player})`, notaAudioCategory);
       }
 
       const owner = this.owner;
@@ -1375,24 +1370,24 @@ function ensureNativeClasses() {
     }
 
     public getCurrentContentText(player: com.google.android.exoplayer2.Player) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.getCurrentContentText(${player})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.getCurrentContentText(${player})`, notaAudioCategory);
       }
 
       return this._getTrackInfo(player)?.album ?? null!;
     }
 
     public getCurrentContentTitle(player: com.google.android.exoplayer2.Player) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.getCurrentContentTitle(${player})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.getCurrentContentTitle(${player})`, notaAudioCategory);
       }
 
       return this._getTrackInfo(player)?.title ?? null!;
     }
 
     public getCurrentLargeIcon(player: com.google.android.exoplayer2.Player, callback) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.getCurrentLargeIcon(${player})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.getCurrentLargeIcon(${player})`, notaAudioCategory);
       }
 
       const owner = this.owner;
@@ -1408,7 +1403,7 @@ function ensureNativeClasses() {
       const lastLoadedAlbumArt = owner._lastLoadedAlbumArt;
 
       if (lastLoadedAlbumArt?.url === track.albumArtUrl) {
-        trace.write(`${this.cls}.getCurrentLargeIcon(${player}) - using lastLoadedAlbumArt`, notaAudioCategory);
+        Trace.write(`${this.cls}.getCurrentLargeIcon(${player}) - using lastLoadedAlbumArt`, notaAudioCategory);
 
         return lastLoadedAlbumArt.bitmap;
       }
@@ -1419,8 +1414,8 @@ function ensureNativeClasses() {
     }
 
     public getCurrentSubText(player: com.google.android.exoplayer2.Player) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.getCurrentSubText(${player})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.getCurrentSubText(${player})`, notaAudioCategory);
       }
 
       return this._getTrackInfo(player)?.artist ?? null!;
@@ -1441,19 +1436,18 @@ function ensureNativeClasses() {
   TNSMediaDescriptionAdapter = TNSMediaDescriptionAdapterImpl;
 
   @Interfaces([com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener])
+  @NativeClass()
   class TNSNotificationListenerImpl extends java.lang.Object implements com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener {
     private static instanceNo = 0;
     private readonly cls = `TNSNotificationListenerImpl<${++TNSNotificationListenerImpl.instanceNo}>`;
 
     constructor(public owner: dk.nota.MediaService) {
       super();
-
-      return global.__native(this);
     }
 
     public onNotificationPosted(notificationId: number, notification: android.app.Notification, ongoing?: boolean) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
       }
 
       const owner = this.owner;
@@ -1465,9 +1459,9 @@ function ensureNativeClasses() {
     }
 
     public onNotificationCancelled(notificationId: number, dismissedByUser = false) {
-      const cls = trace.isEnabled() && `${this.cls}.onNotificationCancelled(id=${notificationId}, dismissedByUser=${dismissedByUser}) - ${this.owner}`;
-      if (trace.isEnabled()) {
-        trace.write(`${cls}`, notaAudioCategory);
+      const cls = Trace.isEnabled() && `${this.cls}.onNotificationCancelled(id=${notificationId}, dismissedByUser=${dismissedByUser}) - ${this.owner}`;
+      if (Trace.isEnabled()) {
+        Trace.write(`${cls}`, notaAudioCategory);
       }
 
       const owner = this.owner;
@@ -1480,7 +1474,7 @@ function ensureNativeClasses() {
           owner.stopForeground(false);
           owner._isForegroundService = false;
         } catch (err) {
-          trace.write(`${cls} stopForeground failed! - ${err}`, notaAudioCategory, trace.messageType.error);
+          Trace.write(`${cls} stopForeground failed! - ${err}`, notaAudioCategory, Trace.messageType.error);
         }
       }
 
@@ -1489,11 +1483,11 @@ function ensureNativeClasses() {
 
     public onNotificationStarted(notificationId: number, notification: android.app.Notification) {
       // Deprecated
-      if (trace.isEnabled()) {
-        trace.write(
+      if (Trace.isEnabled()) {
+        Trace.write(
           `${this.cls}.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
           notaAudioCategory,
-          trace.messageType.warn,
+          Trace.messageType.warn,
         );
       }
 

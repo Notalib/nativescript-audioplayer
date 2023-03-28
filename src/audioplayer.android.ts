@@ -1,7 +1,6 @@
 import * as nsApp from '@nativescript/core/application';
-import * as trace from '@nativescript/core/trace';
-import { traceWrite } from '@nativescript/core/ui/page/page';
-import * as utils from '@nativescript/core/utils/utils';
+import { Trace } from '@nativescript/core/trace';
+import * as utils from '@nativescript/core/utils';
 import { CommonAudioPlayer } from './audioplayer-common';
 import { notaAudioCategory, Playlist } from './audioplayer.types';
 import './media-service';
@@ -56,7 +55,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
             }
           },
           (err) => {
-            traceWrite(`${this.cls} - couldn't init mediaService: ${err.stack || err}`, notaAudioCategory, trace.messageType.error);
+            Trace.write(`${this.cls} - couldn't init mediaService: ${err.stack || err}`, notaAudioCategory, Trace.messageType.error);
           },
         )
         .then(() => {
@@ -79,17 +78,17 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     if (!this._serviceConnection) {
       this._serviceConnection = new android.content.ServiceConnection({
         onServiceConnected: (componentName, binder: dk.nota.MediaService.LocalBinder) => {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onServiceConnected(${componentName.toString()}, ${binder})`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onServiceConnected(${componentName.toString()}, ${binder})`, notaAudioCategory);
           }
 
           const mediaService = binder.getService();
           if (!mediaService) {
             // TODO: How do we handle this case?
-            trace.write(
+            Trace.write(
               `${this.cls}.onServiceConnected(${componentName.toString()}, ${binder}) - couldn't get MediaService`,
               notaAudioCategory,
-              trace.messageType.error,
+              Trace.messageType.error,
             );
 
             this._mediaServiceReject(new Error('MediaService not created'));
@@ -102,22 +101,22 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
           this._mediaServiceResolve(mediaService);
         },
         onBindingDied: (componentName) => {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onBindingDied(${componentName})`, notaAudioCategory);
           }
 
           this._mediaServiceReject(new Error('Died'));
         },
         onNullBinding: (componentName) => {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onNullBinding(${componentName})`, notaAudioCategory);
           }
 
           this._mediaServiceReject(new Error('Null binding'));
         },
         onServiceDisconnected: (componentName) => {
-          if (trace.isEnabled()) {
-            trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
+          if (Trace.isEnabled()) {
+            Trace.write(`${this.cls}.onServiceDisconnected(${componentName})`, notaAudioCategory);
           }
 
           this._mediaServicePromise = undefined;
@@ -145,13 +144,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       // This needs to be after call to this.stop() as stop() removes the current playlist.
       this.playlist = playlist;
     } catch (err) {
-      trace.write(`${this.cls}.preparePlaylist() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.preparePlaylist() - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async getCurrentPlaylistIndex(): Promise<number> {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getCurrentPlaylistIndex() - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return -1;
     }
@@ -164,7 +163,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       return exoPlayer.getCurrentWindowIndex();
     } catch (err) {
-      trace.write(`${this.cls}.getCurrentPlaylistIndex() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getCurrentPlaylistIndex() - ${err}`, notaAudioCategory, Trace.messageType.error);
 
       return -1;
     }
@@ -176,14 +175,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       mediaService.play();
     } catch (err) {
-      trace.write(`${this.cls}.play() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.play() - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async pause() {
     if (!this._mediaService) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.pause() - no media service - cannot pause`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.pause() - no media service - cannot pause`, notaAudioCategory);
       }
 
       return;
@@ -194,7 +193,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       mediaService.pause();
     } catch (err) {
-      trace.write(`${this.cls}.pause() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.pause() - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
@@ -203,8 +202,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     const mediaService = this._mediaService;
     if (!mediaService) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.stop() - no media service - nothing to stop`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.stop() - no media service - nothing to stop`, notaAudioCategory);
       }
 
       return;
@@ -213,14 +212,14 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
     try {
       mediaService.stop();
     } catch (err) {
-      trace.write(`${this.cls}.stop() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.stop() - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async isPlaying(): Promise<boolean> {
     if (!this._mediaService) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.isPlaying() - no media service. - is not playing`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.isPlaying() - no media service. - is not playing`, notaAudioCategory);
       }
 
       return false;
@@ -231,7 +230,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       return mediaService.isPlaying();
     } catch (err) {
-      trace.write(`${this.cls}.isPlaying() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.isPlaying() - ${err}`, notaAudioCategory, Trace.messageType.error);
 
       return false;
     }
@@ -239,7 +238,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async seekTo(offset: number) {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.seekTo(${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.seekTo(${offset}) - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
@@ -250,13 +249,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         exoPlayer.seekTo(offset);
       }
     } catch (err) {
-      trace.write(`${this.cls}.seekTo(${offset}) - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.seekTo(${offset}) - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async skipToPlaylistIndexAndOffset(playlistIndex: number, offset: number) {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
@@ -267,13 +266,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         exoPlayer.seekTo(playlistIndex, offset);
       }
     } catch (err) {
-      trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToPlaylistIndexAndOffset(${playlistIndex}, ${offset}) - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async skipToPrevious() {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.skipToPrevious() - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToPrevious() - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
@@ -284,13 +283,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         exoPlayer.previous();
       }
     } catch (err) {
-      trace.write(`${this.cls}.skipToPrevious() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToPrevious() - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async skipToNext() {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.skipToNext() - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToNext() - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
@@ -301,13 +300,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         exoPlayer.next();
       }
     } catch (err) {
-      trace.write(`${this.cls}.skipToNext() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToNext() - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async skipToPlaylistIndex(playlistIndex: number) {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
@@ -316,7 +315,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       const exoPlayer = await this.getExoPlayer();
       exoPlayer?.seekTo(playlistIndex, 0);
     } catch (err) {
-      trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.skipToPlaylistIndex(${playlistIndex}) - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
@@ -338,13 +337,13 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       mediaService.setRate(rate);
     } catch (err) {
-      trace.write(`${this.cls}.setRate(${rate}) - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.setRate(${rate}) - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
   public async getRate() {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.getRate() - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getRate() - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return this._playbackRate || 1;
     }
@@ -354,7 +353,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       return mediaService.getRate();
     } catch (err) {
-      trace.write(`${this.cls}.getRate() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getRate() - ${err}`, notaAudioCategory, Trace.messageType.error);
 
       return this._playbackRate || 1;
     }
@@ -362,7 +361,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async getDuration() {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.getDuration() - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getDuration() - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return 0;
     }
@@ -372,7 +371,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       return exoPlayer?.getDuration() ?? 0;
     } catch (err) {
-      trace.write(`${this.cls}.getDuration() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getDuration() - ${err}`, notaAudioCategory, Trace.messageType.error);
 
       return 0;
     }
@@ -380,7 +379,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
   public async getCurrentTime(): Promise<number> {
     if (!this._mediaService) {
-      trace.write(`${this.cls}.getCurrentTime() - no media service.`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getCurrentTime() - no media service.`, notaAudioCategory, Trace.messageType.error);
 
       return -1;
     }
@@ -390,15 +389,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       return exoPlayer?.getCurrentPosition() ?? -1;
     } catch (err) {
-      trace.write(`${this.cls}.getCurrentTime() - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.getCurrentTime() - ${err}`, notaAudioCategory, Trace.messageType.error);
 
       return -1;
     }
   }
 
   public async setSeekIntervalSeconds(seconds: number) {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
     }
 
     this._seekIntervalSeconds = seconds;
@@ -412,7 +411,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
       mediaService.setSeekIntervalSeconds(seconds);
     } catch (err) {
-      trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - ${err}`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - ${err}`, notaAudioCategory, Trace.messageType.error);
     }
   }
 
@@ -421,8 +420,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
       return;
     }
 
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.destroy()`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.destroy()`, notaAudioCategory);
     }
 
     this.isDestroyed = true;
@@ -436,12 +435,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private startMediaService() {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.startMediaService()`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.startMediaService()`, notaAudioCategory);
     }
 
     if (!this.context) {
-      trace.write(`${this.cls}.startMediaService() - no context, cannot start MediaService`, notaAudioCategory, trace.messageType.error);
+      Trace.write(`${this.cls}.startMediaService() - no context, cannot start MediaService`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
@@ -454,15 +453,15 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
   }
 
   private stopMediaService() {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.stopMediaService()`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.stopMediaService()`, notaAudioCategory);
     }
 
     delete this._mediaServicePromise;
     const mediaService = this._mediaService;
     if (!mediaService) {
-      if (trace.isEnabled()) {
-        trace.write(`${this.cls}.stopMediaService() - no media service`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}.stopMediaService() - no media service`, notaAudioCategory);
       }
 
       return;

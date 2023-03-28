@@ -15,7 +15,7 @@
     </service>
 
     <!-- Needed for older androids: https://stackoverflow.com/a/44757777/441556 -->
-    <receiver android:name="dk.nota.TNSMediaButtonReceiver" >
+    <receiver android:name="dk.nota.TNSMediaButtonReceiver" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>
