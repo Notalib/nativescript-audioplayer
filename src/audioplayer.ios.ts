@@ -151,8 +151,12 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         if (Trace.isEnabled()) {
           Trace.write(`${this.cls}.play() - from start`, notaAudioCategory);
         }
+      } else if (this._player?.state === AudioPlayerState.Buffering) {
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}.play() - from buffer`, notaAudioCategory);
+        }
       } else {
-        Trace.write(`${this.cls}.play() - unknown start state?`, notaAudioCategory, Trace.messageType.error);
+        Trace.write(`${this.cls}.play() - unknown start state? - ${this._player?.state}`, notaAudioCategory, Trace.messageType.error);
       }
     } catch (err) {
       Trace.write(`${this.cls}.play() - error: ${err}`, notaAudioCategory, Trace.messageType.error);
