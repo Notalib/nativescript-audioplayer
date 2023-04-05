@@ -221,7 +221,7 @@ export class CommonAudioPlayer extends Observable {
     this._onSleepTimerChanged();
   }
 
-  protected _sleepTimer: number | null;
+  protected _sleepTimer: NodeJS.Timer | null;
   protected _sleepTimerPaused = false;
   protected _sleepTimerMillisecondsLeft = 0;
 

@@ -1,7 +1,6 @@
 /// <reference path="./native-definitions/android.d.ts" />
 
 import * as nsApp from '@nativescript/core/application';
-import { WeakRef } from '@nativescript/core/debugger/dom-node';
 import { ImageSource } from '@nativescript/core/image-source';
 import { Trace } from '@nativescript/core/trace';
 import * as nsUtils from '@nativescript/core/utils';
@@ -13,937 +12,933 @@ const DEFAULT_PLAYBACK_RATE = 1;
 const DEFAULT_INTENT_CODE = 1337;
 const DEFAULT_SEEK_LENGTH = 15;
 
-export namespace dk {
-  export namespace nota {
-    let instance = 0;
+let instance = 0;
 
-    @JavaProxy('dk.nota.MediaService')
-    @NativeClass()
-    export class MediaService extends android.app.Service {
-      private _cls: string;
-      private get cls() {
-        if (!this._cls) {
-          this._cls = `MediaService<${++instance}>`;
-        }
+@NativeClass()
+@JavaProxy('dk.nota.MediaService')
+export class MediaService extends android.app.Service {
+  private _cls: string;
+  private get cls() {
+    if (!this._cls) {
+      this._cls = `MediaService<${++instance}>`;
+    }
 
-        return this._cls;
-      }
+    return this._cls;
+  }
 
-      public get notificationTitle() {
-        // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
-        return nsUtils.ad.resources.getStringId('tns_audioplayer_notification_title') ?? (android.R as any).string.unknownName;
-      }
+  public get notificationTitle() {
+    // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
+    return nsUtils.ad.resources.getStringId('tns_audioplayer_notification_title') ?? (android.R as any).string.unknownName;
+  }
 
-      public get notificationDesc() {
-        // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
-        return nsUtils.ad.resources.getStringId('tns_audioplayer_notification_desc') ?? (android.R as any).string.unknownName;
-      }
+  public get notificationDesc() {
+    // These can be defined by the user of the plugin in App_Resources/Android/src/main/res/values/strings.xml
+    return nsUtils.ad.resources.getStringId('tns_audioplayer_notification_desc') ?? (android.R as any).string.unknownName;
+  }
 
-      public exoPlayer?: com.google.android.exoplayer2.SimpleExoPlayer;
+  public exoPlayer?: com.google.android.exoplayer2.SimpleExoPlayer;
 
-      private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
-      private get _sessionToken() {
-        return this._mediaSession?.getSessionToken();
-      }
+  private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
+  private get _sessionToken() {
+    return this._mediaSession?.getSessionToken();
+  }
 
-      private _playerNotificationManager?: WeakRef<com.google.android.exoplayer2.ui.PlayerNotificationManager>;
-      private get playerNotificationManager() {
-        let playerNotificationManager = this._playerNotificationManager?.get();
-        if (!playerNotificationManager) {
-          playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
-            this,
-            MEDIA_SERVICE_NAME,
-            this.notificationTitle,
-            this.notificationDesc,
-            this._intentReqCode,
-            this.mediaDescriptionAdapter,
-            this.notificationListener,
-          );
-          playerNotificationManager.setMediaSessionToken(this._sessionToken!);
-          playerNotificationManager.setUseChronometer(true);
-        }
+  private _playerNotificationManager?: WeakRef<com.google.android.exoplayer2.ui.PlayerNotificationManager>;
+  private get playerNotificationManager() {
+    let playerNotificationManager = this._playerNotificationManager?.get();
+    if (!playerNotificationManager) {
+      playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
+        this,
+        MEDIA_SERVICE_NAME,
+        this.notificationTitle,
+        this.notificationDesc,
+        this._intentReqCode,
+        this.mediaDescriptionAdapter,
+        this.notificationListener,
+      );
+      playerNotificationManager.setMediaSessionToken(this._sessionToken!);
+      playerNotificationManager.setUseChronometer(true);
+    }
 
-        return playerNotificationManager;
-      }
+    return playerNotificationManager;
+  }
 
-      private set playerNotificationManager(playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager | null) {
-        this._playerNotificationManager?.clear();
-        delete this._playerNotificationManager;
+  private set playerNotificationManager(playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager | null) {
+    this._playerNotificationManager?.clear();
+    delete this._playerNotificationManager;
 
-        if (playerNotificationManager) {
-          this._playerNotificationManager = new WeakRef(playerNotificationManager);
-        }
-      }
+    if (playerNotificationManager) {
+      this._playerNotificationManager = new WeakRef(playerNotificationManager);
+    }
+  }
 
-      private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
-      private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
-      private _playerEventListener?: TNSPlayerEvent;
-      private _mediaDescriptionAdapter?: TNSMediaDescriptionAdapter;
-      private get mediaDescriptionAdapter() {
-        if (!this._mediaDescriptionAdapter) {
-          this._mediaDescriptionAdapter = new TNSMediaDescriptionAdapter(this);
-        }
+  private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+  private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
+  private _playerEventListener?: TNSPlayerEvent;
+  private _mediaDescriptionAdapter?: TNSMediaDescriptionAdapter;
+  private get mediaDescriptionAdapter() {
+    if (!this._mediaDescriptionAdapter) {
+      this._mediaDescriptionAdapter = new TNSMediaDescriptionAdapter(this);
+    }
 
-        return this._mediaDescriptionAdapter;
-      }
+    return this._mediaDescriptionAdapter;
+  }
 
-      private _notificationListener?: TNSNotificationListener;
-      private get notificationListener() {
-        if (!this._notificationListener) {
-          this._notificationListener = new TNSNotificationListener(this);
-        }
+  private _notificationListener?: TNSNotificationListener;
+  private get notificationListener() {
+    if (!this._notificationListener) {
+      this._notificationListener = new TNSNotificationListener(this);
+    }
 
-        return this._notificationListener;
-      }
-      private _playlist?: Playlist;
+    return this._notificationListener;
+  }
+  private _playlist?: Playlist;
 
-      public _isForegroundService: boolean;
+  public _isForegroundService: boolean;
 
-      private owner?: TNSAudioPlayer;
+  private owner?: TNSAudioPlayer;
 
-      private _rate = DEFAULT_PLAYBACK_RATE;
-      private _seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
-      private _intentReqCode = DEFAULT_INTENT_CODE;
-      private _timeChangeInterval: number;
+  private _rate = DEFAULT_PLAYBACK_RATE;
+  private _seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
+  private _intentReqCode = DEFAULT_INTENT_CODE;
+  private _timeChangeInterval: NodeJS.Timer;
 
-      private _albumArts?: Map<string, Promise<ImageSource>>;
-      private get albumArts() {
-        if (!this._albumArts) {
-          this._albumArts = new Map<string, Promise<ImageSource>>();
-        }
+  private _albumArts?: Map<string, Promise<ImageSource>>;
+  private get albumArts() {
+    if (!this._albumArts) {
+      this._albumArts = new Map<string, Promise<ImageSource>>();
+    }
 
-        return this._albumArts;
-      }
+    return this._albumArts;
+  }
 
-      public _lastLoadedAlbumArt?: {
-        url: string;
-        bitmap: android.graphics.Bitmap;
-      };
+  public _lastLoadedAlbumArt?: {
+    url: string;
+    bitmap: android.graphics.Bitmap;
+  };
 
-      public onCreate() {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
-        }
-        super.onCreate();
+  public onCreate() {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
+    }
+    super.onCreate();
 
-        const appContext = this.getApplicationContext();
+    const appContext = this.getApplicationContext();
 
-        ensureNativeClasses();
+    ensureNativeClasses();
 
-        const sessionIntent = this.getPackageManager()?.getLaunchIntentForPackage(this.getPackageName());
-        let sessionActivityPendingIntent: android.app.PendingIntent | null = null;
-        if (sessionIntent) {
-          sessionActivityPendingIntent = android.app.PendingIntent.getActivity(this, 0, sessionIntent, 0);
-        }
+    const sessionIntent = this.getPackageManager()?.getLaunchIntentForPackage(this.getPackageName());
+    let sessionActivityPendingIntent: android.app.PendingIntent | null = null;
+    if (sessionIntent) {
+      sessionActivityPendingIntent = android.app.PendingIntent.getActivity(this, 0, sessionIntent, 0);
+    }
 
-        this._rate = DEFAULT_PLAYBACK_RATE;
-        this._seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
-        this._intentReqCode = DEFAULT_INTENT_CODE;
-        this._isForegroundService = false;
+    this._rate = DEFAULT_PLAYBACK_RATE;
+    this._seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
+    this._intentReqCode = DEFAULT_INTENT_CODE;
+    this._isForegroundService = false;
 
-        const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector(this);
-        /**
-         * Increase buffer sizes to support a smoother playback experience in spotty network conditions:
-         *  - max buffer size from 1 to 10 minutes
-         *  - min buffer size from 15 to 60 seconds (only controls when to start pre-buffering again).
-         * See defaults here:
-         * https://github.com/google/ExoPlayer/blob/release-v2/library/core/src/main/java/com/google/android/exoplayer2/DefaultLoadControl.java
-         */
-        const loadControl = new com.google.android.exoplayer2.DefaultLoadControl.Builder()
-          .setBufferDurationsMs(
+    const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector(this);
+    /**
+     * Increase buffer sizes to support a smoother playback experience in spotty network conditions:
+     *  - max buffer size from 1 to 10 minutes
+     *  - min buffer size from 15 to 60 seconds (only controls when to start pre-buffering again).
+     * See defaults here:
+     * https://github.com/google/ExoPlayer/blob/release-v2/library/core/src/main/java/com/google/android/exoplayer2/DefaultLoadControl.java
+     */
+    const loadControl = new com.google.android.exoplayer2.DefaultLoadControl.Builder()
+      .setBufferDurationsMs(
             /* Buffer min */ 1000 * 60,
             /* Buffer max */ 1000 * 60 * 10,
             /* Buffer playback */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
             /* Buffer rebuffer */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
-          )
-          .createDefaultLoadControl();
-        this._playerEventListener = new TNSPlayerEvent(this);
+      )
+      .createDefaultLoadControl();
+    this._playerEventListener = new TNSPlayerEvent(this);
 
-        const mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
-        this._mediaSession = mediaSession;
-        if (sessionActivityPendingIntent) {
-          mediaSession.setSessionActivity(sessionActivityPendingIntent);
-        }
+    const mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
+    this._mediaSession = mediaSession;
+    if (sessionActivityPendingIntent) {
+      mediaSession.setSessionActivity(sessionActivityPendingIntent);
+    }
 
-        mediaSession.setActive(true);
+    mediaSession.setActive(true);
 
-        mediaSession.setFlags(
-          android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-            android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
-        );
+    mediaSession.setFlags(
+      android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+      android.support.v4.media.session.MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+    );
 
-        // Do not let MediaButtons restart the player when the app is not visible.
-        mediaSession.setMediaButtonReceiver(null!);
+    // Do not let MediaButtons restart the player when the app is not visible.
+    mediaSession.setMediaButtonReceiver(null!);
 
-        // Use MediaSessionConnector extension to handle external media control actions (like headset pause/play).
-        const mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(mediaSession);
-        this._mediaSessionConnector = mediaSessionConnector;
-        mediaSessionConnector.setEnabledPlaybackActions(
-          android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY |
-            android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
-            android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE,
-        );
+    // Use MediaSessionConnector extension to handle external media control actions (like headset pause/play).
+    const mediaSessionConnector = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector(mediaSession);
+    this._mediaSessionConnector = mediaSessionConnector;
+    mediaSessionConnector.setEnabledPlaybackActions(
+      android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY |
+      android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE |
+      android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE,
+    );
 
-        // FIX: This prevents "Unknown" title and artist on Samsung lock screens.
-        // Use a MediaSessionMetadataProvider to add missing metadata fields, that ExoPlayer does not copy in by default.
-        const mediaSessionMetadataProvider = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider({
-          getMetadata: () => {
-            const info = this._getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
+    // FIX: This prevents "Unknown" title and artist on Samsung lock screens.
+    // Use a MediaSessionMetadataProvider to add missing metadata fields, that ExoPlayer does not copy in by default.
+    const mediaSessionMetadataProvider = new com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider({
+      getMetadata: () => {
+        const info = this._getTrackInfo(this.exoPlayer?.getCurrentWindowIndex() ?? 0);
 
-            return new android.support.v4.media.MediaMetadataCompat.Builder()
-              .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown')
-              .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown')
-              .build();
-          },
-        });
-        this._mediaSessionMetadataProvider = mediaSessionMetadataProvider;
-
-        mediaSessionConnector.setMediaMetadataProvider(mediaSessionMetadataProvider);
-
-        const exoPlayer = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(appContext)
-          .setTrackSelector(trackSelector)
-          .setLoadControl(loadControl)
+        return new android.support.v4.media.MediaMetadataCompat.Builder()
+          .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, info?.title ?? 'Unknown')
+          .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, info?.artist ?? 'Unknown')
           .build();
+      },
+    });
+    this._mediaSessionMetadataProvider = mediaSessionMetadataProvider;
 
-        exoPlayer.setHandleWakeLock(true);
-        exoPlayer.setHandleAudioBecomingNoisy(true);
-        exoPlayer.addListener(this._playerEventListener);
+    mediaSessionConnector.setMediaMetadataProvider(mediaSessionMetadataProvider);
 
-        mediaSessionConnector.setPlayer(exoPlayer);
+    const exoPlayer = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(appContext)
+      .setTrackSelector(trackSelector)
+      .setLoadControl(loadControl)
+      .build();
 
-        this._albumArts = new Map<string, Promise<ImageSource>>();
+    exoPlayer.setHandleWakeLock(true);
+    exoPlayer.setHandleAudioBecomingNoisy(true);
+    exoPlayer.addListener(this._playerEventListener);
 
-        // Setup audio focus
-        const audioAttributes = new com.google.android.exoplayer2.audio.AudioAttributes.Builder()
-          .setUsage(com.google.android.exoplayer2.C.USAGE_MEDIA)
-          .setContentType(com.google.android.exoplayer2.C.CONTENT_TYPE_MUSIC)
-          .build();
+    mediaSessionConnector.setPlayer(exoPlayer);
 
-        exoPlayer.getAudioComponent().setAudioAttributes(audioAttributes, true);
+    this._albumArts = new Map<string, Promise<ImageSource>>();
 
-        this.exoPlayer = exoPlayer;
+    // Setup audio focus
+    const audioAttributes = new com.google.android.exoplayer2.audio.AudioAttributes.Builder()
+      .setUsage(com.google.android.exoplayer2.C.USAGE_MEDIA)
+      .setContentType(com.google.android.exoplayer2.C.CONTENT_TYPE_MUSIC)
+      .build();
+
+    exoPlayer.getAudioComponent().setAudioAttributes(audioAttributes, true);
+
+    this.exoPlayer = exoPlayer;
+  }
+
+  public _getTrackInfo(index: number): MediaTrack | undefined {
+    return this._playlist?.tracks?.[index];
+  }
+
+  private lastPosition: number;
+  private lastWindowIndex: number;
+
+  /**
+   * Handle time changed by pulling the value.
+   */
+  private _handleTimeChange() {
+    const owner = this.owner;
+    if (!owner) {
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}._onPlaying() - no owner - stop timeChangeInterval`, notaAudioCategory, Trace.messageType.warn);
       }
 
-      public _getTrackInfo(index: number): MediaTrack | undefined {
-        return this._playlist?.tracks?.[index];
+      clearInterval(this._timeChangeInterval);
+
+      return;
+    }
+
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}._onPlaying() - no player stop timeChangeInterval`, notaAudioCategory, Trace.messageType.warn);
       }
 
-      private lastPosition: number;
-      private lastWindowIndex: number;
-
-      /**
-       * Handle time changed by pulling the value.
-       */
-      private _handleTimeChange() {
-        const owner = this.owner;
-        if (!owner) {
-          if (Trace.isEnabled()) {
-            Trace.write(`${this.cls}._onPlaying() - no owner - stop timeChangeInterval`, notaAudioCategory, Trace.messageType.warn);
-          }
-
-          clearInterval(this._timeChangeInterval);
-
-          return;
-        }
-
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          if (Trace.isEnabled()) {
-            Trace.write(`${this.cls}._onPlaying() - no player stop timeChangeInterval`, notaAudioCategory, Trace.messageType.warn);
-          }
-
-          clearInterval(this._timeChangeInterval);
-
-          return;
-        }
-
-        const windowIndex = exoPlayer.getCurrentWindowIndex();
-        const position = exoPlayer.getCurrentPosition();
-        const duration = exoPlayer.getDuration();
-
-        if (this.lastPosition !== position || this.lastWindowIndex !== windowIndex) {
-          owner._onTimeChanged(position, duration, windowIndex);
-
-          this.lastPosition = position;
-          this.lastWindowIndex = windowIndex;
-        }
-      }
-
-      /**
-       * Handle playing event from TNSPlayerEvent
-       */
-      public _onPlaying() {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onPlaying()`, notaAudioCategory);
-        }
-        clearInterval(this._timeChangeInterval);
-
-        this._timeChangeInterval = setInterval(() => {
-          this._handleTimeChange();
-        }, 100);
-
-        this._mediaSession?.setActive(true);
-
-        this._handleTimeChange();
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onPlaying();
-      }
-
-      /**
-       * Handle stopped event from TNSPlayerEvent
-       */
-      public _onPaused() {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
-        }
-
-        clearInterval(this._timeChangeInterval);
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onPaused();
-      }
-
-      /**
-       * Handle stop event from TNSPlayerEvent
-       */
-      public _onStopped() {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onStopped()`, notaAudioCategory);
-        }
-
-        clearInterval(this._timeChangeInterval);
-
-        this._mediaSession?.setActive(false);
-        this._mediaSessionConnector?.setPlayer(null!);
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onStopped();
-      }
-
-      /**
-       * Handle end-of-playlist-reached event
-       */
-      public _onEndOfPlaylistReached() {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onEndOfPlaylistReached()`, notaAudioCategory);
-        }
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onEndOfPlaylistReached();
-      }
-
-      /**
-       * Handle end-of-track-reached event from TNSPlayerEvent
-       */
-      public _onEndOfTrackReached(): void {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}._onEndOfTrackReached() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onEndOfTrackReached()`, notaAudioCategory);
-        }
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        const endedTrackIndex = exoPlayer.getCurrentWindowIndex();
-        owner._onEndOfTrackReached(endedTrackIndex);
-      }
-
-      /**
-       * Handle buffer state changed event from TNSPlayerEvent
-       */
-      public _onBuffering(): void {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onBuffering()`, notaAudioCategory);
-        }
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onBuffering();
-      }
-
-      /**
-       * Handle waiting for network event from TNSPlayerEvent
-       */
-      public _onWaitingForNetwork(): void {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onWaitingForNetwork()`, notaAudioCategory);
-        }
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onWaitingForNetwork();
-      }
-
-      /**
-       * Handle playback error event from TNSPlayerEvent
-       */
-      public _onPlaybackError(errorData: any) {
-        Trace.write(`${this.cls}._onPlaybackError(${errorData})`, notaAudioCategory, Trace.messageType.error);
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onPlaybackError(errorData);
-      }
-
-      public _onPlaybackSuspend(reason: PlaybackSuspend) {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._onPlaybackSuspend(${reason})`, notaAudioCategory);
-        }
-
-        const owner = this.owner;
-        if (!owner) {
-          return;
-        }
-
-        owner._onPlaybackSuspended(reason);
-      }
-
-      public onDestroy() {
-        // end service, reset any variables... etc...
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
-        }
-
-        this.stopForeground(true);
-        if (this._isForegroundService) {
-          this._isForegroundService = false;
-        }
-
-        const exoPlayer = this.exoPlayer;
-        clearInterval(this._timeChangeInterval);
-
-        const playerNotificationManager = this._playerNotificationManager?.get();
-        if (playerNotificationManager) {
-          playerNotificationManager.setMediaSessionToken(null!);
-          playerNotificationManager.setPlaybackPreparer(null!);
-          playerNotificationManager.setControlDispatcher(null!);
-          playerNotificationManager.setPlayer(null!);
-        }
-        this.playerNotificationManager = null;
-
-        const mediaSessionConnector = this._mediaSessionConnector;
-        if (mediaSessionConnector) {
-          mediaSessionConnector.setPlayer(null!);
-          mediaSessionConnector.setMediaMetadataProvider(null!);
-        }
-        delete this._mediaSessionConnector;
-
-        delete this._mediaSessionMetadataProvider;
-
-        const mediaSession = this._mediaSession;
-        if (mediaSession) {
-          mediaSession.setActive(false);
-          mediaSession.release();
-        }
-        delete this._mediaSession;
-
-        if (this._playerEventListener) {
-          exoPlayer?.removeListener(this._playerEventListener);
-          delete this._playerEventListener.owner;
-        }
-        delete this._playerEventListener;
-
-        if (this._notificationListener) {
-          delete this._notificationListener.owner;
-        }
-        delete this._notificationListener;
-
-        if (this._mediaDescriptionAdapter) {
-          delete this._mediaDescriptionAdapter.owner;
-        }
-        delete this._mediaDescriptionAdapter;
-
-        if (exoPlayer?.isPlaying()) {
-          exoPlayer.stop();
-        }
-
-        exoPlayer?.release();
-        delete this.exoPlayer;
-
-        delete this.owner;
-        this._albumArts?.clear();
-        delete this._albumArts;
-        delete this._playlist;
-        delete this._lastLoadedAlbumArt;
-
-        super.onDestroy();
-      }
-
-      public _handleNotificationPosted(notificationId: number, notification: android.app.Notification) {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          if (Trace.isEnabled()) {
-            Trace.write(
-              `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - missing exoplayer`,
-              notaAudioCategory,
-              Trace.messageType.error,
-            );
-          }
-
-          return;
-        }
-
-        const playerState = exoPlayer.getPlaybackState();
-        const isBuffering = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING;
-
-        const shouldBeInForeground = isBuffering || this.isPlaying();
-
-        if (Trace.isEnabled()) {
-          Trace.write(
-            `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - should be in:${shouldBeInForeground}. is in foreground:${this._isForegroundService}`,
-            notaAudioCategory,
-          );
-        }
-
-        if (shouldBeInForeground === this._isForegroundService) {
-          return;
-        }
-
-        if (shouldBeInForeground) {
-          /**
-           * This may look strange, but the documentation for [Service.startForeground]
-           * notes that "calling this method does *not* put the service in the started
-           * state itself, even though the name sounds like it."
-           */
-          androidx.core.content.ContextCompat.startForegroundService(
-            this.getApplicationContext(),
-            new android.content.Intent(this, dk.nota.MediaService.class),
-          );
-
-          this.startForeground(notificationId, notification);
-          this._isForegroundService = true;
-
-          if (Trace.isEnabled()) {
-            Trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
-          }
-        } else {
-          // If playback has ended, also stop the service.
-          const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
-
-          this.stopForeground(shouldStopSelf);
-          this._isForegroundService = false;
-          if (shouldStopSelf) {
-            this.stopSelf();
-          }
-
-          if (Trace.isEnabled()) {
-            Trace.write(
-              `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
-              notaAudioCategory,
-            );
-          }
-        }
-      }
-
-      public onBind(intent: android.content.Intent): android.os.IBinder {
-        const action = `${intent.getAction()}`;
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.onBind(${intent}) action: ${action}`, notaAudioCategory);
-        }
-
-        return new MediaService.LocalBinder(this);
-      }
-
-      public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId}) - ${this._mediaSession}`, notaAudioCategory);
-        }
-
-        const mediaSession = this._mediaSession;
-        if (mediaSession) {
-          TNSMediaButtonReceiver.handleIntent(mediaSession, intent);
-        }
-
-        return super.onStartCommand(intent, flags, startId);
-      }
-
-      public setOwner(owner: TNSAudioPlayer) {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.setOwner()`, notaAudioCategory);
-        }
-
-        if (owner) {
-          this.owner = owner;
-
-          return;
-        }
-
-        delete this.owner;
-      }
-
-      public async preparePlaylist(playlist: Playlist) {
-        const exoPlayer = this.exoPlayer;
-        const playerNotificationManager = this.playerNotificationManager;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        if (!playerNotificationManager) {
-          Trace.write(`${this.cls}.preparePlaylist() - player notification missing`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
-        }
-        exoPlayer.stop();
-
-        const concatenatedSource = new com.google.android.exoplayer2.source.ConcatenatingMediaSource(
-          Array.create(com.google.android.exoplayer2.source.ExtractorMediaSource, 0),
+      clearInterval(this._timeChangeInterval);
+
+      return;
+    }
+
+    const windowIndex = exoPlayer.getCurrentWindowIndex();
+    const position = exoPlayer.getCurrentPosition();
+    const duration = exoPlayer.getDuration();
+
+    if (this.lastPosition !== position || this.lastWindowIndex !== windowIndex) {
+      owner._onTimeChanged(position, duration, windowIndex);
+
+      this.lastPosition = position;
+      this.lastWindowIndex = windowIndex;
+    }
+  }
+
+  /**
+   * Handle playing event from TNSPlayerEvent
+   */
+  public _onPlaying() {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onPlaying()`, notaAudioCategory);
+    }
+    clearInterval(this._timeChangeInterval);
+
+    this._timeChangeInterval = setInterval(() => {
+      this._handleTimeChange();
+    }, 100);
+
+    this._mediaSession?.setActive(true);
+
+    this._handleTimeChange();
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onPlaying();
+  }
+
+  /**
+   * Handle stopped event from TNSPlayerEvent
+   */
+  public _onPaused() {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onPaused()`, notaAudioCategory);
+    }
+
+    clearInterval(this._timeChangeInterval);
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onPaused();
+  }
+
+  /**
+   * Handle stop event from TNSPlayerEvent
+   */
+  public _onStopped() {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onStopped()`, notaAudioCategory);
+    }
+
+    clearInterval(this._timeChangeInterval);
+
+    this._mediaSession?.setActive(false);
+    this._mediaSessionConnector?.setPlayer(null!);
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onStopped();
+  }
+
+  /**
+   * Handle end-of-playlist-reached event
+   */
+  public _onEndOfPlaylistReached() {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onEndOfPlaylistReached()`, notaAudioCategory);
+    }
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onEndOfPlaylistReached();
+  }
+
+  /**
+   * Handle end-of-track-reached event from TNSPlayerEvent
+   */
+  public _onEndOfTrackReached(): void {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}._onEndOfTrackReached() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onEndOfTrackReached()`, notaAudioCategory);
+    }
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    const endedTrackIndex = exoPlayer.getCurrentWindowIndex();
+    owner._onEndOfTrackReached(endedTrackIndex);
+  }
+
+  /**
+   * Handle buffer state changed event from TNSPlayerEvent
+   */
+  public _onBuffering(): void {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onBuffering()`, notaAudioCategory);
+    }
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onBuffering();
+  }
+
+  /**
+   * Handle waiting for network event from TNSPlayerEvent
+   */
+  public _onWaitingForNetwork(): void {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onWaitingForNetwork()`, notaAudioCategory);
+    }
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onWaitingForNetwork();
+  }
+
+  /**
+   * Handle playback error event from TNSPlayerEvent
+   */
+  public _onPlaybackError(errorData: any) {
+    Trace.write(`${this.cls}._onPlaybackError(${errorData})`, notaAudioCategory, Trace.messageType.error);
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onPlaybackError(errorData);
+  }
+
+  public _onPlaybackSuspend(reason: PlaybackSuspend) {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._onPlaybackSuspend(${reason})`, notaAudioCategory);
+    }
+
+    const owner = this.owner;
+    if (!owner) {
+      return;
+    }
+
+    owner._onPlaybackSuspended(reason);
+  }
+
+  public onDestroy() {
+    // end service, reset any variables... etc...
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
+    }
+
+    this.stopForeground(true);
+    if (this._isForegroundService) {
+      this._isForegroundService = false;
+    }
+
+    const exoPlayer = this.exoPlayer;
+    clearInterval(this._timeChangeInterval);
+
+    const playerNotificationManager = this._playerNotificationManager?.get();
+    if (playerNotificationManager) {
+      playerNotificationManager.setMediaSessionToken(null!);
+      playerNotificationManager.setPlaybackPreparer(null!);
+      playerNotificationManager.setControlDispatcher(null!);
+      playerNotificationManager.setPlayer(null!);
+    }
+    this.playerNotificationManager = null;
+
+    const mediaSessionConnector = this._mediaSessionConnector;
+    if (mediaSessionConnector) {
+      mediaSessionConnector.setPlayer(null!);
+      mediaSessionConnector.setMediaMetadataProvider(null!);
+    }
+    delete this._mediaSessionConnector;
+
+    delete this._mediaSessionMetadataProvider;
+
+    const mediaSession = this._mediaSession;
+    if (mediaSession) {
+      mediaSession.setActive(false);
+      mediaSession.release();
+    }
+    delete this._mediaSession;
+
+    if (this._playerEventListener) {
+      exoPlayer?.removeListener(this._playerEventListener);
+      delete this._playerEventListener.owner;
+    }
+    delete this._playerEventListener;
+
+    if (this._notificationListener) {
+      delete this._notificationListener.owner;
+    }
+    delete this._notificationListener;
+
+    if (this._mediaDescriptionAdapter) {
+      delete this._mediaDescriptionAdapter.owner;
+    }
+    delete this._mediaDescriptionAdapter;
+
+    if (exoPlayer?.isPlaying()) {
+      exoPlayer.stop();
+    }
+
+    exoPlayer?.release();
+    delete this.exoPlayer;
+
+    delete this.owner;
+    this._albumArts?.clear();
+    delete this._albumArts;
+    delete this._playlist;
+    delete this._lastLoadedAlbumArt;
+
+    super.onDestroy();
+  }
+
+  public _handleNotificationPosted(notificationId: number, notification: android.app.Notification) {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      if (Trace.isEnabled()) {
+        Trace.write(
+          `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - missing exoplayer`,
+          notaAudioCategory,
+          Trace.messageType.error,
         );
-
-        const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
-        const mediaSourceFactory = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
-          new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(
-            this,
-            new com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory(
-              userAgent,
-              com.google.android.exoplayer2.upstream.DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-              30 * 1000,
-              true,
-            ),
-          ),
-        );
-
-        this.albumArts.clear();
-
-        for (const track of playlist.tracks) {
-          if (!this._checkUrlAllowed(track.url)) {
-            Trace.write(`${this.cls}.preparePlaylist() - clear text traffic is not allowed - "${track.url}"`, notaAudioCategory, Trace.messageType.error);
-          }
-
-          const mediaSource = mediaSourceFactory.createMediaSource(android.net.Uri.parse(track.url));
-          concatenatedSource.addMediaSource(mediaSource);
-
-          if (track.albumArtUrl != null) {
-            this._makeAlbumArtImageSource(track.albumArtUrl);
-          }
-        }
-
-        // Wait for all album arts to be loaded.
-        if (this.albumArts.size > 0) {
-          try {
-            await Promise.all([...this.albumArts.values()]);
-          } catch {
-            // ignore
-          }
-        }
-
-        playerNotificationManager.setPlayer(exoPlayer);
-        playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
-        playerNotificationManager.setUseNavigationActionsInCompactView(true);
-        playerNotificationManager.setUsePlayPauseActions(true);
-        playerNotificationManager.setUseNavigationActions(false);
-        playerNotificationManager.setUseStopAction(false);
-        const notificationIcon = nsUtils.ad.resources.getDrawableId('tns_audioplayer_small_icon');
-        if (notificationIcon) {
-          playerNotificationManager.setSmallIcon(notificationIcon);
-        }
-
-        this._playlist = playlist;
-
-        this.setRate(this._rate);
-        this.setSeekIntervalSeconds(this._seekIntervalSeconds);
-        const mediaSessionConnector = this._mediaSessionConnector;
-        if (mediaSessionConnector) {
-          mediaSessionConnector.setPlayer(exoPlayer);
-        }
-        exoPlayer.prepare(concatenatedSource);
       }
 
-      public setSeekIntervalSeconds(seconds: number) {
-        const playerNotificationManager = this.playerNotificationManager;
-        if (!playerNotificationManager) {
-          Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, Trace.messageType.error);
+      return;
+    }
 
-          return;
-        }
+    const playerState = exoPlayer.getPlaybackState();
+    const isBuffering = playerState === com.google.android.exoplayer2.Player.STATE_BUFFERING;
 
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
-        }
-        this._seekIntervalSeconds = Math.max(seconds ?? DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
+    const shouldBeInForeground = isBuffering || this.isPlaying();
 
-        const seekMs = this._seekIntervalSeconds * 1000;
-        playerNotificationManager.setFastForwardIncrementMs(seekMs);
-        playerNotificationManager.setRewindIncrementMs(seekMs);
-      }
+    if (Trace.isEnabled()) {
+      Trace.write(
+        `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - should be in:${shouldBeInForeground}. is in foreground:${this._isForegroundService}`,
+        notaAudioCategory,
+      );
+    }
 
-      public setRate(rate: number) {
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory);
-        }
+    if (shouldBeInForeground === this._isForegroundService) {
+      return;
+    }
 
-        if (typeof rate !== 'number' || Number.isNaN(rate) || rate <= 0) {
-          Trace.write(`${this.cls}.setRate(${rate}) - ${JSON.stringify(rate)} isn't a valid value, setting to 1`, notaAudioCategory, Trace.messageType.error);
-
-          rate = 1;
-        }
-
-        this._rate = rate;
-
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        const params = new com.google.android.exoplayer2.PlaybackParameters(rate);
-        exoPlayer.setPlaybackParameters(params);
-      }
-
-      public getRate() {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.getRate() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return this._rate;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.getRate()`, notaAudioCategory);
-        }
-
-        return exoPlayer.getPlaybackParameters()?.speed ?? this._rate ?? DEFAULT_PLAYBACK_RATE;
-      }
-
-      public isPlaying() {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.isPlaying() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return false;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.isPlaying()`, notaAudioCategory);
-        }
-
-        return !!exoPlayer.isPlaying();
-      }
-
-      public play() {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.play() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.play()`, notaAudioCategory);
-        }
-
-        exoPlayer.setPlayWhenReady(true);
-      }
-
-      public pause() {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.pause()`, notaAudioCategory);
-        }
-
-        exoPlayer.setPlayWhenReady(false);
-      }
-
-      public stop() {
-        const exoPlayer = this.exoPlayer;
-        if (!exoPlayer) {
-          Trace.write(`${this.cls}.stop() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
-
-          return;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.stop()`, notaAudioCategory);
-        }
-
-        exoPlayer.stop();
-        this.albumArts.clear();
-
-        this._playlist = undefined;
-      }
-
-      public onTaskRemoved(rootIntent: android.content.Intent): void {
-        super.onTaskRemoved(rootIntent);
-
-        this.exoPlayer?.stop(true);
-      }
-
-      private async _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
-        if (!this._checkUrlAllowed(url)) {
-          Trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text traffic not allowed - "${url}"`, notaAudioCategory);
-
-          throw new Error();
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}.makeAlbumArtImageSource(${url})`, notaAudioCategory);
-        }
-
-        if (!this.albumArts.has(url)) {
-          this.albumArts.set(url, ImageSource.fromUrl(url));
-        }
-
-        return this.albumArts.get(url)!;
-      }
-
-      public async _loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback): Promise<void> {
-        if (!track?.albumArtUrl) {
-          Trace.write(`${this.cls}._loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, Trace.messageType.error);
-          // Artwork not loaded set null as image
-          callback.onBitmap(null!);
-
-          return;
-        }
-
-        if (Trace.isEnabled()) {
-          Trace.write(`${this.cls}._loadAlbumArt(...)`, notaAudioCategory);
-        }
-
-        const start = Date.now();
-        try {
-          const image = await this._makeAlbumArtImageSource(track.albumArtUrl);
-          if (image?.android) {
-            callback.onBitmap(image.android);
-            if (Trace.isEnabled()) {
-              Trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
-            }
-            this._lastLoadedAlbumArt = {
-              url: track.albumArtUrl,
-              bitmap: image.android,
-            };
-
-            return;
-          } else {
-            if (Trace.isEnabled()) {
-              Trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - not loaded`, notaAudioCategory);
-            }
-          }
-        } catch (err) {
-          Trace.write(
-            `${this.cls}._loadAlbumArt(${track.albumArtUrl}) - couldn't be loaded. ${err} ${err.message}`,
-            notaAudioCategory,
-            Trace.messageType.error,
-          );
-        }
-
-        // Artwork not loaded set null as image
-        callback.onBitmap(null!);
-      }
-
+    if (shouldBeInForeground) {
       /**
-       * Android 8+ doesn't allow plain HTTP traffic by default.
-       * Use this function to check, if a URL is allowed.
+       * This may look strange, but the documentation for [Service.startForeground]
+       * notes that "calling this method does *not* put the service in the started
+       * state itself, even though the name sounds like it."
        */
-      private _checkUrlAllowed(url: string): boolean {
-        if (android.os.Build.VERSION.SDK_INT < 23) {
-          return true;
-        }
+      androidx.core.content.ContextCompat.startForegroundService(
+        this.getApplicationContext(),
+        new android.content.Intent(this, MediaService.class),
+      );
 
-        const clearTextHostname = url.match(/^http:\/\/([^\/]+)/)?.[1];
-        if (!clearTextHostname) {
-          return true;
-        }
+      this.startForeground(notificationId, notification);
+      this._isForegroundService = true;
 
-        if (android.os.Build.VERSION.SDK_INT === 23) {
-          // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted()
-          return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
-        }
+      if (Trace.isEnabled()) {
+        Trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
+      }
+    } else {
+      // If playback has ended, also stop the service.
+      const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
 
-        // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted(java.lang.String)
-        return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted(clearTextHostname);
+      this.stopForeground(shouldStopSelf);
+      this._isForegroundService = false;
+      if (shouldStopSelf) {
+        this.stopSelf();
+      }
+
+      if (Trace.isEnabled()) {
+        Trace.write(
+          `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
+          notaAudioCategory,
+        );
+      }
+    }
+  }
+
+  public onBind(intent: android.content.Intent): android.os.IBinder {
+    const action = `${intent.getAction()}`;
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.onBind(${intent}) action: ${action}`, notaAudioCategory);
+    }
+
+    return new LocalBinder(this);
+  }
+
+  public onStartCommand(intent: android.content.Intent, flags: number, startId: number) {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId}) - ${this._mediaSession}`, notaAudioCategory);
+    }
+
+    const mediaSession = this._mediaSession;
+    if (mediaSession) {
+      TNSMediaButtonReceiver.handleIntent(mediaSession, intent);
+    }
+
+    return super.onStartCommand(intent, flags, startId);
+  }
+
+  public setOwner(owner: TNSAudioPlayer) {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.setOwner()`, notaAudioCategory);
+    }
+
+    if (owner) {
+      this.owner = owner;
+
+      return;
+    }
+
+    delete this.owner;
+  }
+
+  public async preparePlaylist(playlist: Playlist) {
+    const exoPlayer = this.exoPlayer;
+    const playerNotificationManager = this.playerNotificationManager;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (!playerNotificationManager) {
+      Trace.write(`${this.cls}.preparePlaylist() - player notification missing`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
+    }
+    exoPlayer.stop();
+
+    const concatenatedSource = new com.google.android.exoplayer2.source.ConcatenatingMediaSource(
+      Array.create(com.google.android.exoplayer2.source.ExtractorMediaSource, 0),
+    );
+
+    const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
+    const mediaSourceFactory = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(
+      new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(
+        this,
+        new com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory(
+          userAgent,
+          com.google.android.exoplayer2.upstream.DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+          30 * 1000,
+          true,
+        ),
+      ),
+    );
+
+    this.albumArts.clear();
+
+    for (const track of playlist.tracks) {
+      if (!this._checkUrlAllowed(track.url)) {
+        Trace.write(`${this.cls}.preparePlaylist() - clear text traffic is not allowed - "${track.url}"`, notaAudioCategory, Trace.messageType.error);
+      }
+
+      const mediaSource = mediaSourceFactory.createMediaSource(android.net.Uri.parse(track.url));
+      concatenatedSource.addMediaSource(mediaSource);
+
+      if (track.albumArtUrl != null) {
+        this._makeAlbumArtImageSource(track.albumArtUrl);
       }
     }
 
-    @JavaProxy('dk.nota.TNSMediaButtonReceiver')
-    export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
-      public onReceive(context: android.content.Context, intent: android.content.Intent): void {
-        if (Trace.isEnabled()) {
-          Trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
-        }
-
-        try {
-          super.onReceive(context, intent);
-        } catch (e) {
-          if (Trace.isEnabled()) {
-            Trace.write(`TNSMediaButtonReceiver.onReceive() - error - ${e}`, notaAudioCategory, Trace.messageType.warn);
-          }
-        }
+    // Wait for all album arts to be loaded.
+    if (this.albumArts.size > 0) {
+      try {
+        await Promise.all([...this.albumArts.values()]);
+      } catch {
+        // ignore
       }
     }
 
-    export namespace MediaService {
-      @NativeClass()
-      export class LocalBinder extends android.os.Binder {
-        constructor(private owner: MediaService) {
-          super();
-        }
+    playerNotificationManager.setPlayer(exoPlayer);
+    playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
+    playerNotificationManager.setUseNavigationActionsInCompactView(true);
+    playerNotificationManager.setUsePlayPauseActions(true);
+    playerNotificationManager.setUseNavigationActions(false);
+    playerNotificationManager.setUseStopAction(false);
+    const notificationIcon = nsUtils.ad.resources.getDrawableId('tns_audioplayer_small_icon');
+    if (notificationIcon) {
+      playerNotificationManager.setSmallIcon(notificationIcon);
+    }
 
-        public getService(): MediaService {
-          return this.owner;
+    this._playlist = playlist;
+
+    this.setRate(this._rate);
+    this.setSeekIntervalSeconds(this._seekIntervalSeconds);
+    const mediaSessionConnector = this._mediaSessionConnector;
+    if (mediaSessionConnector) {
+      mediaSessionConnector.setPlayer(exoPlayer);
+    }
+    exoPlayer.prepare(concatenatedSource);
+  }
+
+  public setSeekIntervalSeconds(seconds: number) {
+    const playerNotificationManager = this.playerNotificationManager;
+    if (!playerNotificationManager) {
+      Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
+    }
+    this._seekIntervalSeconds = Math.max(seconds ?? DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
+
+    const seekMs = this._seekIntervalSeconds * 1000;
+    playerNotificationManager.setFastForwardIncrementMs(seekMs);
+    playerNotificationManager.setRewindIncrementMs(seekMs);
+  }
+
+  public setRate(rate: number) {
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory);
+    }
+
+    if (typeof rate !== 'number' || Number.isNaN(rate) || rate <= 0) {
+      Trace.write(`${this.cls}.setRate(${rate}) - ${JSON.stringify(rate)} isn't a valid value, setting to 1`, notaAudioCategory, Trace.messageType.error);
+
+      rate = 1;
+    }
+
+    this._rate = rate;
+
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.setRate(${rate})`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    const params = new com.google.android.exoplayer2.PlaybackParameters(rate);
+    exoPlayer.setPlaybackParameters(params);
+  }
+
+  public getRate() {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.getRate() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return this._rate;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.getRate()`, notaAudioCategory);
+    }
+
+    return exoPlayer.getPlaybackParameters()?.speed ?? this._rate ?? DEFAULT_PLAYBACK_RATE;
+  }
+
+  public isPlaying() {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.isPlaying() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return false;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.isPlaying()`, notaAudioCategory);
+    }
+
+    return !!exoPlayer.isPlaying();
+  }
+
+  public play() {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.play() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.play()`, notaAudioCategory);
+    }
+
+    exoPlayer.setPlayWhenReady(true);
+  }
+
+  public pause() {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.pause() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.pause()`, notaAudioCategory);
+    }
+
+    exoPlayer.setPlayWhenReady(false);
+  }
+
+  public stop() {
+    const exoPlayer = this.exoPlayer;
+    if (!exoPlayer) {
+      Trace.write(`${this.cls}.stop() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.stop()`, notaAudioCategory);
+    }
+
+    exoPlayer.stop();
+    this.albumArts.clear();
+
+    this._playlist = undefined;
+  }
+
+  public onTaskRemoved(rootIntent: android.content.Intent): void {
+    super.onTaskRemoved(rootIntent);
+
+    this.exoPlayer?.stop(true);
+  }
+
+  private async _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
+    if (!this._checkUrlAllowed(url)) {
+      Trace.write(`${this.cls}.makeAlbumArtImageSource(${url}) - clear text traffic not allowed - "${url}"`, notaAudioCategory);
+
+      throw new Error();
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.makeAlbumArtImageSource(${url})`, notaAudioCategory);
+    }
+
+    if (!this.albumArts.has(url)) {
+      this.albumArts.set(url, ImageSource.fromUrl(url));
+    }
+
+    return this.albumArts.get(url)!;
+  }
+
+  public async _loadAlbumArt(track: MediaTrack, callback: com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback): Promise<void> {
+    if (!track?.albumArtUrl) {
+      Trace.write(`${this.cls}._loadAlbumArt(...) - invalid albumArtUrl`, notaAudioCategory, Trace.messageType.error);
+      // Artwork not loaded set null as image
+      callback.onBitmap(null!);
+
+      return;
+    }
+
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}._loadAlbumArt(...)`, notaAudioCategory);
+    }
+
+    const start = Date.now();
+    try {
+      const image = await this._makeAlbumArtImageSource(track.albumArtUrl);
+      if (image?.android) {
+        callback.onBitmap(image.android);
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - loaded in ${Date.now() - start}`, notaAudioCategory);
         }
+        this._lastLoadedAlbumArt = {
+          url: track.albumArtUrl,
+          bitmap: image.android,
+        };
+
+        return;
+      } else {
+        if (Trace.isEnabled()) {
+          Trace.write(`${this.cls}._loadAlbumArt(${track.albumArtUrl}) - not loaded`, notaAudioCategory);
+        }
+      }
+    } catch (err) {
+      Trace.write(
+        `${this.cls}._loadAlbumArt(${track.albumArtUrl}) - couldn't be loaded. ${err} ${err.message}`,
+        notaAudioCategory,
+        Trace.messageType.error,
+      );
+    }
+
+    // Artwork not loaded set null as image
+    callback.onBitmap(null!);
+  }
+
+  /**
+   * Android 8+ doesn't allow plain HTTP traffic by default.
+   * Use this function to check, if a URL is allowed.
+   */
+  private _checkUrlAllowed(url: string): boolean {
+    if (android.os.Build.VERSION.SDK_INT < 23) {
+      return true;
+    }
+
+    const clearTextHostname = url.match(/^http:\/\/([^\/]+)/)?.[1];
+    if (!clearTextHostname) {
+      return true;
+    }
+
+    if (android.os.Build.VERSION.SDK_INT === 23) {
+      // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted()
+      return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
+    }
+
+    // https://developer.android.com/reference/android/security/NetworkSecurityPolicy.html#isCleartextTrafficPermitted(java.lang.String)
+    return !!android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted(clearTextHostname);
+  }
+}
+
+@NativeClass()
+@JavaProxy('dk.nota.TNSMediaButtonReceiver')
+export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
+  public onReceive(context: android.content.Context, intent: android.content.Intent): void {
+    if (Trace.isEnabled()) {
+      Trace.write(`TNSMediaButtonReceiver.onReceive() - ${context} - ${intent}`, notaAudioCategory);
+    }
+
+    try {
+      super.onReceive(context, intent);
+    } catch (e) {
+      if (Trace.isEnabled()) {
+        Trace.write(`TNSMediaButtonReceiver.onReceive() - error - ${e}`, notaAudioCategory, Trace.messageType.warn);
       }
     }
   }
 }
 
-let TNSPlayerEvent: new (owner: dk.nota.MediaService) => com.google.android.exoplayer2.Player.EventListener & { owner?: dk.nota.MediaService };
-type TNSPlayerEvent = com.google.android.exoplayer2.Player.EventListener & { owner?: dk.nota.MediaService };
+@NativeClass()
+@JavaProxy("dk.nota.LocalBinder")
+export class LocalBinder extends android.os.Binder {
+  constructor(private owner: MediaService) {
+    super();
+  }
 
-let TNSMediaDescriptionAdapter: new (owner: dk.nota.MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & {
-  owner?: dk.nota.MediaService;
+  public getService(): MediaService {
+    return this.owner;
+  }
+}
+
+let TNSPlayerEvent: new (owner: MediaService) => com.google.android.exoplayer2.Player.EventListener & { owner?: MediaService };
+type TNSPlayerEvent = com.google.android.exoplayer2.Player.EventListener & { owner?: MediaService };
+
+let TNSMediaDescriptionAdapter: new (owner: MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & {
+  owner?: MediaService;
 };
-type TNSMediaDescriptionAdapter = com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & { owner?: dk.nota.MediaService };
-let TNSNotificationListener: new (owner: dk.nota.MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & {
-  owner?: dk.nota.MediaService;
+type TNSMediaDescriptionAdapter = com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & { owner?: MediaService };
+let TNSNotificationListener: new (owner: MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & {
+  owner?: MediaService;
 };
-type TNSNotificationListener = com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & { owner?: dk.nota.MediaService };
+type TNSNotificationListener = com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & { owner?: MediaService };
 
 export class ExoPlaybackError extends Error {
   constructor(public errorType: string, public errorMessage: string, public nativeException: com.google.android.exoplayer2.ExoPlaybackException) {
@@ -964,7 +959,7 @@ function ensureNativeClasses() {
     private static instanceNo = 0;
     private readonly cls = `TNSPlayerEventImpl<${++TNSPlayerEventImpl.instanceNo}>`;
 
-    constructor(public owner: dk.nota.MediaService) {
+    constructor(public owner: MediaService) {
       super();
     }
 
@@ -1347,7 +1342,7 @@ function ensureNativeClasses() {
     private static instanceNo = 0;
     private readonly cls = `TNSMediaDescriptionAdapterImpl<${++TNSMediaDescriptionAdapterImpl.instanceNo}>`;
 
-    constructor(public owner?: dk.nota.MediaService) {
+    constructor(public owner?: MediaService) {
       super();
     }
 
@@ -1364,7 +1359,7 @@ function ensureNativeClasses() {
       return android.app.PendingIntent.getActivity(
         owner,
         0,
-        new android.content.Intent(owner, nsApp.android.startActivity?.getClass() ?? dk.nota.MediaService.class),
+        new android.content.Intent(owner, nsApp.android.startActivity?.getClass() ?? MediaService.class),
         android.app.PendingIntent.FLAG_UPDATE_CURRENT,
       );
     }
@@ -1441,7 +1436,7 @@ function ensureNativeClasses() {
     private static instanceNo = 0;
     private readonly cls = `TNSNotificationListenerImpl<${++TNSNotificationListenerImpl.instanceNo}>`;
 
-    constructor(public owner: dk.nota.MediaService) {
+    constructor(public owner: MediaService) {
       super();
     }
 
