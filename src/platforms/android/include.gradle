@@ -1,5 +1,5 @@
 dependencies {
-  def exoplayerVersion = "2.13.3+"
+  def exoplayerVersion = "2.18.4+"
 
   // implementation "com.google.android.exoplayer:exoplayer:$exoplayerVersion"
   // implementation "com.google.android.exoplayer:exoplayer-dash:$exoplayerVersion"

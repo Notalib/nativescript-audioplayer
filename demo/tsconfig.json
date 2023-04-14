@@ -13,7 +13,13 @@
     "paths": {
       "~/*": ["app/*"],
       "@/*": ["app/*"]
-    }
+    },
+    "plugins": [
+      {
+        "transform": "@nativescript/webpack/dist/transformers/NativeClass",
+        "type": "raw"
+      }
+    ]
   },
   "include": ["app/**/*"],
   "files": ["./references.d.ts"],

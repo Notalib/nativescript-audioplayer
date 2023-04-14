@@ -7,9 +7,6 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
 
   constructor() {
     super();
-    this.player = new TNSAudioPlayer();
-    this.player.setPlaybackEventListener(this);
-    this.player.setSeekIntervalSeconds(15);
 
     // setTimeout(() => {
     //   this.loadAndSetupPlaylist();
@@ -22,6 +19,9 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
   }
 
   public async loadAndSetupPlaylist() {
+    this.player = new TNSAudioPlayer();
+    // this.player.setPlaybackEventListener(this);
+    this.player.setSeekIntervalSeconds(15);
     const playlistUID = 'UID_12345';
     if (this.player.getCurrentPlaylistUID() === playlistUID) {
       console.log(`Player already has playlist: ${this.player.getCurrentPlaylistUID()}`);

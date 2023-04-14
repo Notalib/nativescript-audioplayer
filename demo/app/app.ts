@@ -1,7 +1,7 @@
 import { Application, Trace } from '@nativescript/core'
 import { notaAudioCategory } from '@nota/nativescript-audioplayer';
 
-Trace.setCategories(notaAudioCategory);
+Trace.setCategories(`${notaAudioCategory},${Trace.categories.Debug}`);
 Trace.enable();
 
 Application.on('launch', function (args) {

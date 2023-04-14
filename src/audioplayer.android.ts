@@ -1,6 +1,9 @@
+/// <reference path="./native-definitions/android.d.ts" />
+
 import * as nsApp from '@nativescript/core/application';
 import { Trace } from '@nativescript/core/trace';
 import * as utils from '@nativescript/core/utils';
+
 import { CommonAudioPlayer } from './audioplayer-common';
 import { notaAudioCategory, Playlist } from './audioplayer.types';
 import './media-service';
