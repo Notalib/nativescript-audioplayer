@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@nota/nativescript-audioplayer",
-  "version": "8.4.0-alpha.1",
+  "version": "8.4.0-alpha.2",
   "description": "Fully featured AudioPlayer for NativeScript. Supports gap-less audio playlist playback with variable playback speed and native remote controls",
   "scripts": {
     "build.apk": "cd demo && tns build android --copy-to .",
