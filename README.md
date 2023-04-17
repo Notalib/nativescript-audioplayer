@@ -1,4 +1,4 @@
-# Nativescript plugin for Audio playback (WIP)
+# Nativescript plugin for Audio playback (Nativescript 8+)
 
 ## Usage
 
