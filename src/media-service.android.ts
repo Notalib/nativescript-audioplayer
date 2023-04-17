@@ -9,7 +9,9 @@ import { MediaTrack, notaAudioCategory, PlaybackSuspend, Playlist } from './audi
 
 const MEDIA_SERVICE_NAME = 'TNS-MediaService-1';
 const NOTIFICATION_ID = 1;
-const NOTIFICATION_CHANNEL_ID = "TNS-MediaService-Notification-1";
+const NOTIFICATION_CHANNEL_ID = "MediaService-1";
+const NOTIFICATION_CHANNEL_NAME = "Nativescript-MediaService-Notifications";
+const NOTIFICATION_CHANNEL_DESC = "MediaService notifications";
 const DEFAULT_PLAYBACK_RATE = 1;
 const DEFAULT_INTENT_CODE = 1337;
 const DEFAULT_SEEK_LENGTH = 15;
@@ -40,73 +42,66 @@ export class MediaService extends android.app.Service {
 
   public exoPlayer?: com.google.android.exoplayer2.ExoPlayer;
 
+  private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
+
   private _mediaSession?: android.support.v4.media.session.MediaSessionCompat;
   private get _sessionToken() {
     return this._mediaSession?.getSessionToken();
   }
 
-  private _playerNotificationInit = false;
-
-  private _playerNotificationManager?: WeakRef<com.google.android.exoplayer2.ui.PlayerNotificationManager>;
-  private get playerNotificationManager() {
-    let playerNotificationManager = this._playerNotificationManager?.deref();
-    if (!this._playerNotificationInit) {
-      console.log('Create player notification manager');
-      const channelNameResourceId = androidUtils.resources.getStringId('tns_mediaservice_notifications_channel_name');
-      const channelDescResourceId = androidUtils.resources.getStringId('tns_mediaservice_notifications_channel_desc');
-      const mChannel = new android.app.NotificationChannel(NOTIFICATION_CHANNEL_ID, "test", android.app.NotificationManager.IMPORTANCE_HIGH);
-      Trace.write('Channel created', notaAudioCategory, Trace.messageType.info);
-      console.log('Channel created!', mChannel);
-      // const builderName = com.google.android.exoplayer2.ui.PlayerNotificationManager.Builder.class.getName();
-      const context: android.content.Context = this.appContext;
-      console.log('Context: ', context);
-      console.log('Stack:', new Error().stack);
-      const appContext: android.content.Context = this.getApplicationContext();
-      console.log('Context: ', appContext);
-      // const builder = new com.google.android.exoplayer2.ui.PlayerNotificationManager.Builder(context, 123, NOTIFICATION_CHANNEL_ID);
-      // const builder = new com.google.android.exoplayer2.ui.PlayerNotificationManager.Builder(this.getApplicationContext(), NOTIFICATION_ID, NOTIFICATION_CHANNEL_ID);
-      // playerNotificationManager = new com.google.android.exoplayer2.ui.PlayerNotificationManager.Builder(this.getApplicationContext(), NOTIFICATION_ID, NOTIFICATION_CHANNEL_ID)
-      //   .setChannelNameResourceId(channelNameResourceId)
-      //   .setChannelDescriptionResourceId(channelDescResourceId)
-      // //   // .setMediaDescriptionAdapter(this.mediaDescriptionAdapter)
-      // //   // .setNotificationListener(this.notificationListener)
-      //   .build();
-      // playerNotificationManager.setUseChronometer(true);
-      // playerNotificationManager.setMediaSessionToken(this._sessionToken!);
-      // playerNotificationManager = com.google.android.exoplayer2.ui.PlayerNotificationManager.createWithNotificationChannel(
-      //   this,
-      //   MEDIA_SERVICE_NAME,
-      //   this.notificationTitle,
-      //   this.notificationDesc,
-      //   this._intentReqCode,
-      //   this.mediaDescriptionAdapter,
-      //   this.notificationListener,
-      // );
-      // playerNotificationManager.setMediaSessionToken(this._sessionToken!);
-      // playerNotificationManager.setUseChronometer(true);
-      // this._playerNotificationManager = new WeakRef(playerNotificationManager);
-      this._playerNotificationInit = true;
+  private _notificationChannel?: android.app.NotificationChannel;
+  private getNotificationChannel() {
+    if (!this._notificationChannel) {
+      const notificationChannel = new android.app.NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, android.app.NotificationManager.IMPORTANCE_LOW);
+      notificationChannel.setSound(null!, null);
+      notificationChannel.setShowBadge(false);
+      notificationChannel.setDescription(NOTIFICATION_CHANNEL_DESC);
+      const notificationManager: android.app.NotificationManager = this.getSystemService(android.app.NotificationManager.class);
+      notificationManager.createNotificationChannel(notificationChannel);
+      Trace.write(`Channel created! id=${notificationChannel.getId()}`, notaAudioCategory, Trace.messageType.info);
+      this._notificationChannel = notificationChannel;
     }
-
-    return playerNotificationManager!;
+    return this._notificationChannel;
   }
 
-  private set playerNotificationManager(playerNotificationManager: com.google.android.exoplayer2.ui.PlayerNotificationManager | null) {
-    // this._playerNotificationManager?.clear();
-    // delete this._playerNotificationManager;
+  private _playerNotificationManager?: WeakRef<com.google.android.exoplayer2.ui.PlayerNotificationManager>;
+  private getPlayerNotificationManager() {
+    let playerNotificationManager = this._playerNotificationManager?.deref();
+    if (!playerNotificationManager) {
+      Trace.write('Create player notification manager', notaAudioCategory, Trace.messageType.info);
 
-    // if (playerNotificationManager) {
-    //   this._playerNotificationManager = new WeakRef(playerNotificationManager);
-    // }
+      const mChannel = this.getNotificationChannel();
+      const appContext: android.content.Context = this.getApplicationContext();
+      console.log('AppContext: ', appContext);
+      const mediaDescriptionAdapter = this.getMediaDescriptionAdapter(this);
+      const notificationListener = getTNSNotificationListenerImpl(this);
+      const newPlayerNotificationManager = new com.google.android.exoplayer2.ui.PlayerNotificationManager.Builder(
+            this.getApplicationContext(),
+            NOTIFICATION_ID,
+            mChannel.getId())
+        .setMediaDescriptionAdapter(mediaDescriptionAdapter)
+        .setNotificationListener(notificationListener)
+        .build();
+      console.log('PlayerNotificationManager: ', newPlayerNotificationManager);
+      newPlayerNotificationManager.setUseChronometer(true);
+      newPlayerNotificationManager.setMediaSessionToken(this._sessionToken!);
+      this._playerNotificationManager = new WeakRef(newPlayerNotificationManager);
+      return newPlayerNotificationManager;
+    }
+
+    return playerNotificationManager;
   }
 
   private _mediaSessionConnector?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
-  private _mediaSessionMetadataProvider?: com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider;
-  // private _playerEventListener?: TNSPlayerEventImpl;
-  private readonly mediaDescriptionAdapter = getTNSMediaDescriptionAdapterImpl(this);
+  private _mediaDescriptionAdapter?: com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter;
+  private getMediaDescriptionAdapter(owner: MediaService) {
+    if (!this._mediaDescriptionAdapter) {
+      this._mediaDescriptionAdapter = getTNSMediaDescriptionAdapterImpl(owner);
+    }
+    return this._mediaDescriptionAdapter;
+  }
 
-  //   return this._mediaDescriptionAdapter;
-  // }
+  private _playerEventListener?: TNSPlayerEventListener;
 
   // private _notificationListener?: TNSNotificationListenerImpl;
   // private get notificationListener() {
@@ -141,15 +136,13 @@ export class MediaService extends android.app.Service {
     bitmap: android.graphics.Bitmap;
   };
 
-  private appContext: android.content.Context;
-
   public onCreate() {
     if (Trace.isEnabled()) {
       Trace.write(`${this.cls}.onCreate()`, notaAudioCategory);
     }
     super.onCreate();
 
-    this.appContext = this.getApplicationContext();
+    const appContext = this.getApplicationContext();
 
     const sessionIntent = this.getPackageManager()?.getLaunchIntentForPackage(this.getPackageName());
     let sessionActivityPendingIntent: android.app.PendingIntent | null = null;
@@ -178,7 +171,8 @@ export class MediaService extends android.app.Service {
             /* Buffer rebuffer */ com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
       )
       .build();
-    // this._playerEventListener = new TNSPlayerEventImpl(this);
+    this._playerEventListener = new TNSPlayerEventListener();
+    this._playerEventListener.setOwner(this);
 
     const mediaSession = new android.support.v4.media.session.MediaSessionCompat(this, MEDIA_SERVICE_NAME);
     this._mediaSession = mediaSession;
@@ -221,7 +215,7 @@ export class MediaService extends android.app.Service {
 
     mediaSessionConnector.setMediaMetadataProvider(mediaSessionMetadataProvider);
 
-    const exoPlayer = new com.google.android.exoplayer2.ExoPlayer.Builder(this.appContext)
+    const exoPlayer = new com.google.android.exoplayer2.ExoPlayer.Builder(appContext)
       .setTrackSelector(trackSelector)
       .setLoadControl(loadControl)
       .setSeekForwardIncrementMs(this._seekIntervalSeconds * 1000)
@@ -230,7 +224,7 @@ export class MediaService extends android.app.Service {
 
     exoPlayer.setWakeMode(com.google.android.exoplayer2.C.WAKE_MODE_NETWORK);
     exoPlayer.setHandleAudioBecomingNoisy(true);
-    // exoPlayer.addListener(this._playerEventListener);
+    exoPlayer.addListener(this._playerEventListener);
 
     mediaSessionConnector.setPlayer(exoPlayer);
 
@@ -469,46 +463,28 @@ export class MediaService extends android.app.Service {
     const exoPlayer = this.exoPlayer;
     clearInterval(this._timeChangeInterval);
 
-    // const playerNotificationManager = this._playerNotificationManager?.deref();
-    // if (playerNotificationManager) {
-    //   playerNotificationManager.setMediaSessionToken(null!);
-    //   playerNotificationManager.setPlayer(null!);
-    // }
-    // this.playerNotificationManager = null;
+    const mediaSessionConnector = this._mediaSessionConnector;
+    if (mediaSessionConnector) {
+      mediaSessionConnector.setPlayer(null!);
+      mediaSessionConnector.setMediaMetadataProvider(null!);
+    }
+    delete this._mediaSessionConnector;
 
-    // const mediaSessionConnector = this._mediaSessionConnector;
-    // if (mediaSessionConnector) {
-    //   mediaSessionConnector.setPlayer(null!);
-    //   mediaSessionConnector.setMediaMetadataProvider(null!);
-    // }
-    // delete this._mediaSessionConnector;
+    delete this._mediaSessionMetadataProvider;
 
-    // delete this._mediaSessionMetadataProvider;
+    const mediaSession = this._mediaSession;
+    if (mediaSession) {
+      mediaSession.setActive(false);
+      mediaSession.release();
+    }
+    delete this._mediaSession;
 
-    // const mediaSession = this._mediaSession;
-    // if (mediaSession) {
-    //   mediaSession.setActive(false);
-    //   mediaSession.release();
-    // }
-    // delete this._mediaSession;
-
-    // if (this._playerEventListener) {
-    //   exoPlayer?.removeListener(this._playerEventListener);
-    //   //TODO
-    //   // delete this._playerEventListener.owner;
-    // }
-    // delete this._playerEventListener;
-
-    // if (this._notificationListener) {
-    //   //TODO
-    //   // delete this._notificationListener.owner;
-    // }
-    // delete this._notificationListener;
-
-    // if (this._mediaDescriptionAdapter) {
-    //   delete this._mediaDescriptionAdapter.owner;
-    // }
-    // delete this._mediaDescriptionAdapter;
+    if (this._playerEventListener) {
+      exoPlayer?.removeListener(this._playerEventListener);
+      this._playerEventListener.setOwner(null!);
+    }
+    delete this._playerEventListener;
+    delete this._mediaDescriptionAdapter;
 
     if (exoPlayer?.isPlaying()) {
       exoPlayer.stop();
@@ -608,10 +584,10 @@ export class MediaService extends android.app.Service {
       Trace.write(`${this.cls}.onStartCommand(${intent}, ${flags}, ${startId})`, notaAudioCategory);
     }
 
-    // const mediaSession = this._mediaSession;
-    // if (mediaSession) {
-    //   TNSMediaButtonReceiver.handleIntent(mediaSession, intent);
-    // }
+    const mediaSession = this._mediaSession;
+    if (mediaSession) {
+      TNSMediaButtonReceiver.handleIntent(mediaSession, intent);
+    }
 
     return super.onStartCommand(intent, flags, startId);
   }
@@ -632,18 +608,12 @@ export class MediaService extends android.app.Service {
 
   public async preparePlaylist(playlist: Playlist) {
     const exoPlayer = this.exoPlayer;
-    // const playerNotificationManager = this.playerNotificationManager;
+
     if (!exoPlayer) {
       Trace.write(`${this.cls}.preparePlaylist() - exoPlayer not initialized`, notaAudioCategory, Trace.messageType.error);
 
       return;
     }
-
-    // if (!playerNotificationManager) {
-    //   Trace.write(`${this.cls}.preparePlaylist() - player notification missing`, notaAudioCategory, Trace.messageType.error);
-
-    //   return;
-    // }
 
     if (Trace.isEnabled()) {
       Trace.write(`${this.cls}.preparePlaylist()`, notaAudioCategory);
@@ -687,40 +657,40 @@ export class MediaService extends android.app.Service {
       }
     }
 
-    // playerNotificationManager.setPlayer(exoPlayer);
-    // playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
-    // // playerNotificationManager.setUseNavigationActionsInCompactView(true);
-    // playerNotificationManager.setUseNextActionInCompactView(true);
-    // playerNotificationManager.setUsePreviousActionInCompactView(true);
-    // playerNotificationManager.setUsePlayPauseActions(true);
-    // // playerNotificationManager.setUseNavigationActions(true);
-    // playerNotificationManager.setUseNextAction(false);
-    // playerNotificationManager.setUsePreviousAction(false);
-    // playerNotificationManager.setUseStopAction(false);
-    // const notificationIcon = androidUtils.resources.getDrawableId('tns_audioplayer_small_icon');
-    // if (notificationIcon) {
-    //   playerNotificationManager.setSmallIcon(notificationIcon);
-    // }
+    const playerNotificationManager = this.getPlayerNotificationManager();
+
+    playerNotificationManager.setPlayer(exoPlayer);
+    playerNotificationManager.setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC);
+    playerNotificationManager.setUseNextActionInCompactView(true);
+    playerNotificationManager.setUsePreviousActionInCompactView(true);
+    playerNotificationManager.setUsePlayPauseActions(true);
+    playerNotificationManager.setUseNextAction(false);
+    playerNotificationManager.setUsePreviousAction(false);
+    playerNotificationManager.setUseStopAction(false);
+    const notificationIcon = androidUtils.resources.getDrawableId('tns_audioplayer_small_icon');
+    if (notificationIcon) {
+      playerNotificationManager.setSmallIcon(notificationIcon);
+    }
 
     this._playlist = playlist;
 
     this.setRate(this._rate);
     this.setSeekIntervalSeconds(this._seekIntervalSeconds);
-    // const mediaSessionConnector = this._mediaSessionConnector;
-    // if (mediaSessionConnector) {
-    //   mediaSessionConnector.setPlayer(exoPlayer);
-    // }
+    const mediaSessionConnector = this._mediaSessionConnector;
+    if (mediaSessionConnector) {
+      mediaSessionConnector.setPlayer(exoPlayer);
+    }
     exoPlayer.setMediaSource(concatenatedSource, true);
     exoPlayer.prepare();
   }
 
   public setSeekIntervalSeconds(seconds: number) {
-    // const playerNotificationManager = this.playerNotificationManager;
-    // if (!playerNotificationManager) {
-    //   Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, Trace.messageType.error);
+    const playerNotificationManager = this.getPlayerNotificationManager();
+    if (!playerNotificationManager) {
+      Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds}) - player notification missing`, notaAudioCategory, Trace.messageType.error);
 
-    //   return;
-    // }
+      return;
+    }
 
     if (Trace.isEnabled()) {
       Trace.write(`${this.cls}.setSeekIntervalSeconds(${seconds})`, notaAudioCategory);
@@ -728,7 +698,7 @@ export class MediaService extends android.app.Service {
     this._seekIntervalSeconds = Math.max(seconds ?? DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
 
     // TODO: This has changed to be on ExoPlayer.Builder, so we need to create new ExoPlayer???
-    // const seekMs = this._seekIntervalSeconds * 1000;
+    const seekMs = this._seekIntervalSeconds * 1000;
     // playerNotificationManager.setFastForwardIncrementMs(seekMs);
     // playerNotificationManager.setRewindIncrementMs(seekMs);
   }
@@ -972,10 +942,11 @@ export class LocalBinder extends android.os.Binder {
 //   owner?: MediaService;
 // };
 // type TNSMediaDescriptionAdapter = com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & { owner?: MediaService };
-// let TNSNotificationListener: new (owner: MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & {
-//   owner?: MediaService;
-// };
-// type TNSNotificationListener = com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & { owner?: MediaService };
+
+let TNSNotificationListener: new (owner: MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & {
+  owner?: MediaService;
+};
+type TNSNotificationListener = com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & { owner?: MediaService };
 
 export class ExoPlaybackError extends Error {
   constructor(public errorType: string, public errorMessage: string, public nativeException: com.google.android.exoplayer2.ExoPlaybackException) {
@@ -987,14 +958,23 @@ export class ExoPlaybackError extends Error {
 
 @NativeClass()
 @JavaProxy('dk.nota.ExoPlayerListener')
-class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
+class TNSPlayerEventListener extends com.google.android.exoplayer2.Player.Listener {
   private static instanceNo = 0;
-  private readonly cls = `TNSPlayerEventImpl<${++TNSPlayerEventImpl.instanceNo}>`;
+  private _owner: WeakRef<MediaService>;
+  private readonly cls = `TNSPlayerEventListener<${++TNSPlayerEventListener.instanceNo}>`;
 
-  constructor(public owner: MediaService) {
+  constructor() {
     super();
     // necessary when extending TypeScript constructors
     return global.__native(this);
+  }
+
+  public setOwner(owner: MediaService) {
+    this._owner = new WeakRef<MediaService>(owner);
+  }
+
+  private getOwner(): MediaService | null {
+    return this._owner?.deref() ?? null;
   }
 
   /**
@@ -1005,7 +985,7 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
       Trace.write(`${this.cls}.onIsPlayingChanged(${isPlaying})`, notaAudioCategory);
     }
 
-    const owner = this.owner;
+    const owner = this.getOwner();
     if (!owner) {
       return;
     }
@@ -1029,7 +1009,7 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
    * @param reason The Player.TimelineChangeReason responsible for this timeline change
    */
   public onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, reason: number) {
-    const manifest = this.owner?.exoPlayer?.getCurrentManifest();
+    const manifest = this.getOwner()?.exoPlayer?.getCurrentManifest();
 
     switch (reason) {
       case com.google.android.exoplayer2.Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED: {
@@ -1086,7 +1066,7 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
    * @param playbackState One of the STATE constants
    */
   public onPlayerStateChanged(playWhenReady: boolean, playbackState: number) {
-    const owner = this.owner;
+    const owner = this.getOwner();
     if (!owner) {
       return;
     }
@@ -1228,7 +1208,7 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
 
     Trace.write(`${this.cls}.onPlayerError() - ${error.message}`, notaAudioCategory, Trace.messageType.error);
 
-    const owner = this.owner;
+    const owner = this.getOwner();
     if (!owner) {
       return;
     }
@@ -1246,7 +1226,7 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
    * onTimelineChanged(Timeline, Object, int) is called in this case.
    */
   public onPositionDiscontinuity(oldPos: com.google.android.exoplayer2.Player.PositionInfo, newPos: com.google.android.exoplayer2.Player.PositionInfo, reason: number): void {
-    const owner = this.owner;
+    const owner = this.getOwner();
     if (!owner) {
       return;
     }
@@ -1332,7 +1312,7 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
   }
 
   public onPlaybackSuppressionReasonChanged(reason: number) {
-    const owner = this.owner;
+    const owner = this.getOwner();
     if (!owner) {
       return;
     }
@@ -1365,7 +1345,10 @@ class TNSPlayerEventImpl extends com.google.android.exoplayer2.Player.Listener {
 function getTNSMediaDescriptionAdapterImpl(owner: MediaService) {
     let cls = `TNSMediaDescriptionAdapterImpl<0>`;
 
+    const localOwner: WeakRef<MediaService> = new WeakRef(owner);
+
     function _getTrackInfo(player: com.google.android.exoplayer2.Player) {
+      const owner = localOwner.deref();
       if (!owner) {
         return null;
       }
@@ -1381,9 +1364,9 @@ function getTNSMediaDescriptionAdapterImpl(owner: MediaService) {
           Trace.write(`${cls}.createCurrentContentIntent(${player})`, notaAudioCategory);
         }
 
-        const owner = this.owner;
+        const owner = localOwner.deref();
         if (!owner) {
-          return new android.app.PendingIntent();
+          return null!;
         }
 
         return android.app.PendingIntent.getActivity(
@@ -1415,7 +1398,7 @@ function getTNSMediaDescriptionAdapterImpl(owner: MediaService) {
           Trace.write(`${cls}.getCurrentLargeIcon(${player})`, notaAudioCategory);
         }
 
-        const owner = this.owner;
+        const owner = localOwner.deref();
         if (!owner) {
           return null!;
         }
@@ -1448,72 +1431,46 @@ function getTNSMediaDescriptionAdapterImpl(owner: MediaService) {
     });
 }
 
-@NativeClass()
-// @JavaProxy('dk.nota.TNSNotificationListener')
-@Interfaces([com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener])
-class TNSNotificationListenerImpl extends java.lang.Object implements com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener {
-  private instanceNo = 0;
-  private owner: any;
-  private readonly cls = `TNSNotificationListenerImpl<0>`;
+function getTNSNotificationListenerImpl(owner: MediaService) {
+  let cls = `TNSMediaDescriptionAdapterImpl<0>`;
 
-  constructor() {
-    super();
-    // necessary when extending TypeScript constructors
-    this.owner = null!;
-    return global.__native(this);
-  }
+    const localOwner: WeakRef<MediaService> = new WeakRef(owner);
 
-  public onNotificationPosted(notificationId: number, notification: android.app.Notification, ongoing?: boolean) {
-    if (Trace.isEnabled()) {
-      Trace.write(`${this.cls}.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
-    }
+    return new com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener({
+      onNotificationPosted: function(notificationId: number, notification: android.app.Notification, ongoing?: boolean) {
+        if (Trace.isEnabled()) {
+          Trace.write(`${cls}.onNotificationPosted(${notificationId}, ${notification}, ${ongoing})`, notaAudioCategory);
+        }
 
-    const owner = this.owner;
-    if (!owner) {
-      return;
-    }
+        const owner = localOwner.deref();
+        if (!owner) {
+          return;
+        }
 
-    owner._handleNotificationPosted(notificationId, notification);
-  }
+        owner._handleNotificationPosted(notificationId, notification);
+      },
 
-  public onNotificationCancelled(notificationId: number, dismissedByUser = false) {
-    const cls = Trace.isEnabled() && `${this.cls}.onNotificationCancelled(id=${notificationId}, dismissedByUser=${dismissedByUser}) - ${this.owner}`;
-    if (Trace.isEnabled()) {
-      Trace.write(`${cls}`, notaAudioCategory);
-    }
+      onNotificationCancelled: function(notificationId: number, dismissedByUser = false) {
+        const innerCls = Trace.isEnabled() && `${cls}.onNotificationCancelled(id=${notificationId}, dismissedByUser=${dismissedByUser})`;
+        if (Trace.isEnabled()) {
+          Trace.write(`${innerCls}`, notaAudioCategory);
+        }
 
-    const owner = this.owner;
-    if (!owner) {
-      return;
-    }
+        const owner = localOwner.deref();
+        if (!owner) {
+          return;
+        }
 
-    if (owner._isForegroundService) {
-      try {
-        owner.stopForeground(false);
-        owner._isForegroundService = false;
-      } catch (err) {
-        Trace.write(`${cls} stopForeground failed! - ${err}`, notaAudioCategory, Trace.messageType.error);
+        if (owner._isForegroundService) {
+          try {
+            owner.stopForeground(false);
+            owner._isForegroundService = false;
+          } catch (err) {
+            Trace.write(`${cls} stopForeground failed! - ${err}`, notaAudioCategory, Trace.messageType.error);
+          }
+        }
+
+        owner.stopSelf();
       }
-    }
-
-    owner.stopSelf();
-  }
-
-  public onNotificationStarted(notificationId: number, notification: android.app.Notification) {
-    // Deprecated
-    if (Trace.isEnabled()) {
-      Trace.write(
-        `${this.cls}.onNotificationStarted(${notificationId}, ${notification}) is deprecated - why was this called?`,
-        notaAudioCategory,
-        Trace.messageType.warn,
-      );
-    }
-
-    const owner = this.owner;
-    if (!owner) {
-      return;
-    }
-
-    owner._handleNotificationPosted(notificationId, notification);
-  }
+    });
 }

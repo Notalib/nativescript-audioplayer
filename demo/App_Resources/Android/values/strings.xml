@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="tns_mediaservice_notifications_channel_name">tns_mediaservice_channel</string>
-    <string name="tns_mediaservice_notifications_channel_desc">Nativescript audio MediaService</string>
-</resources>
