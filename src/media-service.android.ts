@@ -549,6 +549,11 @@ export class MediaService extends android.app.Service {
       // If playback has ended, also stop the service.
       const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
 
+      Trace.write(
+        `${this.cls}._handleNotificationPosted: playerState=${playerState}`,
+        notaAudioCategory,
+      );
+
       this.stopForeground(shouldStopSelf);
       this._isForegroundService = false;
       if (shouldStopSelf) {
@@ -557,7 +562,7 @@ export class MediaService extends android.app.Service {
 
       if (Trace.isEnabled()) {
         Trace.write(
-          `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${isBuffering}`,
+          `${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - stopped in foreground. stopSelf:${shouldStopSelf}`,
           notaAudioCategory,
         );
       }
