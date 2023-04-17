@@ -470,7 +470,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         Trace.write(`${this.cls}.makeAudioItemForMediaTrack(${JSON.stringify(track)})`, notaAudioCategory);
       }
 
-      const url = track.url.substr(0, 7) === 'file://' ? NSURL.fileURLWithPath(track.url.substr(7)) : NSURL.URLWithString(track.url);
+      const url = track.url.substring(0, 7) === 'file://' ? NSURL.fileURLWithPath(track.url.substring(7)) : NSURL.URLWithString(track.url);
 
       if (Trace.isEnabled()) {
         Trace.write(`${this.cls}.makeAudioItemForMediaTrack(track) - URL: ${url}`, notaAudioCategory);

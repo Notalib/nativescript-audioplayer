@@ -164,7 +164,7 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
         return -1;
       }
 
-      return exoPlayer.getCurrentWindowIndex();
+      return exoPlayer.getCurrentMediaItemIndex();
     } catch (err) {
       Trace.write(`${this.cls}.getCurrentPlaylistIndex() - ${err}`, notaAudioCategory, Trace.messageType.error);
 
@@ -282,8 +282,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       const exoPlayer = await this.getExoPlayer();
-      if (exoPlayer?.hasPrevious()) {
-        exoPlayer.previous();
+      if (exoPlayer?.hasPreviousMediaItem()) {
+        exoPlayer.seekToPreviousMediaItem();
       }
     } catch (err) {
       Trace.write(`${this.cls}.skipToPrevious() - ${err}`, notaAudioCategory, Trace.messageType.error);
@@ -299,8 +299,8 @@ export class TNSAudioPlayer extends CommonAudioPlayer {
 
     try {
       const exoPlayer = await this.getExoPlayer();
-      if (exoPlayer?.hasNext()) {
-        exoPlayer.next();
+      if (exoPlayer?.hasNextMediaItem()) {
+        exoPlayer.seekToNextMediaItem();
       }
     } catch (err) {
       Trace.write(`${this.cls}.skipToNext() - ${err}`, notaAudioCategory, Trace.messageType.error);

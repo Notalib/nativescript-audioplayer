@@ -61,6 +61,7 @@ export class MediaService extends android.app.Service {
       Trace.write(`Channel created! id=${notificationChannel.getId()}`, notaAudioCategory, Trace.messageType.info);
       this._notificationChannel = notificationChannel;
     }
+
     return this._notificationChannel;
   }
 
@@ -71,8 +72,6 @@ export class MediaService extends android.app.Service {
       Trace.write('Create player notification manager', notaAudioCategory, Trace.messageType.info);
 
       const mChannel = this.getNotificationChannel();
-      const appContext: android.content.Context = this.getApplicationContext();
-      console.log('AppContext: ', appContext);
       const mediaDescriptionAdapter = this.getMediaDescriptionAdapter(this);
       const notificationListener = getTNSNotificationListenerImpl(this);
       const newPlayerNotificationManager = new com.google.android.exoplayer2.ui.PlayerNotificationManager.Builder(
@@ -82,10 +81,10 @@ export class MediaService extends android.app.Service {
         .setMediaDescriptionAdapter(mediaDescriptionAdapter)
         .setNotificationListener(notificationListener)
         .build();
-      console.log('PlayerNotificationManager: ', newPlayerNotificationManager);
       newPlayerNotificationManager.setUseChronometer(true);
       newPlayerNotificationManager.setMediaSessionToken(this._sessionToken!);
       this._playerNotificationManager = new WeakRef(newPlayerNotificationManager);
+
       return newPlayerNotificationManager;
     }
 
@@ -98,19 +97,12 @@ export class MediaService extends android.app.Service {
     if (!this._mediaDescriptionAdapter) {
       this._mediaDescriptionAdapter = getTNSMediaDescriptionAdapterImpl(owner);
     }
+
     return this._mediaDescriptionAdapter;
   }
 
   private _playerEventListener?: TNSPlayerEventListener;
 
-  // private _notificationListener?: TNSNotificationListenerImpl;
-  // private get notificationListener() {
-  //   if (!this._notificationListener) {
-  //     this._notificationListener = new TNSNotificationListenerImpl();
-  //   }
-
-  //   return this._notificationListener;
-  // }
   private _playlist?: Playlist;
 
   public _isForegroundService: boolean;
@@ -119,7 +111,6 @@ export class MediaService extends android.app.Service {
 
   private _rate = DEFAULT_PLAYBACK_RATE;
   private _seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
-  private _intentReqCode = DEFAULT_INTENT_CODE;
   private _timeChangeInterval: NodeJS.Timer;
 
   private _albumArts?: Map<string, Promise<ImageSource>>;
@@ -152,7 +143,6 @@ export class MediaService extends android.app.Service {
 
     this._rate = DEFAULT_PLAYBACK_RATE;
     this._seekIntervalSeconds = DEFAULT_SEEK_LENGTH;
-    this._intentReqCode = DEFAULT_INTENT_CODE;
     this._isForegroundService = false;
 
     const trackSelector = new com.google.android.exoplayer2.trackselection.DefaultTrackSelector(this);
@@ -463,6 +453,12 @@ export class MediaService extends android.app.Service {
     const exoPlayer = this.exoPlayer;
     clearInterval(this._timeChangeInterval);
 
+    const playerNotificationManager = this._playerNotificationManager?.deref();
+    if (playerNotificationManager) {
+      playerNotificationManager.setMediaSessionToken(null!);
+      playerNotificationManager.setPlayer(null!);
+    }
+
     const mediaSessionConnector = this._mediaSessionConnector;
     if (mediaSessionConnector) {
       mediaSessionConnector.setPlayer(null!);
@@ -576,6 +572,7 @@ export class MediaService extends android.app.Service {
     }
     let binder = new LocalBinder();
     binder.setService(this);
+
     return binder;
   }
 
@@ -808,7 +805,8 @@ export class MediaService extends android.app.Service {
   public onTaskRemoved(rootIntent: android.content.Intent): void {
     super.onTaskRemoved(rootIntent);
 
-    this.exoPlayer?.stop(true);
+    this.exoPlayer?.stop();
+    this.exoPlayer?.clearMediaItems();
   }
 
   private async _makeAlbumArtImageSource(url: string): Promise<ImageSource> {
@@ -897,8 +895,6 @@ export class MediaService extends android.app.Service {
   }
 }
 
-// type MediaService = any;
-
 @NativeClass()
 @JavaProxy('dk.nota.TNSMediaButtonReceiver')
 export class TNSMediaButtonReceiver extends androidx.media.session.MediaButtonReceiver {
@@ -935,19 +931,6 @@ export class LocalBinder extends android.os.Binder {
   }
 }
 
-// let TNSPlayerEvent: new (owner: MediaService) => com.google.android.exoplayer2.Player.Listener & { owner?: MediaService };
-// type TNSPlayerEvent = com.google.android.exoplayer2.Player.Listener & { owner?: MediaService };
-
-// let TNSMediaDescriptionAdapter: new (owner: MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & {
-//   owner?: MediaService;
-// };
-// type TNSMediaDescriptionAdapter = com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter & { owner?: MediaService };
-
-let TNSNotificationListener: new (owner: MediaService) => com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & {
-  owner?: MediaService;
-};
-type TNSNotificationListener = com.google.android.exoplayer2.ui.PlayerNotificationManager.NotificationListener & { owner?: MediaService };
-
 export class ExoPlaybackError extends Error {
   constructor(public errorType: string, public errorMessage: string, public nativeException: com.google.android.exoplayer2.ExoPlaybackException) {
     super(`ExoPlaybackError<${errorType}>: ${errorMessage}`);
@@ -965,6 +948,7 @@ class TNSPlayerEventListener extends com.google.android.exoplayer2.Player.Listen
 
   constructor() {
     super();
+
     // necessary when extending TypeScript constructors
     return global.__native(this);
   }
