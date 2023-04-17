@@ -1,21 +1,26 @@
-// Add your native dependencies here:
-
-// Uncomment to add recyclerview-v7 dependency
-//dependencies {
-//	compile 'com.android.support:recyclerview-v7:+'
-//}
+// You can add your native dependencies here
+dependencies {
+//  implementation 'androidx.multidex:multidex:2.0.1'
+}
 
 android {
+  // compileSdkVersion 32
+  // buildToolsVersion "32.0.0"
+  // ndkVersion ""
+
   defaultConfig {
+    minSdkVersion 19
+    // targetSdkVersion 32
+
+    // Version Information
+    versionCode 1
+    versionName "1.0.0"
+
     generatedDensities = []
-    applicationId = "org.nativescript.demo"
-    minSdkVersion = 19
+    multiDexEnabled true
   }
+
   aaptOptions {
     additionalParameters "--no-version-vectors"
-  }
-  project.ext {
-    //googlePlayServicesVersion = "11.2.2"
-    supportVersion = "28.0.0"
   }
 }

@@ -1,35 +1,39 @@
 {
-    "compilerOptions": {
-        "strictNullChecks": true,
-        "skipLibCheck": true,
-        "downlevelIteration": true,
-        "target": "es5",
-        "module": "commonjs",
-        "declaration": true,
-        "removeComments": true,
-        "noLib": false,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "lib": [
-            "es6",
-            "dom",
-            "es2017"
-        ],
-        "sourceMap": true,
-        "pretty": true,
-        "allowUnreachableCode": false,
-        "allowUnusedLabels": false,
-        "noEmitHelpers": true,
-        "noEmitOnError": false,
-        "noImplicitAny": false,
-        "noImplicitReturns": true,
-        "noImplicitUseStrict": false,
-        "noFallthroughCasesInSwitch": true,
-        "incremental": true
-    },
-    "exclude": [
-        "node_modules",
-        "native-definitions"
+  "compileOnSave": false,
+  "compilerOptions": {
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "lib": [
+      "ESNext",
+      "dom"
     ],
-    "compileOnSave": false
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmitHelpers": true,
+    "noEmitOnError": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noImplicitUseStrict": false,
+    "noLib": false,
+    "pretty": true,
+    "removeComments": false,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "target": "es2020",
+    "plugins": [
+      {
+        "transform": "@nativescript/webpack/dist/transformers/NativeClass",
+        "type": "raw"
+      }
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "native-definitions"
+  ]
 }

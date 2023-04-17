@@ -1,6 +1,6 @@
 import * as nsApp from '@nativescript/core/application';
 import { Observable } from '@nativescript/core/data/observable';
-import * as trace from '@nativescript/core/trace';
+import { Trace } from '@nativescript/core/trace';
 import {
   BufferingEventData,
   EndOfPlaylistReachedEventData,
@@ -168,23 +168,23 @@ export class CommonAudioPlayer extends Observable {
    * Start new sleep timer
    */
   public setSleepTimer(milliseconds: number) {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.setSleepTimer(${milliseconds})`, notaAudioCategory);
     }
 
     this.cancelSleepTimer();
 
     const countdownTick = 1000;
     this._sleepTimerMillisecondsLeft = milliseconds;
-    this._sleepTimer = setInterval(() => {
-      if (!this._sleepTimerPaused && this.isPlaying()) {
+    this._sleepTimer = setInterval(async () => {
+      if (!this._sleepTimerPaused && (await this.isPlaying())) {
         this._sleepTimerMillisecondsLeft = Math.max(this._sleepTimerMillisecondsLeft - countdownTick, 0);
         this._onSleepTimerChanged();
       }
 
       if (this._sleepTimerMillisecondsLeft === 0) {
         // Fade out volume and pause if not already paused.
-        if (this.isPlaying()) {
+        if (await this.isPlaying()) {
           this._onSleepTimerExpired();
         }
 
@@ -206,8 +206,8 @@ export class CommonAudioPlayer extends Observable {
    * Cancel/stop sleep timer.
    */
   public cancelSleepTimer() {
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.cancelSleepTimer()`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.cancelSleepTimer()`, notaAudioCategory);
     }
 
     if (this._sleepTimer == null) {
@@ -221,7 +221,7 @@ export class CommonAudioPlayer extends Observable {
     this._onSleepTimerChanged();
   }
 
-  protected _sleepTimer: number | null;
+  protected _sleepTimer: NodeJS.Timer | null;
   protected _sleepTimerPaused = false;
   protected _sleepTimerMillisecondsLeft = 0;
 
@@ -230,8 +230,8 @@ export class CommonAudioPlayer extends Observable {
       return;
     }
 
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.pauseSleepTimer()`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.pauseSleepTimer()`, notaAudioCategory);
     }
 
     this._sleepTimerPaused = true;
@@ -242,8 +242,8 @@ export class CommonAudioPlayer extends Observable {
       return;
     }
 
-    if (trace.isEnabled()) {
-      trace.write(`${this.cls}.resumeSleepTimer()`, notaAudioCategory);
+    if (Trace.isEnabled()) {
+      Trace.write(`${this.cls}.resumeSleepTimer()`, notaAudioCategory);
     }
 
     this._sleepTimerPaused = false;
@@ -279,8 +279,8 @@ export class CommonAudioPlayer extends Observable {
     }
 
     if (offset > 0) {
-      if (trace.isEnabled()) {
-        trace.write(`Set queuedSeek to ${offset}`, notaAudioCategory);
+      if (Trace.isEnabled()) {
+        Trace.write(`Set queuedSeek to ${offset}`, notaAudioCategory);
       }
 
       this._queuedSeekTo = offset;
@@ -301,7 +301,7 @@ export class CommonAudioPlayer extends Observable {
    * @deprecated
    */
   public setPlaybackEventListener(listener: PlaybackEventListener) {
-    trace.write(`${this.cls}.setPlaybackEventListener(..) is deprecated`, notaAudioCategory, trace.messageType.error);
+    Trace.write(`${this.cls}.setPlaybackEventListener(..) is deprecated`, notaAudioCategory, Trace.messageType.error);
 
     this._listener = listener;
   }
