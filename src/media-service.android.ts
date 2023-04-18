@@ -1209,7 +1209,7 @@ class TNSPlayerEventListener extends com.google.android.exoplayer2.Player.Listen
     reason: number,
   ): void {
     const owner = this.getOwner();
-    if (!owner) {
+    if (!owner || reason == undefined) {
       return;
     }
 
