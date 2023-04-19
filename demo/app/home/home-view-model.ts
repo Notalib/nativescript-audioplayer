@@ -1,27 +1,35 @@
 import { Observable } from '@nativescript/core/data/observable';
+import * as fs from '@nativescript/core/file-system';
 import { MediaTrack, PlaybackEvent, PlaybackEventListener, Playlist, TNSAudioPlayer } from '@nota/nativescript-audioplayer';
 
+let localTestFilePath = fs.path.join(fs.knownFolders.currentApp().path, "assets/1984-Part01.mp3");
+console.log(fs.File.exists(localTestFilePath));
+let localTestFile = fs.File.fromPath(localTestFilePath);
+console.log(localTestFile.path);
+// Example path from LYT3 local playlist
+// file:///storage/emulated/0/Android/data/dk.nota.lyt.next/files/books/22368/content/03_bibliografiske_oplysninger.mp3
+
 export class HomeViewModel extends Observable implements PlaybackEventListener {
-  private player: TNSAudioPlayer;
+  private player: TNSAudioPlayer = new TNSAudioPlayer();
   private rateToggled: boolean = false;
 
   constructor() {
     super();
 
-    // setTimeout(() => {
-    //   this.loadAndSetupPlaylist();
-    // }, 500);
-    // setInterval(() => {
+    this.player.setSeekIntervalSeconds(15);
+    this.player.setPlaybackEventListener(this);
+
+    setTimeout(() => {
+      this.loadAndSetupPlaylist();
+    }, 500);
+    // setInterval(async () => {
     //   if (this.player && this.player.isPlaying()) {
-    //     console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${this.player.getCurrentPlaylistIndex()} @ ${this.player.getCurrentTime()} of ${this.player.getDuration()}`);
+    //     console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${await this.player.getCurrentPlaylistIndex()} @ ${await this.player.getCurrentTime()} of ${await this.player.getDuration()}`);
     //   }
     // }, 1000);
   }
 
   public async loadAndSetupPlaylist() {
-    this.player = new TNSAudioPlayer();
-    // this.player.setPlaybackEventListener(this);
-    this.player.setSeekIntervalSeconds(15);
     const playlistUID = 'UID_12345';
     if (this.player.getCurrentPlaylistUID() === playlistUID) {
       console.log(`Player already has playlist: ${this.player.getCurrentPlaylistUID()}`);
@@ -98,8 +106,7 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
   }
 
   public async play() {
-    await this.loadAndSetupPlaylist();
-    // console.log("play");
+    console.log("play");
     await this.player.play();
   }
 
@@ -156,17 +163,14 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
   }
 
   public doOne() {
-    const playlist = new Playlist(
-      '1',
-      new MediaTrack('http://www.moviesoundclips.net/download.php?id=3706&ft=mp3', 'CoffeeSteam', 'SoundSnap.com', 'Short Test', null),
+    const playlist = new Playlist('1',
       new MediaTrack(
-        'https://archive.org/download/George-Orwell-1984-Audio-book/1984-01.mp3',
+        `file://${localTestFile.path}`,
         '1984',
         'George Orwell',
         'Del 1 af 4',
         'https://bookcover.nota.dk/714070_w140_h200.jpg',
       ),
-      new MediaTrack('http://www.moviesoundclips.net/download.php?id=3706&ft=mp3', 'CoffeeSteam3', 'SoundSnap.com', 'Short Test', null),
     );
     this.player.loadPlaylist(playlist, 0, 10000);
   }
@@ -176,7 +180,7 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
       '2',
       new MediaTrack('http://www.moviesoundclips.net/download.php?id=3706&ft=mp3', 'CoffeeSteam', 'SoundSnap.com', 'Short Test', null),
       new MediaTrack(
-        'https://archive.org/download/George-Orwell-1984-Audio-book/1984-02.mp3',
+        'https://archive.org/download/1984Part01/1984-Part02.mp3',
         '1984',
         'George Orwell',
         'Del 2 af 4',
@@ -190,14 +194,11 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
   public doThree() {
     this.player.stop();
     setTimeout(() => {
-      this.player = new TNSAudioPlayer();
-      this.player.setPlaybackEventListener(this);
-      this.player.setSeekIntervalSeconds(15);
       const playlist = new Playlist(
         '3',
         new MediaTrack('http://www.moviesoundclips.net/download.php?id=3706&ft=mp3', 'CoffeeSteam', 'SoundSnap.com', 'Short Test', null),
         new MediaTrack(
-          'https://archive.org/download/George-Orwell-1984-Audio-book/1984-03.mp3',
+          'https://archive.org/download/1984Part01/1984-Part03.mp3',
           '1984',
           'George Orwell',
           'Del 3 af 4',

@@ -626,11 +626,12 @@ export class MediaService extends android.app.Service {
     );
 
     const userAgent = com.google.android.exoplayer2.util.Util.getUserAgent(this, 'tns-audioplayer');
-    const dataSrcFactory = new com.google.android.exoplayer2.upstream.DefaultHttpDataSource.Factory();
-    dataSrcFactory.setUserAgent(userAgent);
-    dataSrcFactory.setConnectTimeoutMs(com.google.android.exoplayer2.upstream.DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS);
-    dataSrcFactory.setReadTimeoutMs(30 * 1000);
-    dataSrcFactory.setAllowCrossProtocolRedirects(true);
+    const httpDataSrcFactory = new com.google.android.exoplayer2.upstream.DefaultHttpDataSource.Factory();
+    httpDataSrcFactory.setUserAgent(userAgent);
+    httpDataSrcFactory.setConnectTimeoutMs(com.google.android.exoplayer2.upstream.DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS);
+    httpDataSrcFactory.setReadTimeoutMs(30 * 1000);
+    httpDataSrcFactory.setAllowCrossProtocolRedirects(true);
+    const dataSrcFactory = new com.google.android.exoplayer2.upstream.DefaultDataSource.Factory(this, httpDataSrcFactory);
 
     const mediaSourceFactory = new com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory(dataSrcFactory);
 
