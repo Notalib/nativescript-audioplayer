@@ -950,7 +950,14 @@ export class ExoPlaybackError extends Error {
 class TNSPlayerEventListener extends com.google.android.exoplayer2.Player.Listener {
   private static instanceNo = 0;
   private _owner: WeakRef<MediaService>;
-  private readonly cls = `TNSPlayerEventListener<${++TNSPlayerEventListener.instanceNo}>`;
+  private _cls: string;
+  private get cls() {
+    if (!this._cls) {
+      this._cls = `TNSPlayerEventListener<${++TNSPlayerEventListener.instanceNo}>`
+    }
+
+    return this._cls;
+  }
 
   constructor() {
     super();
