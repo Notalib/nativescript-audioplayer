@@ -143,7 +143,12 @@ export class MediaService extends android.app.Service {
     const sessionIntent = this.getPackageManager()?.getLaunchIntentForPackage(this.getPackageName());
     let sessionActivityPendingIntent: android.app.PendingIntent | null = null;
     if (sessionIntent) {
-      sessionActivityPendingIntent = android.app.PendingIntent.getActivity(this, 0, sessionIntent, 0);
+      sessionActivityPendingIntent = android.app.PendingIntent.getActivity(
+        this,
+        0,
+        sessionIntent,
+        android.app.PendingIntent.FLAG_IMMUTABLE | android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+      );
     }
 
     this._rate = DEFAULT_PLAYBACK_RATE;
@@ -1356,7 +1361,7 @@ function getTNSMediaDescriptionAdapterImpl(owner: MediaService) {
         owner,
         0,
         new android.content.Intent(owner, nsApp.android.startActivity?.getClass()),
-        android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+        android.app.PendingIntent.FLAG_IMMUTABLE | android.app.PendingIntent.FLAG_UPDATE_CURRENT,
       );
     },
 
