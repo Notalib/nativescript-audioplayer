@@ -553,8 +553,9 @@ export class MediaService extends android.app.Service {
         Trace.write(`${this.cls}._handleNotificationPosted(${notificationId}, ${notification}) - started in foreground`, notaAudioCategory);
       }
     } else {
-      // If playback has ended, also stop the service.
-      const shouldStopSelf = playerState === com.google.android.exoplayer2.Player.STATE_ENDED;
+      // If playback has ended or is idle, also stop the service.
+      const shouldStopSelf =
+        playerState === com.google.android.exoplayer2.Player.STATE_ENDED || playerState === com.google.android.exoplayer2.Player.STATE_IDLE;
 
       Trace.write(`${this.cls}._handleNotificationPosted: playerState=${playerState}`, notaAudioCategory);
 
@@ -953,7 +954,7 @@ class TNSPlayerEventListener extends com.google.android.exoplayer2.Player.Listen
   private _cls: string;
   private get cls() {
     if (!this._cls) {
-      this._cls = `TNSPlayerEventListener<${++TNSPlayerEventListener.instanceNo}>`
+      this._cls = `TNSPlayerEventListener<${++TNSPlayerEventListener.instanceNo}>`;
     }
 
     return this._cls;
