@@ -1,6 +1,14 @@
 import { Observable } from '@nativescript/core/data/observable';
 import * as fs from '@nativescript/core/file-system';
-import { MediaTrack, PlaybackEvent, PlaybackEventListener, Playlist, TNSAudioPlayer } from '@nota/nativescript-audioplayer';
+import { MediaTrack, Playlist, TNSAudioPlayer } from '@nota/nativescript-audioplayer';
+import {
+  EventData,
+  TimeChangedEventData,
+  SleepTimerChangedEventData,
+  PlayingEventData,
+  PausedEventData,
+  PlaybackSuspendEventData,
+} from '@nota/nativescript-audioplayer';
 
 let localTestFilePath = fs.path.join(fs.knownFolders.currentApp().path, 'assets/1984-Part01.mp3');
 console.log(fs.File.exists(localTestFilePath));
@@ -9,7 +17,7 @@ console.log(localTestFile.path);
 // Example path from LYT3 local playlist
 // file:///storage/emulated/0/Android/data/dk.nota.lyt.next/files/books/22368/content/03_bibliografiske_oplysninger.mp3
 
-export class HomeViewModel extends Observable implements PlaybackEventListener {
+export class HomeViewModel extends Observable {
   private player: TNSAudioPlayer = new TNSAudioPlayer();
   private rateToggled: boolean = false;
 
@@ -17,16 +25,36 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
     super();
 
     this.player.setSeekIntervalSeconds(15);
-    this.player.setPlaybackEventListener(this);
+    this.player.on(TNSAudioPlayer.bufferingEvent, this.defaultPlayerEventHandler);
+    this.player.on(TNSAudioPlayer.timeChangedEvent, (args: TimeChangedEventData) => {
+      console.log(`timeChangedEvent: (idx=${args.playlistIndex}) ${args.currentTime} / ${args.duration}`);
+    });
+    this.player.on(TNSAudioPlayer.sleepTimerChangedEvent, (args: SleepTimerChangedEventData) => {
+      console.log(`sleepTimerChangedEvent: ${args.remaining}`);
+    });
+    this.player.on(TNSAudioPlayer.playingEvent, (args: PlayingEventData) => {
+      console.log(`playingEvent: (idx=${args.playlistIndex}) ${args.currentTime} / ${args.duration}`);
+    });
+    this.player.on(TNSAudioPlayer.pausedEvent, (args: PausedEventData) => {
+      console.log(`pausedEvent: (idx=${args.playlistIndex}) ${args.currentTime} / ${args.duration}`);
+    });
+    this.player.on(TNSAudioPlayer.stoppedEvent, this.defaultPlayerEventHandler);
+    this.player.on(TNSAudioPlayer.playbackSuspendEvent, (args: PlaybackSuspendEventData) => {
+      console.log(`playbackSuspendEvent: ${args.reason}`);
+    });
+    this.player.on(TNSAudioPlayer.waitingForNetworkEvent, this.defaultPlayerEventHandler);
+    this.player.on(TNSAudioPlayer.endOfPlaylistReachedEvent, this.defaultPlayerEventHandler);
+    this.player.on(TNSAudioPlayer.encounteredErrorEvent, this.defaultPlayerEventHandler);
+    // This way of listening to playback events is deprecated (but still works for now).
+    // this.player.setPlaybackEventListener(this);
 
-    setTimeout(() => {
-      this.loadAndSetupPlaylist();
-    }, 500);
-    // setInterval(async () => {
-    //   if (this.player && this.player.isPlaying()) {
-    //     console.log(`Playing playlist UID (${this.player.getCurrentPlaylistUID()}). Index ${await this.player.getCurrentPlaylistIndex()} @ ${await this.player.getCurrentTime()} of ${await this.player.getDuration()}`);
-    //   }
-    // }, 1000);
+    // setTimeout(() => {
+    //   this.loadAndSetupPlaylist();
+    // }, 500);
+  }
+
+  private defaultPlayerEventHandler(data: EventData) {
+    console.log(`player event: ${data.eventName}`);
   }
 
   public async loadAndSetupPlaylist() {
@@ -101,6 +129,9 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
 
   public async play() {
     console.log('play');
+    if (!this.player.playlist) {
+      await this.loadAndSetupPlaylist();
+    }
     await this.player.play();
   }
 
@@ -205,9 +236,5 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
     // console.log('sleep in 5 sec!');
     // this.player.setSleepTimer(5000);
     // console.log(`Player position: ${this.player.getCurrentPlaylistIndex()}@${this.player.getCurrentTime()} / ${this.player.getDuration()}`);
-  }
-
-  public onPlaybackEvent(evt: PlaybackEvent, data: any) {
-    // console.log('onPlaybackEvent', { evt, data });
   }
 }

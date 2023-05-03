@@ -1,4 +1,5 @@
 export const notaAudioCategory = 'NotaAudioPlayer';
+export { EventData } from '@nativescript/core/data/observable';
 import { EventData } from '@nativescript/core/data/observable';
 
 export class MediaTrack {
