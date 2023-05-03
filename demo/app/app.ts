@@ -1,4 +1,4 @@
-import { Application, Trace } from '@nativescript/core'
+import { Application, Trace } from '@nativescript/core';
 import { notaAudioCategory } from '@nota/nativescript-audioplayer';
 
 Trace.setCategories(`${notaAudioCategory},${Trace.categories.Debug}`);
@@ -76,7 +76,7 @@ Application.on(Application.exitEvent, () => {
   global['nsApp'] = null;
 });
 
-Application.run({ moduleName: 'app-root' })
+Application.run({ moduleName: 'app-root' });
 
 /*
 Do not place any code after the Application has been started as it will not

@@ -2,7 +2,7 @@ import { Observable } from '@nativescript/core/data/observable';
 import * as fs from '@nativescript/core/file-system';
 import { MediaTrack, PlaybackEvent, PlaybackEventListener, Playlist, TNSAudioPlayer } from '@nota/nativescript-audioplayer';
 
-let localTestFilePath = fs.path.join(fs.knownFolders.currentApp().path, "assets/1984-Part01.mp3");
+let localTestFilePath = fs.path.join(fs.knownFolders.currentApp().path, 'assets/1984-Part01.mp3');
 console.log(fs.File.exists(localTestFilePath));
 let localTestFile = fs.File.fromPath(localTestFilePath);
 console.log(localTestFile.path);
@@ -83,13 +83,7 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
         'Album 2/4',
         'http://bookcover.nota.dk/714070_w140_h200.jpg',
       ),
-      new MediaTrack(
-        'https://archive.org/download/1984Part01/1984-Part03.mp3',
-        'George Orwell',
-        '1984',
-        'Album 3/4',
-        null,
-      ),
+      new MediaTrack('https://archive.org/download/1984Part01/1984-Part03.mp3', 'George Orwell', '1984', 'Album 3/4', null),
       new MediaTrack(
         'https://archive.org/download/1984Part01/1984-Part04.mp3',
         'George Orwell',
@@ -106,7 +100,7 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
   }
 
   public async play() {
-    console.log("play");
+    console.log('play');
     await this.player.play();
   }
 
@@ -163,14 +157,9 @@ export class HomeViewModel extends Observable implements PlaybackEventListener {
   }
 
   public doOne() {
-    const playlist = new Playlist('1',
-      new MediaTrack(
-        `file://${localTestFile.path}`,
-        '1984',
-        'George Orwell',
-        'Del 1 af 4',
-        'https://bookcover.nota.dk/714070_w140_h200.jpg',
-      ),
+    const playlist = new Playlist(
+      '1',
+      new MediaTrack(`file://${localTestFile.path}`, '1984', 'George Orwell', 'Del 1 af 4', 'https://bookcover.nota.dk/714070_w140_h200.jpg'),
     );
     this.player.loadPlaylist(playlist, 0, 10000);
   }
