@@ -559,10 +559,14 @@ export class MediaService extends android.app.Service {
 
       Trace.write(`${this.cls}._handleNotificationPosted: playerState=${playerState}`, notaAudioCategory);
 
-      this.stopForeground(shouldStopSelf);
-      this._isForegroundService = false;
-      if (shouldStopSelf) {
-        this.stopSelf();
+      // Starting with Android 12 (API 31), we cannot stop the foreground service on pause, otherwise we won't be able to resume later.
+      // See https://stackoverflow.com/a/75296605/382830
+      if (shouldStopSelf || android.os.Build.VERSION.SDK_INT < 31) {
+        this.stopForeground(shouldStopSelf);
+        this._isForegroundService = false;
+        if (shouldStopSelf) {
+          this.stopSelf();
+        }
       }
 
       if (Trace.isEnabled()) {
@@ -1457,6 +1461,7 @@ function getTNSNotificationListenerImpl(owner: MediaService) {
         return;
       }
 
+      // Stop the foreground service when the notification is dismissed by the user.
       if (owner._isForegroundService) {
         try {
           owner.stopForeground(false);
