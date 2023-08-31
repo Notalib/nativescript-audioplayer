@@ -454,58 +454,62 @@ export class MediaService extends android.app.Service {
     if (Trace.isEnabled()) {
       Trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
     }
+    try {
 
-    this.stopForeground(true);
-    if (this._isForegroundService) {
-      this._isForegroundService = false;
+      this.stopForeground(true);
+      if (this._isForegroundService) {
+        this._isForegroundService = false;
+      }
+
+      const exoPlayer = this.exoPlayer;
+      clearInterval(this._timeChangeInterval);
+
+      const playerNotificationManager = this._playerNotificationManager?.deref();
+      if (playerNotificationManager) {
+        playerNotificationManager.setMediaSessionToken(null!);
+        playerNotificationManager.setPlayer(null!);
+      }
+
+      const mediaSessionConnector = this._mediaSessionConnector;
+      if (mediaSessionConnector) {
+        mediaSessionConnector.setPlayer(null!);
+        mediaSessionConnector.setMediaMetadataProvider(null!);
+      }
+      delete this._mediaSessionConnector;
+
+      delete this._mediaSessionMetadataProvider;
+
+      const mediaSession = this._mediaSession;
+      if (mediaSession) {
+        mediaSession.setActive(false);
+        mediaSession.release();
+      }
+      delete this._mediaSession;
+
+      if (this._playerEventListener) {
+        exoPlayer?.removeListener(this._playerEventListener);
+        this._playerEventListener.setOwner(null!);
+      }
+      delete this._playerEventListener;
+      delete this._mediaDescriptionAdapter;
+
+      if (exoPlayer?.isPlaying()) {
+        exoPlayer.stop();
+      }
+
+      exoPlayer?.release();
+      delete this.exoPlayer;
+
+      delete this.owner;
+      this._albumArts?.clear();
+      delete this._albumArts;
+      delete this._playlist;
+      delete this._lastLoadedAlbumArt;
+
+      super.onDestroy();
+    } catch (error) {
+      Trace.write(`${this.cls}.onDestroy() - super.onDestroy() failed: ${error}`, notaAudioCategory, Trace.messageType.error);
     }
-
-    const exoPlayer = this.exoPlayer;
-    clearInterval(this._timeChangeInterval);
-
-    const playerNotificationManager = this._playerNotificationManager?.deref();
-    if (playerNotificationManager) {
-      playerNotificationManager.setMediaSessionToken(null!);
-      playerNotificationManager.setPlayer(null!);
-    }
-
-    const mediaSessionConnector = this._mediaSessionConnector;
-    if (mediaSessionConnector) {
-      mediaSessionConnector.setPlayer(null!);
-      mediaSessionConnector.setMediaMetadataProvider(null!);
-    }
-    delete this._mediaSessionConnector;
-
-    delete this._mediaSessionMetadataProvider;
-
-    const mediaSession = this._mediaSession;
-    if (mediaSession) {
-      mediaSession.setActive(false);
-      mediaSession.release();
-    }
-    delete this._mediaSession;
-
-    if (this._playerEventListener) {
-      exoPlayer?.removeListener(this._playerEventListener);
-      this._playerEventListener.setOwner(null!);
-    }
-    delete this._playerEventListener;
-    delete this._mediaDescriptionAdapter;
-
-    if (exoPlayer?.isPlaying()) {
-      exoPlayer.stop();
-    }
-
-    exoPlayer?.release();
-    delete this.exoPlayer;
-
-    delete this.owner;
-    this._albumArts?.clear();
-    delete this._albumArts;
-    delete this._playlist;
-    delete this._lastLoadedAlbumArt;
-
-    super.onDestroy();
   }
 
   public _handleNotificationPosted(notificationId: number, notification: android.app.Notification) {
@@ -559,7 +563,7 @@ export class MediaService extends android.app.Service {
 
       Trace.write(`${this.cls}._handleNotificationPosted: playerState=${playerState}`, notaAudioCategory);
 
-      // Starting with Android 12 (API 31), we cannot stop the foreground service on pause, otherwise we won't be able to resume later.
+      // Starting with Android 12 (API 31), we cannot stop the foreground service on pause, otherwise we won't be able to resume safely.
       // See https://stackoverflow.com/a/75296605/382830
       if (shouldStopSelf || android.os.Build.VERSION.SDK_INT < 31) {
         this.stopForeground(shouldStopSelf);
