@@ -455,7 +455,6 @@ export class MediaService extends android.app.Service {
       Trace.write(`${this.cls}.onDestroy()`, notaAudioCategory);
     }
     try {
-
       this.stopForeground(true);
       if (this._isForegroundService) {
         this._isForegroundService = false;
