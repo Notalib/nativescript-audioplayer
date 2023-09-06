@@ -1,6 +1,6 @@
 {
   "name": "@nota/nativescript-audioplayer",
-  "version": "8.4.1",
+  "version": "8.4.2",
   "license": "LGPL-3.0",
   "description": "Fully featured AudioPlayer for NativeScript. Supports gap-less audio playlist playback with variable playback speed and native remote controls",
   "nativescript": {
