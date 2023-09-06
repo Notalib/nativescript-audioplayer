@@ -713,7 +713,7 @@ export class MediaService extends android.app.Service {
     this._seekIntervalSeconds = Math.max(seconds ?? DEFAULT_SEEK_LENGTH, DEFAULT_SEEK_LENGTH);
 
     // TODO: This has changed to be on ExoPlayer.Builder, so we need to create new ExoPlayer???
-    const seekMs = this._seekIntervalSeconds * 1000;
+    // const seekMs = this._seekIntervalSeconds * 1000;
     // playerNotificationManager.setFastForwardIncrementMs(seekMs);
     // playerNotificationManager.setRewindIncrementMs(seekMs);
   }
